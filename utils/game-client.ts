@@ -1,5 +1,5 @@
 import { P5CanvasInstance } from "react-p5-wrapper"
-import { CANVASHEIGHT, CANVASWIDTH, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { CANVASCENTER, CANVASHEIGHT, CANVASWIDTH, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
@@ -111,7 +111,7 @@ export class Piece {
     constructor(piece: PieceProps) {
         this.type = piece.type
         this.color = piece.color
-        this.x = 0
+        this.x = CANVASCENTER
         this.y = 0
         this.r_state = ROTATION.FIRST
         this.active = true
@@ -296,8 +296,6 @@ export class Piece {
     draw = (p5: P5CanvasInstance) => {
         p5.fill(this.color[0], this.color[1], this.color[2])
         for (let i = 0; i < 4; i++) {
-            const halfCols = Math.floor(COLS/2) - 1 // test purpose
-            const mid = halfCols * (TILEWIDTH + SPACING) // test purpose
             const x = this.x + this.points[i].x
             const y = this.y + this.points[i].y
             p5.rect(

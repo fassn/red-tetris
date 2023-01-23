@@ -1,14 +1,14 @@
 import dynamic from "next/dynamic"
-import { useContext } from "react"
 import { P5CanvasInstance, P5WrapperProps, Sketch } from "react-p5-wrapper"
 const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     .then(mod => mod.ReactP5Wrapper), {
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
+import { useEffectAfterMount } from "../utils/hooks"
+import { useContext } from "react"
 import { SocketContext } from "../context/socket"
 import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
 import { Piece, PieceProps, Playground } from "../utils/game-client"
-import { useEffectAfterMount } from "../utils/hooks"
 
 enum ARROW {
     UP,
@@ -31,21 +31,20 @@ const Game = () => {
             nextPiece = newPiece
         })
     }, [])
-    socket.emit('fetchFirstPieces')
-    const pg: Playground = new Playground()
-    let currentPiece: PieceProps = { type: 'left_L', color: [255, 0, 0] }
-    let nextPiece: PieceProps = { type: 'bar', color: [255, 0, 0] }
 
+    socket.emit('fetchFirstPieces') // will populate currentPiece/nextPiece
+    let currentPiece: PieceProps
+    let nextPiece: PieceProps
+    const pg: Playground = new Playground()
     const sketch: Sketch = (p5) => {
 
         let piece = new Piece(currentPiece)
-
+        let accuDelta = 0
+        let tickRate = 1000 / FRAMERATE
         p5.setup = () => {
             p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
             p5.frameRate(FRAMERATE)
         }
-        let accuDelta = 0
-        let tickRate = 1000 / FRAMERATE
         p5.draw = () => {
             p5.background(250);
             pg.draw(p5)
@@ -57,20 +56,32 @@ const Game = () => {
             if (accuDelta >= tickRate) {
                 accuDelta -= tickRate
                 tickRate = p5.deltaTime
+
                 if (p5.frameCount % FRAMERATE === 0) {
-                    const dy = 1
-                    const newY = piece.getY() + dy * (TILEHEIGHT + SPACING)
-                    piece.setY(newY, pg.stack)
+                    movePiece()
                     if (!piece.isActive() && !piece.isDisabled()) {
-                        socket.emit('fetchNewPiece')
-                        piece.disable()
-                        pg.addToStack(piece)
-                        piece = new Piece(nextPiece)
+                        getNewPiece()
                     }
                 }
             }
         }
+
+        const getNewPiece = () => {
+            if (!piece.isActive() && !piece.isDisabled()) {
+                socket.emit('fetchNewPiece')
+                piece.disable()
+                pg.addToStack(piece)
+                piece = new Piece(nextPiece)
+            }
+        }
+
+        const movePiece = () => {
+            const newY = piece.getY() + (TILEHEIGHT + SPACING)
+            piece.setY(newY, pg.stack)
+        }
     }
+
+
 
     const handleKeyboard = (p5: P5CanvasInstance, piece: Piece) => {
         if (p5.keyIsDown(ARROW.DOWN)) {

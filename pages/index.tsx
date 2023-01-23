@@ -1,7 +1,6 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
-import { Socket } from 'socket.io-client'
 import { FormEvent, KeyboardEvent, useContext, useState } from 'react'
 import { useEffectAfterMount } from '../utils/hooks'
 import { useRouter } from 'next/router'

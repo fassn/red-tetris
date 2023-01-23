@@ -7,3 +7,4 @@ export const SPACING = 2
 export const RADIUS = 10
 export const CANVASWIDTH = TILEWIDTH * COLS + SPACING * (COLS - 1)
 export const CANVASHEIGHT = TILEHEIGHT * ROWS + SPACING * (ROWS - 1)
+export const CANVASCENTER = (Math.floor(COLS / 2) - 1) * (TILEWIDTH + SPACING) // test purpose
