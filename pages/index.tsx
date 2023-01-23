@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import io, { Socket } from 'socket.io-client'
-import { FormEvent, KeyboardEvent, useRef, useState } from 'react'
+import { FormEvent, KeyboardEvent, useState } from 'react'
 import { useEffectAfterMount } from '../utils/hooks'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
@@ -11,6 +11,9 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     .then(mod => mod.ReactP5Wrapper), {
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
+
+import { Point, POINTS } from '../utils/points'
+import { ROWS, COLS, TILEWIDTH, TILEHEIGHT, SPACING, RADIUS, CANVASWIDTH, CANVASHEIGHT } from '../utils/config'
 
 let socket: Socket
 
@@ -58,30 +61,17 @@ const Home: NextPage = () => {
         bottom: number,
         left: number
     }
-    const ROWS = 20
-    const COLS = 10
-    const TILEWIDTH = 30
-    const TILEHEIGHT = 30
-    const SPACING = 2
-    const RADIUS = 10
 
     class Playground {
-        private cols: number
-        private rows: number
-        private tileWidth: number
-        private tileHeight: number
-        private spacing: number
-        private radius: number
         private bgColor: RGB
+        stack: boolean[]
 
-        constructor(rows = 20, cols = 10, tileWidth = 30, tileHeight = 30, spacing = 2, radius = 10, bgColor = [230, 230, 230] as RGB) {
-            this.cols = cols
-            this.rows = rows
-            this.tileWidth = tileWidth
-            this.tileHeight = tileHeight
-            this.spacing = spacing
-            this.radius = radius
+        constructor(bgColor = [230, 230, 230] as RGB) {
             this.bgColor = bgColor
+            this.stack = new Array<boolean>(ROWS*COLS)
+            for (let i = 0; i < ROWS*COLS; i++) {
+                this.stack[i] = false
+            }
         }
 
         draw = (p5: P5CanvasInstance) => {
@@ -89,77 +79,243 @@ const Home: NextPage = () => {
             let y = 0
             p5.fill(this.bgColor[0], this.bgColor[1], this.bgColor[2])
             p5.stroke(255,255,255)
-            for (let i = 0; i < this.cols; i++) {
-                for (let j = 0; j < this.rows; j++) {
-                    const tile = p5.rect(x, y, this.tileWidth, this.tileHeight, this.radius)
-                    y += this.tileHeight + this.spacing
+            for (let i = 0; i < COLS; i++) {
+                for (let j = 0; j < ROWS; j++) {
+                    const tile = p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
+                    y += TILEHEIGHT + SPACING
                 }
                 y = 0
-                x += this.tileWidth + this.spacing
+                x += TILEWIDTH + SPACING
             }
         }
     }
-    class CanvasProps {
-        width: number
-        height: number
 
-        constructor(rows = 20, cols = 10, tileWidth = 30, tileHeight = 30, spacing = 2) {
-            this.width = tileWidth * cols + spacing * (cols - 1)
-            this.height = tileHeight * rows + spacing * (rows - 1)
-        }
+    enum ARROW {
+        UP,
+        DOWN = 40,
+        LEFT = 37,
+        RIGHT = 39
     }
 
+    enum ROTATION {
+        FIRST,
+        SECOND,
+        THIRD,
+        FOURTH
+    }
     class Piece {
         private type: PieceType
         private color: RGB
+        private points: [Point, Point, Point, Point]
         private h: Hitbox
         private x: number
         private y: number
-        constructor(type: PieceType, color: RGB, c: any) {
+        private active: boolean
+        private r_state: ROTATION
+
+        constructor(type: PieceType, color: RGB) {
             this.type = type
             this.color = color
             this.x = 0
             this.y = 0
-            this.h = { top: c.canvasHeight, right: 0, bottom: 0, left: c.canvasWidth}
+            this.h = { top: CANVASHEIGHT, right: 0, bottom: 0, left: CANVASWIDTH}
+            this.r_state = ROTATION.FIRST
+            this.active = true
             switch(type) {
                 case 'bar':
+                    this.points = POINTS.bar[0]
+                    break;
+                case 'left_L':
+                    this.points = POINTS.left_L[0]
+                    break
+                case 'right_L':
+                    this.points = POINTS.right_L[0]
+                    break
+                case 'cube':
+                    this.points = POINTS.cube[0]
+                    break
+                case 'T':
+                    this.points = POINTS.T[0]
+                    break
+                case 'Z':
+                    this.points = POINTS.Z[0]
+                    break
+                case 'rev_Z':
+                    this.points = POINTS.rev_Z[0]
+                    break
+                default:
+                    throw new Error('The piece type doesn\'t exist.')
+            }
+        }
+
+        setActive(state: boolean) {
+            this.active = state
+        }
+
+        isActive() {
+            return this.active
+        }
+
+        getX() {
+            return this.x
+        }
+
+        getY() {
+            return this.y
+        }
+
+        setX(x: number, stack: boolean[]) {
+            if (this.isHittingRightOrLeft(x, stack)) {
+                return
+            }
+            this.x = x
+        }
+
+        setY(y: number, stack: boolean[]) {
+            if (this.isHittingDown(y, stack)) {
+                this.active = false
+                return
+            }
+            this.y = y
+        }
+
+        canRotate(stack: boolean[]): boolean {
+            let newPoints: [Point, Point, Point, Point]
+            switch (this.r_state) {
+                case ROTATION.FIRST:
+                    newPoints = POINTS[this.type][1]
+                break;
+                case ROTATION.SECOND:
+                    newPoints = POINTS[this.type][2]
+                break;
+                case ROTATION.THIRD:
+                    newPoints = POINTS[this.type][3]
+                break;
+                case ROTATION.FOURTH:
+                    newPoints = POINTS[this.type][0]
+                break;
+            }
+
+            for (let i = 0; i < 4; i++) {
+                const { x, y } = newPoints[i]
+
+                if (this.y + y > CANVASHEIGHT) {
+                    return false
+                }
+                if ((this.x + x) < 0 || (this.x + x) > CANVASWIDTH) {
+                    return false
+                }
+
+                const idxX = (this.x + x) / (TILEWIDTH + SPACING)
+                const idxY = (this.y + y) / (TILEHEIGHT + SPACING)
+                if (stack[idxY * ROWS + idxX]) {
+                    return false
+                }
+            }
+            return true
+        }
+
+        rotate = () => {
+            switch (this.r_state) {
+                case ROTATION.FIRST:
+                    this.r_state = ROTATION.SECOND
+                    this.points = POINTS[this.type][1]
+                break;
+                case ROTATION.SECOND:
+                    this.r_state = ROTATION.THIRD
+                    this.points = POINTS[this.type][2]
+                break;
+                case ROTATION.THIRD:
+                    this.r_state = ROTATION.FOURTH
+                    this.points = POINTS[this.type][3]
+                break;
+                case ROTATION.FOURTH:
+                    this.r_state = ROTATION.FIRST
+                    this.points = POINTS[this.type][0]
                 break;
             }
         }
 
-        setX(x: number) {
-            this.x = x
-        }
-
-        setY(y: number) {
+        down = (stack: boolean[]) => {
+            const y = this.y + TILEHEIGHT + SPACING
+            if (this.isHittingDown(y, stack)) {
+                return
+            }
             this.y = y
         }
 
-        getHitbox() {
-            return this.h
-        }
+        // hitsRight(stack: boolean[]) {
+        //     const index = this.h.right / (TILEHEIGHT + SPACING)
+        //     if (index >= COLS) return true
+        // }
 
-        private setHitbox(x: number, y: number) {
-            if (this.h.top > y) {
-                this.h.top = y
-            }
-            if (this.h.right < x + TILEWIDTH) {
-                this.h.right = x + TILEWIDTH
-            }
-            if (this.h.bottom < y + TILEHEIGHT) {
-                this.h.bottom = y + TILEHEIGHT
-            }
-            if (this.h.left > x) {
-                this.h.left = x
-            }
-        }
+        // hitsLeft(stack: boolean[]) {
+        //     const index = this.h.left / (TILEWIDTH + SPACING)
+        //     if (index === 0) return true
+        // }
 
-        drawBar = (p5: P5CanvasInstance) => {
-            p5.fill(this.color[0], this.color[1], this.color[2])
+        // hitsDown(stack: boolean[]) {
+        //     const index = this.h.bottom / (TILEHEIGHT + SPACING)
+        //     // stack[index * ]
+        //     if (index >= ROWS) {
+        //         this.active = false
+        //         return true
+        //     }
+        //     // stack[]
+        // }
+
+        isHittingDown(newY: number, stack: boolean[]): boolean {
             for (let i = 0; i < 4; i++) {
-                const halfCols = Math.floor(COLS/2) // test purpose
-                const x = this.x + TILEWIDTH * halfCols + (SPACING * halfCols)
-                const y = this.y + TILEHEIGHT * i + SPACING * i
+                const { x, y } = this.points[i]
+
+                if (newY + y > CANVASHEIGHT) {
+                    return true
+                }
+
+                const idxX = (this.x + x) / (TILEWIDTH + SPACING)
+                const idxY = (newY + y) / (TILEHEIGHT + SPACING)
+                if (stack[idxY * ROWS + idxX]) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        isHittingRightOrLeft(newX: number, stack: boolean[]): boolean {
+            for (let i = 0; i < 4; i++) {
+                const { x, y } = this.points[i]
+
+                if ((newX + x) < 0 || (newX + x) > CANVASWIDTH) {
+                    return true
+                }
+
+                const idxX = (newX + x) / (TILEWIDTH + SPACING)
+                const idxY = (this.y + y) / (TILEHEIGHT + SPACING)
+                if (stack[idxY * ROWS + idxX]) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        private setHitbox(minX: number, maxX: number, minY: number, maxY: number) {
+            this.h.top = minY
+            this.h.right = maxX + TILEWIDTH + SPACING
+            this.h.bottom = maxY + TILEHEIGHT + SPACING
+            this.h.left = minX
+        }
+
+        draw = (p5: P5CanvasInstance) => {
+            p5.fill(this.color[0], this.color[1], this.color[2])
+            let minX = CANVASWIDTH
+            let minY = CANVASHEIGHT
+            let maxX = 0
+            let maxY = 0
+            for (let i = 0; i < 4; i++) {
+                const halfCols = Math.floor(COLS/2) - 1 // test purpose
+                const mid = halfCols * (TILEWIDTH + SPACING) // test purpose
+                const x = this.x + this.points[i].x
+                const y = this.y + this.points[i].y
                 p5.rect(
                     x,
                     y,
@@ -167,30 +323,60 @@ const Home: NextPage = () => {
                     TILEHEIGHT,
                     RADIUS
                 )
-                this.setHitbox(x, y)
+                if (x < minX) {
+                    minX = x
+                }
+                if (x > maxX) {
+                    maxX = x
+                }
+                if (y < minY) {
+                    minY = y
+                }
+                if (y > maxY) {
+                    maxY = y
+                }
             }
+            this.setHitbox(minX, maxX, minY, maxY)
         }
     }
 
     const sketch: Sketch = (p5) => {
-        const playground = new Playground()
-        const canvasProps = new CanvasProps()
+        const pg = new Playground()
         p5.setup = () => {
-            p5.createCanvas(canvasProps.width, canvasProps.height)
+            p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
             p5.frameRate(30)
         }
-        const tee = new Piece('T', [255, 0, 0], canvasProps)
-        let newY = 0
+        const piece = new Piece('left_L', [255, 0, 0])
         p5.draw = () => {
             p5.background(250);
-            playground.draw(p5)
-            tee.drawBar(p5)
-            let h = tee.getHitbox()
-            if (p5.frameCount % 30 === 0 && h.bottom < canvasProps.height) {
+            pg.draw(p5)
+
+            if (p5.keyIsDown(ARROW.DOWN)) {
+                piece.down(pg.stack)
+            }
+            if (p5.keyIsDown(ARROW.LEFT)) {
+                piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
+            }
+            if (p5.keyIsDown(ARROW.RIGHT)) {
+                piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
+            }
+            p5.keyPressed = (event: KeyboardEvent) => {
+                if (event.key ===  'ArrowUp') {
+                    if (piece.canRotate(pg.stack)) {
+                        piece.rotate()
+                    }
+                }
+            }
+            piece.draw(p5)
+
+            if (p5.frameCount % 30 === 0) {
                 // move piece
                 const dy = 1
-                newY = newY + dy * (TILEHEIGHT + SPACING)
-                tee.setY(newY)
+                const newY = piece.getY() + dy * (TILEHEIGHT + SPACING)
+                piece.setY(newY, pg.stack)
+                if (!piece.isActive()) {
+                    socket.emit('newPiece')
+                }
             }
         }
     }
@@ -271,8 +457,7 @@ const Home: NextPage = () => {
 
             <main className={styles.main}>
                 <ReactP5Wrapper sketch={sketch} />
-                {/* <div ref={p5ContainerRef} /> */}
-                <form onSubmit={onSubmit} action=''>
+                {/* <form onSubmit={onSubmit} action=''>
                     <label htmlFor='room_name'>Room name</label>
                     <input type='text' id='room_name' name='room_name' required></input>
                     <label htmlFor='player_name'>Player name</label>
@@ -348,13 +533,13 @@ const Home: NextPage = () => {
                         </div>
                         </>
                     )}
-                </div>
+                </div> */}
             </main>
 
-            <div className={styles.card}></div>
+            {/* <div className={styles.card}></div>
 
             <footer className={styles.footer}>
-            </footer>
+            </footer> */}
         </div>
     )
 }
