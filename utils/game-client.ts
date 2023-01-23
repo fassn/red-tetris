@@ -4,11 +4,9 @@ import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
 export type RGB = [number, number, number]
-type Hitbox = {
-    top: number,
-    right: number,
-    bottom: number,
-    left: number
+export type PieceProps = {
+    type: PieceType,
+    color: RGB
 }
 
 enum ROTATION {
@@ -44,6 +42,37 @@ export class Playground {
             this.stack[idxY * COLS + idxX].isFilled = true
             this.stack[idxY * COLS + idxX].color = piece.getColor()
         }
+        this.checkLines()
+    }
+
+    removeLine = (row: number) => {
+        for (let x = 0; x < COLS; x++) {
+            this.stack[row * COLS + x].isFilled = false;
+        }
+        this.moveDownUpperLines(row)
+    }
+
+    moveDownUpperLines = (row: number) => {
+        for (let y = row - 1; y > 0; y--) {
+            for (let x = 0; x < COLS; x++) {
+                this.stack[(y + 1) * COLS + x] = this.stack[y * COLS + x]
+            }
+        }
+    }
+
+    checkLines = () => {
+        for (let y = 0; y < ROWS; y++) {
+            let lineFilled = true;
+            for (let x = 0; x < COLS; x++) {
+                if (this.stack[y * COLS + x].isFilled === false) {
+                    lineFilled = false;
+                    break;
+                }
+            }
+            if (lineFilled) {
+                this.removeLine(y)
+            }
+        }
     }
 
     draw = (p5: P5CanvasInstance) => {
@@ -73,23 +102,21 @@ export class Piece {
     private type: PieceType
     private color: RGB
     private points: [Point, Point, Point, Point]
-    private h: Hitbox
     private x: number
     private y: number
     private active: boolean
     private disabled: boolean
     private r_state: ROTATION
 
-    constructor(type: PieceType, color: RGB) {
-        this.type = type
-        this.color = color
+    constructor(piece: PieceProps) {
+        this.type = piece.type
+        this.color = piece.color
         this.x = 0
         this.y = 0
-        this.h = { top: CANVASHEIGHT, right: 0, bottom: 0, left: CANVASWIDTH}
         this.r_state = ROTATION.FIRST
         this.active = true
         this.disabled = false
-        switch(type) {
+        switch(piece.type) {
             case 'bar':
                 this.points = POINTS.bar[0]
                 break;
@@ -232,26 +259,6 @@ export class Piece {
         }
     }
 
-    // hitsRight(stack: boolean[]) {
-    //     const index = this.h.right / (TILEHEIGHT + SPACING)
-    //     if (index >= COLS) return true
-    // }
-
-    // hitsLeft(stack: boolean[]) {
-    //     const index = this.h.left / (TILEWIDTH + SPACING)
-    //     if (index === 0) return true
-    // }
-
-    // hitsDown(stack: boolean[]) {
-    //     const index = this.h.bottom / (TILEHEIGHT + SPACING)
-    //     // stack[index * ]
-    //     if (index >= ROWS) {
-    //         this.active = false
-    //         return true
-    //     }
-    //     // stack[]
-    // }
-
     isHittingDown(newY: number, stack: Stack[]): boolean {
         for (let i = 0; i < 4; i++) {
             const { x, y } = this.points[i]
@@ -286,19 +293,8 @@ export class Piece {
         return false
     }
 
-    private setHitbox(minX: number, maxX: number, minY: number, maxY: number) {
-        this.h.top = minY
-        this.h.right = maxX + TILEWIDTH + SPACING
-        this.h.bottom = maxY + TILEHEIGHT + SPACING
-        this.h.left = minX
-    }
-
     draw = (p5: P5CanvasInstance) => {
         p5.fill(this.color[0], this.color[1], this.color[2])
-        let minX = CANVASWIDTH
-        let minY = CANVASHEIGHT
-        let maxX = 0
-        let maxY = 0
         for (let i = 0; i < 4; i++) {
             const halfCols = Math.floor(COLS/2) - 1 // test purpose
             const mid = halfCols * (TILEWIDTH + SPACING) // test purpose
@@ -311,19 +307,6 @@ export class Piece {
                 TILEHEIGHT,
                 RADIUS
             )
-            if (x < minX) {
-                minX = x
-            }
-            if (x > maxX) {
-                maxX = x
-            }
-            if (y < minY) {
-                minY = y
-            }
-            if (y > maxY) {
-                maxY = y
-            }
         }
-        this.setHitbox(minX, maxX, minY, maxY)
     }
 }

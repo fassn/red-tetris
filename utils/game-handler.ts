@@ -6,18 +6,32 @@ const GameHandler = (io: Server, socket: Socket) => {
         socket.broadcast.emit('newIncomingMsg', msg)
     }
 
+    const fetchFirstPieces = () => {
+        const firstPiece = getPiece()
+        const secondPiece = getPiece()
+
+        socket.emit('firstPieces', { firstPiece, secondPiece })
+    }
+
     const fetchNewPiece = () => {
+        const { type, color } = getPiece()
+
+        socket.emit('newIncomingPiece', {type, color})
+    }
+
+    const getPiece = () => {
         const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
         const type: PieceType = types[Math.floor(Math.random() * types.length)]
 
         const colors: RGB[] = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
         const color: RGB = colors[Math.floor(Math.random() * colors.length)]
 
-        socket.emit('newIncomingPiece', {type, color})
+        return { type, color }
     }
 
     socket.on('createdMessage', createdMessage)
 
+    socket.on('fetchFirstPieces', fetchFirstPieces)
     socket.on('fetchNewPiece', fetchNewPiece)
 }
 

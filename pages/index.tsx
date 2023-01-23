@@ -1,21 +1,13 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
-import io, { Socket } from 'socket.io-client'
-import { FormEvent, KeyboardEvent, useState } from 'react'
+import { Socket } from 'socket.io-client'
+import { FormEvent, KeyboardEvent, useContext, useState } from 'react'
 import { useEffectAfterMount } from '../utils/hooks'
 import { useRouter } from 'next/router'
-import dynamic from 'next/dynamic'
-import { P5WrapperProps, Sketch } from 'react-p5-wrapper'
-const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
-    .then(mod => mod.ReactP5Wrapper), {
-    ssr: false
-}) as unknown as React.NamedExoticComponent<P5WrapperProps>
 
-import { TILEWIDTH, TILEHEIGHT, SPACING, RADIUS, CANVASWIDTH, CANVASHEIGHT } from '../utils/config'
-import { Piece, PieceType, Playground, RGB } from '../utils/game-client'
-
-let socket: Socket
+import Game from '../components/Game'
+import { SocketContext } from '../context/socket'
 
 type Message = {
     author: string,
@@ -24,14 +16,12 @@ type Message = {
 
 const Home: NextPage = () => {
     const router = useRouter()
+    const socket = useContext(SocketContext)
 
     const [username, setUsername] = useState('')
     const [chosenUsername, setChosenUsername] = useState('')
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState<Array<Message>>([])
-    let currentPiece: PieceType = 'left_L'
-    let nextPiece: PieceType = 'bar'
-    let color: RGB = [255, 0, 0]
 
     useEffectAfterMount(() => {
         socketInit()
@@ -55,62 +45,6 @@ const Home: NextPage = () => {
         }
     }, [])
 
-    enum ARROW {
-        UP,
-        DOWN = 40,
-        LEFT = 37,
-        RIGHT = 39
-    }
-    let piece = new Piece(currentPiece, color)
-    const sketch: Sketch = (p5) => {
-        const pg = new Playground()
-        p5.setup = () => {
-            p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
-            p5.frameRate(30)
-        }
-        p5.draw = () => {
-            p5.background(250);
-            pg.draw(p5)
-
-            if (p5.keyIsDown(ARROW.DOWN)) {
-                piece.down(pg.stack)
-            }
-            // if (p5.keyIsDown(ARROW.LEFT)) {
-            //     piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
-            // }
-            // if (p5.keyIsDown(ARROW.RIGHT)) {
-            //     piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
-            // }
-            p5.keyPressed = (event: KeyboardEvent) => {
-                if (event.key ===  'ArrowUp') {
-                    if (piece.canRotate(pg.stack)) {
-                        piece.rotate()
-                    }
-                }
-                if (event.key === 'ArrowLeft') {
-                    piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
-                }
-                if (event.key === 'ArrowRight') {
-                    piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
-                }
-            }
-            piece.draw(p5)
-
-            if (p5.frameCount % 30 === 0) {
-                // move piece
-                const dy = 1
-                const newY = piece.getY() + dy * (TILEHEIGHT + SPACING)
-                piece.setY(newY, pg.stack)
-                if (!piece.isActive() && !piece.isDisabled()) {
-                    socket.emit('fetchNewPiece')
-                    piece.disable()
-                    pg.addToStack(piece)
-                    piece = new Piece(nextPiece, color)
-                }
-            }
-        }
-    }
-
     const parseHash = (url: string) => {
         const hash: string = url.split('#')[1] || '';
         const match = hash.match(/[^\[\]]+/g)
@@ -121,22 +55,13 @@ const Home: NextPage = () => {
     const socketInit = async () => {
         await fetch('/api/socket-handler')
 
-        socket = io()
-
         socket.on('newIncomingMsg', (msg: Message) => {
             setMessages((currentMsg) => [
                 ...currentMsg,
                 { author: msg.author, message: msg.message }
             ])
         })
-
-        socket.on('newIncomingPiece', (newPiece: { type: PieceType, color: RGB }) => {
-            currentPiece = nextPiece
-            nextPiece = newPiece.type
-            color = newPiece.color
-        })
     }
-
 
     const sendMessage = async () => {
         socket.emit('createdMessage', { author: chosenUsername, message })
@@ -193,7 +118,7 @@ const Home: NextPage = () => {
             </Head>
 
             <main className={styles.main}>
-                <ReactP5Wrapper sketch={sketch} />
+                <Game />
                 {/* <form onSubmit={onSubmit} action=''>
                     <label htmlFor='room_name'>Room name</label>
                     <input type='text' id='room_name' name='room_name' required></input>
