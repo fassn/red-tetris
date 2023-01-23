@@ -6,14 +6,14 @@ import { FormEvent, KeyboardEvent, useState } from 'react'
 import { useEffectAfterMount } from '../utils/hooks'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
-import { P5CanvasInstance, P5WrapperProps, Sketch } from 'react-p5-wrapper'
+import { P5WrapperProps, Sketch } from 'react-p5-wrapper'
 const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     .then(mod => mod.ReactP5Wrapper), {
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
 
-import { Point, POINTS } from '../utils/points'
-import { ROWS, COLS, TILEWIDTH, TILEHEIGHT, SPACING, RADIUS, CANVASWIDTH, CANVASHEIGHT } from '../utils/config'
+import { TILEWIDTH, TILEHEIGHT, SPACING, RADIUS, CANVASWIDTH, CANVASHEIGHT } from '../utils/config'
+import { Piece, PieceType, Playground, RGB } from '../utils/game-client'
 
 let socket: Socket
 
@@ -29,6 +29,9 @@ const Home: NextPage = () => {
     const [chosenUsername, setChosenUsername] = useState('')
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState<Array<Message>>([])
+    let currentPiece: PieceType = 'left_L'
+    let nextPiece: PieceType = 'bar'
+    let color: RGB = [255, 0, 0]
 
     useEffectAfterMount(() => {
         socketInit()
@@ -49,46 +52,8 @@ const Home: NextPage = () => {
 
         return () => {
             router.events.off('hashChangeComplete', handleHashChange)
-            // p5Instance.remove()
         }
     }, [])
-
-    type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
-    type RGB = [number, number, number]
-    type Hitbox = {
-        top: number,
-        right: number,
-        bottom: number,
-        left: number
-    }
-
-    class Playground {
-        private bgColor: RGB
-        stack: boolean[]
-
-        constructor(bgColor = [230, 230, 230] as RGB) {
-            this.bgColor = bgColor
-            this.stack = new Array<boolean>(ROWS*COLS)
-            for (let i = 0; i < ROWS*COLS; i++) {
-                this.stack[i] = false
-            }
-        }
-
-        draw = (p5: P5CanvasInstance) => {
-            let x = 0
-            let y = 0
-            p5.fill(this.bgColor[0], this.bgColor[1], this.bgColor[2])
-            p5.stroke(255,255,255)
-            for (let i = 0; i < COLS; i++) {
-                for (let j = 0; j < ROWS; j++) {
-                    const tile = p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-                    y += TILEHEIGHT + SPACING
-                }
-                y = 0
-                x += TILEWIDTH + SPACING
-            }
-        }
-    }
 
     enum ARROW {
         UP,
@@ -96,257 +61,13 @@ const Home: NextPage = () => {
         LEFT = 37,
         RIGHT = 39
     }
-
-    enum ROTATION {
-        FIRST,
-        SECOND,
-        THIRD,
-        FOURTH
-    }
-    class Piece {
-        private type: PieceType
-        private color: RGB
-        private points: [Point, Point, Point, Point]
-        private h: Hitbox
-        private x: number
-        private y: number
-        private active: boolean
-        private r_state: ROTATION
-
-        constructor(type: PieceType, color: RGB) {
-            this.type = type
-            this.color = color
-            this.x = 0
-            this.y = 0
-            this.h = { top: CANVASHEIGHT, right: 0, bottom: 0, left: CANVASWIDTH}
-            this.r_state = ROTATION.FIRST
-            this.active = true
-            switch(type) {
-                case 'bar':
-                    this.points = POINTS.bar[0]
-                    break;
-                case 'left_L':
-                    this.points = POINTS.left_L[0]
-                    break
-                case 'right_L':
-                    this.points = POINTS.right_L[0]
-                    break
-                case 'cube':
-                    this.points = POINTS.cube[0]
-                    break
-                case 'T':
-                    this.points = POINTS.T[0]
-                    break
-                case 'Z':
-                    this.points = POINTS.Z[0]
-                    break
-                case 'rev_Z':
-                    this.points = POINTS.rev_Z[0]
-                    break
-                default:
-                    throw new Error('The piece type doesn\'t exist.')
-            }
-        }
-
-        setActive(state: boolean) {
-            this.active = state
-        }
-
-        isActive() {
-            return this.active
-        }
-
-        getX() {
-            return this.x
-        }
-
-        getY() {
-            return this.y
-        }
-
-        setX(x: number, stack: boolean[]) {
-            if (this.isHittingRightOrLeft(x, stack)) {
-                return
-            }
-            this.x = x
-        }
-
-        setY(y: number, stack: boolean[]) {
-            if (this.isHittingDown(y, stack)) {
-                this.active = false
-                return
-            }
-            this.y = y
-        }
-
-        canRotate(stack: boolean[]): boolean {
-            let newPoints: [Point, Point, Point, Point]
-            switch (this.r_state) {
-                case ROTATION.FIRST:
-                    newPoints = POINTS[this.type][1]
-                break;
-                case ROTATION.SECOND:
-                    newPoints = POINTS[this.type][2]
-                break;
-                case ROTATION.THIRD:
-                    newPoints = POINTS[this.type][3]
-                break;
-                case ROTATION.FOURTH:
-                    newPoints = POINTS[this.type][0]
-                break;
-            }
-
-            for (let i = 0; i < 4; i++) {
-                const { x, y } = newPoints[i]
-
-                if (this.y + y > CANVASHEIGHT) {
-                    return false
-                }
-                if ((this.x + x) < 0 || (this.x + x) > CANVASWIDTH) {
-                    return false
-                }
-
-                const idxX = (this.x + x) / (TILEWIDTH + SPACING)
-                const idxY = (this.y + y) / (TILEHEIGHT + SPACING)
-                if (stack[idxY * ROWS + idxX]) {
-                    return false
-                }
-            }
-            return true
-        }
-
-        rotate = () => {
-            switch (this.r_state) {
-                case ROTATION.FIRST:
-                    this.r_state = ROTATION.SECOND
-                    this.points = POINTS[this.type][1]
-                break;
-                case ROTATION.SECOND:
-                    this.r_state = ROTATION.THIRD
-                    this.points = POINTS[this.type][2]
-                break;
-                case ROTATION.THIRD:
-                    this.r_state = ROTATION.FOURTH
-                    this.points = POINTS[this.type][3]
-                break;
-                case ROTATION.FOURTH:
-                    this.r_state = ROTATION.FIRST
-                    this.points = POINTS[this.type][0]
-                break;
-            }
-        }
-
-        down = (stack: boolean[]) => {
-            const y = this.y + TILEHEIGHT + SPACING
-            if (this.isHittingDown(y, stack)) {
-                return
-            }
-            this.y = y
-        }
-
-        // hitsRight(stack: boolean[]) {
-        //     const index = this.h.right / (TILEHEIGHT + SPACING)
-        //     if (index >= COLS) return true
-        // }
-
-        // hitsLeft(stack: boolean[]) {
-        //     const index = this.h.left / (TILEWIDTH + SPACING)
-        //     if (index === 0) return true
-        // }
-
-        // hitsDown(stack: boolean[]) {
-        //     const index = this.h.bottom / (TILEHEIGHT + SPACING)
-        //     // stack[index * ]
-        //     if (index >= ROWS) {
-        //         this.active = false
-        //         return true
-        //     }
-        //     // stack[]
-        // }
-
-        isHittingDown(newY: number, stack: boolean[]): boolean {
-            for (let i = 0; i < 4; i++) {
-                const { x, y } = this.points[i]
-
-                if (newY + y > CANVASHEIGHT) {
-                    return true
-                }
-
-                const idxX = (this.x + x) / (TILEWIDTH + SPACING)
-                const idxY = (newY + y) / (TILEHEIGHT + SPACING)
-                if (stack[idxY * ROWS + idxX]) {
-                    return true
-                }
-            }
-            return false
-        }
-
-        isHittingRightOrLeft(newX: number, stack: boolean[]): boolean {
-            for (let i = 0; i < 4; i++) {
-                const { x, y } = this.points[i]
-
-                if ((newX + x) < 0 || (newX + x) > CANVASWIDTH) {
-                    return true
-                }
-
-                const idxX = (newX + x) / (TILEWIDTH + SPACING)
-                const idxY = (this.y + y) / (TILEHEIGHT + SPACING)
-                if (stack[idxY * ROWS + idxX]) {
-                    return true
-                }
-            }
-            return false
-        }
-
-        private setHitbox(minX: number, maxX: number, minY: number, maxY: number) {
-            this.h.top = minY
-            this.h.right = maxX + TILEWIDTH + SPACING
-            this.h.bottom = maxY + TILEHEIGHT + SPACING
-            this.h.left = minX
-        }
-
-        draw = (p5: P5CanvasInstance) => {
-            p5.fill(this.color[0], this.color[1], this.color[2])
-            let minX = CANVASWIDTH
-            let minY = CANVASHEIGHT
-            let maxX = 0
-            let maxY = 0
-            for (let i = 0; i < 4; i++) {
-                const halfCols = Math.floor(COLS/2) - 1 // test purpose
-                const mid = halfCols * (TILEWIDTH + SPACING) // test purpose
-                const x = this.x + this.points[i].x
-                const y = this.y + this.points[i].y
-                p5.rect(
-                    x,
-                    y,
-                    TILEWIDTH,
-                    TILEHEIGHT,
-                    RADIUS
-                )
-                if (x < minX) {
-                    minX = x
-                }
-                if (x > maxX) {
-                    maxX = x
-                }
-                if (y < minY) {
-                    minY = y
-                }
-                if (y > maxY) {
-                    maxY = y
-                }
-            }
-            this.setHitbox(minX, maxX, minY, maxY)
-        }
-    }
-
+    let piece = new Piece(currentPiece, color)
     const sketch: Sketch = (p5) => {
         const pg = new Playground()
         p5.setup = () => {
             p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
             p5.frameRate(30)
         }
-        const piece = new Piece('left_L', [255, 0, 0])
         p5.draw = () => {
             p5.background(250);
             pg.draw(p5)
@@ -354,17 +75,23 @@ const Home: NextPage = () => {
             if (p5.keyIsDown(ARROW.DOWN)) {
                 piece.down(pg.stack)
             }
-            if (p5.keyIsDown(ARROW.LEFT)) {
-                piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
-            }
-            if (p5.keyIsDown(ARROW.RIGHT)) {
-                piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
-            }
+            // if (p5.keyIsDown(ARROW.LEFT)) {
+            //     piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
+            // }
+            // if (p5.keyIsDown(ARROW.RIGHT)) {
+            //     piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
+            // }
             p5.keyPressed = (event: KeyboardEvent) => {
                 if (event.key ===  'ArrowUp') {
                     if (piece.canRotate(pg.stack)) {
                         piece.rotate()
                     }
+                }
+                if (event.key === 'ArrowLeft') {
+                    piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
+                }
+                if (event.key === 'ArrowRight') {
+                    piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
                 }
             }
             piece.draw(p5)
@@ -374,8 +101,11 @@ const Home: NextPage = () => {
                 const dy = 1
                 const newY = piece.getY() + dy * (TILEHEIGHT + SPACING)
                 piece.setY(newY, pg.stack)
-                if (!piece.isActive()) {
-                    socket.emit('newPiece')
+                if (!piece.isActive() && !piece.isDisabled()) {
+                    socket.emit('fetchNewPiece')
+                    piece.disable()
+                    pg.addToStack(piece)
+                    piece = new Piece(nextPiece, color)
                 }
             }
         }
@@ -399,7 +129,14 @@ const Home: NextPage = () => {
                 { author: msg.author, message: msg.message }
             ])
         })
+
+        socket.on('newIncomingPiece', (newPiece: { type: PieceType, color: RGB }) => {
+            currentPiece = nextPiece
+            nextPiece = newPiece.type
+            color = newPiece.color
+        })
     }
+
 
     const sendMessage = async () => {
         socket.emit('createdMessage', { author: chosenUsername, message })
