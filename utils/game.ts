@@ -1,13 +1,8 @@
-import { P5CanvasInstance } from "react-p5-wrapper"
-import { CANVASCENTER, CANVASHEIGHT, CANVASWIDTH, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { CANVASCENTER, CANVASHEIGHT, CANVASWIDTH, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
 export type RGB = [number, number, number]
-export type PieceProps = {
-    type: PieceType,
-    color: RGB
-}
 
 enum ROTATION {
     FIRST,
@@ -16,19 +11,17 @@ enum ROTATION {
     FOURTH
 }
 
-type Stack = {
+export type Stack = {
     isFilled: boolean,
     color: RGB
 }
-export class Playground {
-    private bgColor: RGB
+export class Game {
     stack: Stack[]
 
-    constructor(bgColor = [230, 230, 230] as RGB) {
-        this.bgColor = bgColor
+    constructor() {
         this.stack = new Array<Stack>(ROWS*COLS)
         for (let i = 0; i < ROWS*COLS; i++) {
-            this.stack[i] = { isFilled: false, color: this.bgColor }
+            this.stack[i] = { isFilled: false, color: [230, 230, 230] }
         }
     }
 
@@ -74,28 +67,6 @@ export class Playground {
             }
         }
     }
-
-    draw = (p5: P5CanvasInstance) => {
-        let x = 0
-        let y = 0
-        p5.fill(this.bgColor[0], this.bgColor[1], this.bgColor[2])
-        p5.stroke(255,255,255)
-        for (let i = 0; i < COLS; i++) {
-            for (let j = 0; j < ROWS; j++) {
-                const tile = this.stack[j * COLS + i]
-                if (tile.isFilled) {
-                    p5.fill(tile.color[0], tile.color[1], tile.color[2])
-                    p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-                } else {
-                    p5.fill(this.bgColor[0], this.bgColor[1], this.bgColor[2])
-                    p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-                }
-                y += TILEHEIGHT + SPACING
-            }
-            y = 0
-            x += TILEWIDTH + SPACING
-        }
-    }
 }
 
 export class Piece {
@@ -108,15 +79,15 @@ export class Piece {
     private disabled: boolean
     private r_state: ROTATION
 
-    constructor(piece: PieceProps) {
-        this.type = piece.type
-        this.color = piece.color
+    constructor(props: { type: PieceType, color: RGB }) {
+        this.type = props.type
+        this.color = props.color
         this.x = CANVASCENTER
         this.y = 0
         this.r_state = ROTATION.FIRST
         this.active = true
         this.disabled = false
-        switch(piece.type) {
+        switch(props.type) {
             case 'bar':
                 this.points = POINTS.bar[0]
                 break;
@@ -291,20 +262,5 @@ export class Piece {
             }
         }
         return false
-    }
-
-    draw = (p5: P5CanvasInstance) => {
-        p5.fill(this.color[0], this.color[1], this.color[2])
-        for (let i = 0; i < 4; i++) {
-            const x = this.x + this.points[i].x
-            const y = this.y + this.points[i].y
-            p5.rect(
-                x,
-                y,
-                TILEWIDTH,
-                TILEHEIGHT,
-                RADIUS
-            )
-        }
     }
 }

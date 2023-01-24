@@ -5,10 +5,11 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
 import { useEffectAfterMount } from "../utils/hooks"
-import { useContext } from "react"
+import { useContext, useState } from "react"
 import { SocketContext } from "../context/socket"
-import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
-import { Piece, PieceProps, Playground } from "../utils/game-client"
+import { CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
+import { Piece, RGB, Stack } from "../utils/game"
+import { Point } from "../utils/points"
 
 enum ARROW {
     UP,
@@ -17,28 +18,81 @@ enum ARROW {
     RIGHT = 39
 }
 
+type PieceProps = {
+    x: number,
+    y: number,
+    points: [Point, Point, Point, Point]
+    color: RGB
+}
+
+let currentPiece = {
+    x: 0,
+    y: 0,
+    points: [new Point(0, 0), new Point(0, 0), new Point(0, 0), new Point(0, 0)],
+    color: [0, 0, 0]
+}
+let nextPiece = {
+    x: 0,
+    y: 0,
+    points: [new Point(0, 0), new Point(0, 0), new Point(0, 0), new Point(0, 0)],
+    color: [0, 0, 0]
+}
+
+let stack = function () {
+    let newStack = new Array<Stack>(ROWS*COLS)
+    for (let i = 0; i < ROWS*COLS; i++) {
+        newStack[i] = { isFilled: false, color: [230, 230, 230] }
+    }
+    return newStack
+}()
+
 const Game = () => {
     const socket = useContext(SocketContext)
+    const [loading, setLoading] = useState(true)
+
 
     useEffectAfterMount(() => {
-        socket.on('firstPieces', (pieces: { firstPiece: PieceProps, secondPiece: PieceProps }) => {
-            currentPiece = pieces.firstPiece
-            nextPiece = pieces.secondPiece
+        socket.emit('startGame')
+
+        socket.on('newGame', ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
+            stack = newStack
+            currentPiece = firstPiece
+            nextPiece = secondPiece
+            setLoading(false)
         })
 
-        socket.on('newIncomingPiece', (newPiece: PieceProps) => {
-            currentPiece = nextPiece
-            nextPiece = newPiece
+        socket.on('newStack', (newStack: Stack[]) => {
+            stack = newStack
+        })
+
+        socket.on('newPosition', (newY) => {
+            currentPiece.y = newY
+        })
+
+        socket.on('newPiece', ({ newCurrentPiece, newNextPiece }: { newCurrentPiece: PieceProps, newNextPiece: PieceProps }) => {
+            currentPiece = newCurrentPiece
+            nextPiece = newNextPiece
+        })
+
+        socket.on('newMoveDown', (newY) => {
+            currentPiece.y = newY
+        })
+
+        socket.on('newMoveLeft', (newX) => {
+            currentPiece.x = newX
+        })
+
+        socket.on('newMoveRight', (newX) => {
+            currentPiece.x = newX
+        })
+
+        socket.on('newPoints', (newPoints) => {
+            currentPiece.points = newPoints
         })
     }, [])
 
-    socket.emit('fetchFirstPieces') // will populate currentPiece/nextPiece
-    let currentPiece: PieceProps
-    let nextPiece: PieceProps
-    const pg: Playground = new Playground()
     const sketch: Sketch = (p5) => {
 
-        let piece = new Piece(currentPiece)
         let accuDelta = 0
         let tickRate = 1000 / FRAMERATE
         p5.setup = () => {
@@ -46,58 +100,66 @@ const Game = () => {
             p5.frameRate(FRAMERATE)
         }
         p5.draw = () => {
-            p5.background(250);
-            pg.draw(p5)
+            drawStack(p5)
 
-            handleKeyboard(p5, piece)
+            handleKeyboard(p5)
 
-            piece.draw(p5)
-            accuDelta += p5.deltaTime
-            if (accuDelta >= tickRate) {
-                accuDelta -= tickRate
-                tickRate = p5.deltaTime
+            drawPiece(p5)
+        }
+    }
 
-                if (p5.frameCount % FRAMERATE === 0) {
-                    movePiece()
-                    if (!piece.isActive() && !piece.isDisabled()) {
-                        getNewPiece()
-                    }
+    const drawStack = (p5: P5CanvasInstance) => {
+        let x = 0
+        let y = 0
+        p5.fill(230, 230, 230)
+        p5.stroke(255,255,255)
+        for (let i = 0; i < COLS; i++) {
+            for (let j = 0; j < ROWS; j++) {
+                const tile = stack[j * COLS + i]
+                if (tile.isFilled) {
+                    p5.fill(tile.color[0], tile.color[1], tile.color[2])
+                    p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
+                } else {
+                    p5.fill(230, 230, 230)
+                    p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
                 }
+                y += TILEHEIGHT + SPACING
             }
+            y = 0
+            x += TILEWIDTH + SPACING
         }
+    }
 
-        const getNewPiece = () => {
-            if (!piece.isActive() && !piece.isDisabled()) {
-                socket.emit('fetchNewPiece')
-                piece.disable()
-                pg.addToStack(piece)
-                piece = new Piece(nextPiece)
-            }
-        }
-
-        const movePiece = () => {
-            const newY = piece.getY() + (TILEHEIGHT + SPACING)
-            piece.setY(newY, pg.stack)
+    const drawPiece = (p5: P5CanvasInstance) => {
+        p5.fill(currentPiece.color[0], currentPiece.color[1], currentPiece.color[2])
+        for (let i = 0; i < 4; i++) {
+            const newX = currentPiece.x + currentPiece.points[i].x
+            const newY = currentPiece.y + currentPiece.points[i].y
+            p5.rect(
+                newX,
+                newY,
+                TILEWIDTH,
+                TILEHEIGHT,
+                RADIUS
+            )
         }
     }
 
 
 
-    const handleKeyboard = (p5: P5CanvasInstance, piece: Piece) => {
+    const handleKeyboard = (p5: P5CanvasInstance) => {
         if (p5.keyIsDown(ARROW.DOWN)) {
-            piece.down(pg.stack)
+            socket.emit('moveDown')
         }
         if (p5.keyIsDown(ARROW.LEFT)) {
-            piece.setX(piece.getX() - TILEWIDTH - SPACING, pg.stack)
+            socket.emit('moveLeft')
         }
         if (p5.keyIsDown(ARROW.RIGHT)) {
-            piece.setX(piece.getX() + TILEWIDTH + SPACING, pg.stack)
+            socket.emit('moveRight')
         }
         p5.keyPressed = (event: KeyboardEvent) => {
             if (event.key ===  'ArrowUp') {
-                if (piece.canRotate(pg.stack)) {
-                    piece.rotate()
-                }
+                socket.emit('rotate')
             }
         }
     }
