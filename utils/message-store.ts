@@ -1,16 +1,12 @@
 /* abstract */ class MessageStore {
-    saveMessage(roomName:string, message: Message) { }
-    findMessagesForUser(userId: string) { }
+    saveMessage(roomName:string, message: Message) {}
+    findMessagesForRoom(userId: string) {}
+    removeMessagesFromRoom(roomName: string) {}
 }
 
 export type Message = {
     author: string,
     message: string
-    // from: string,
-    // to: string
-    // userId: string
-    // playerName: string
-    // roomName: string
 }
 
 export default class InMemoryMessageStore extends MessageStore {
@@ -31,11 +27,17 @@ export default class InMemoryMessageStore extends MessageStore {
         }
     }
 
-    // saveMessages(roomName: string, messages: Message[]) {
-    //     this.messages.set(roomName, messages)
-    // }
-
     findMessagesForRoom(roomName: string) {
         return this.messages.get(roomName) || []
+    }
+
+    removeMessagesFromRoom(roomName: string): void {
+        for (let [key, _] of this.messages) {
+            if (key === roomName) {
+                this.messages.delete(key)
+            }
+        }
+        console.log('after messages removed');
+        console.log(this.messages);
     }
 }

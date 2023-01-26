@@ -5,9 +5,9 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
 import { useEffectAfterMount } from "../utils/hooks"
-import { Dispatch, SetStateAction, useContext, useState } from "react"
+import { useContext, useState } from "react"
 import { SocketContext } from "../context/socket"
-import { BOARDWIDTH, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
+import { BACKGROUND_COLOR, BOARDWIDTH, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
 import { PieceProps, Stack } from "../utils/game"
 import { Point } from "../utils/points"
 
@@ -34,28 +34,22 @@ let nextPiece = {
 let stack = function () {
     let newStack = new Array<Stack>(ROWS*COLS)
     for (let i = 0; i < ROWS*COLS; i++) {
-        newStack[i] = { isFilled: false, color: [230, 230, 230] }
+        newStack[i] = { isFilled: false, color: BACKGROUND_COLOR }
     }
     return newStack
-}()
+}(
 
-type GameClientProps = {
-    // playerName: string,
-}
-
+)
 const GameClient = () => {
     const socket = useContext(SocketContext)
-    const [loading, setLoading] = useState(true)
-
 
     useEffectAfterMount(() => {
-        socket.emit('startGame')
 
         socket.on('newGame', ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
             stack = newStack
             currentPiece = firstPiece
             nextPiece = secondPiece
-            setLoading(false)
+            socket.emit('startGameLoop')
         })
 
         socket.on('newStack', (newStack: Stack[]) => {
@@ -108,7 +102,7 @@ const GameClient = () => {
     const drawStack = (p5: P5CanvasInstance) => {
         let x = 0
         let y = 0
-        p5.fill(230, 230, 230)
+        p5.fill(BACKGROUND_COLOR)
         p5.stroke(255,255,255)
         for (let i = 0; i < COLS; i++) {
             for (let j = 0; j < ROWS; j++) {
@@ -117,7 +111,7 @@ const GameClient = () => {
                     p5.fill(tile.color[0], tile.color[1], tile.color[2])
                     p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
                 } else {
-                    p5.fill(230, 230, 230)
+                    p5.fill(BACKGROUND_COLOR)
                     p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
                 }
                 y += TILEHEIGHT + SPACING

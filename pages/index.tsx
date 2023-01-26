@@ -1,8 +1,3 @@
-import dynamic from 'next/dynamic'
-const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
-    .then(mod => mod.ReactP5Wrapper), {
-    ssr: false
-}) as unknown as React.NamedExoticComponent<P5WrapperProps>
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import { ChangeEvent, FormEvent, useContext, useState } from 'react'
@@ -10,8 +5,6 @@ import { useEffectAfterMount } from '../utils/hooks'
 import { useRouter } from 'next/router'
 
 import GameClient from '../components/game-client'
-import { BOARDHEIGHT, BOARDWIDTH, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from '../utils/config'
-import { P5CanvasInstance, P5WrapperProps, Sketch } from 'react-p5-wrapper'
 import Chat from '../components/chat'
 import { SocketContext } from '../context/socket'
 
@@ -28,8 +21,8 @@ const Home: NextPage = () => {
     const [playerName, setPlayerName] = useState('')
     const [isLobby, setIsLobby] = useState(false)
     const [opponentIsReady, setOpponentIsReady] = useState(false)
-    const [isStarted, setIsStarted] = useState(false)
     const [isGameLeader, setIsGameLeader] = useState(false)
+    const [hasStarted, setHasStarted] = useState(false)
 
     let sessionId: string | null
     useEffectAfterMount(() => {
@@ -70,13 +63,12 @@ const Home: NextPage = () => {
 
         socket.on('setGameLeader', (playerName) => {
             if (playerName === name) {
-                socket.emit('initGame')
                 setIsGameLeader(true)
             }
         })
 
-        socket.on('joinGame', () => {
-            setIsStarted(true)
+        socket.on('hasStarted', (bool) => {
+            setHasStarted(bool)
         })
 
         return () => {
@@ -122,34 +114,8 @@ const Home: NextPage = () => {
         socket.emit('setReady', event.target.checked)
     }
 
-    const drawBackground = (p5: P5CanvasInstance) => {
-        let x = 0
-        let y = 0
-        p5.fill(230, 230, 230)
-        p5.stroke(255,255,255)
-        for (let i = 0; i < COLS; i++) {
-            for (let j = 0; j < ROWS; j++) {
-                p5.fill(230, 230, 230)
-                p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-                y += TILEHEIGHT + SPACING
-            }
-            y = 0
-            x += TILEWIDTH + SPACING
-        }
-    }
-
-    const sketch: Sketch = (p5) => {
-
-        p5.setup = () => {
-            p5.createCanvas(BOARDWIDTH, BOARDHEIGHT)
-        }
-        p5.draw = () => {
-            drawBackground(p5)
-        }
-    }
-
     const startGame = () => {
-        setIsStarted(true)
+        socket.emit('startGame')
     }
 
     return (
@@ -169,26 +135,24 @@ const Home: NextPage = () => {
                             </div>
                             <div className='flex w-2/3 justify-start'>
                                 {
-                                    isStarted ?
-                                    <GameClient /> :
-                                    <ReactP5Wrapper sketch={sketch} />
+                                    <GameClient />
                                 }
                             </div>
                             {/* <div className='border-l border-2 border-red-500'></div> */}
                         </div>
                         {
-                            isStarted ?
+                            hasStarted ?
                             <></> :
-                                isGameLeader ?
-                                <div className='flex flex-grow flex-col w-2/3 h-1/2 my-10'>
-                                    <div className='self-center text-lg mt-20 mb-4'>{opponentIsReady ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
-                                    <div className='border-t border-2 border-red-500'></div>
-                                    <button onClick={startGame} className='py-4 w-1/3 self-center text-xl uppercase my-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
-                                </div> :
-                                <div>
-                                    <label htmlFor='ready'>Ready?</label>
-                                    <input id='ready' name='ready' type='checkbox' onChange={setReady} />
-                                </div>
+                            isGameLeader ?
+                            <div className='flex flex-grow flex-col w-2/3 h-1/2 my-10'>
+                                <div className='self-center text-lg mt-20 mb-4'>{opponentIsReady ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
+                                <div className='border-t border-2 border-red-500'></div>
+                                <button onClick={startGame} className='py-4 w-1/3 self-center text-xl uppercase my-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
+                            </div> :
+                            <div>
+                                <label htmlFor='ready'>Ready?</label>
+                                <input id='ready' name='ready' type='checkbox' onChange={setReady} />
+                            </div>
                         }
                     </div>
                 </main>

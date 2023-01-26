@@ -8,6 +8,7 @@ import { Server } from 'socket.io'
 import GameHandler from "../../utils/game-handler";
 import InMemorySessionStore, { Session } from '../../utils/session-store'
 import InMemoryMessageStore from '../../utils/message-store'
+import InMemoryGameStore from '../../utils/game-store'
 
 interface SocketServer extends HTTPServer {
     io?: IOServer | undefined
@@ -23,6 +24,9 @@ interface NextApiResponseWithSocket extends NextApiResponse {
 
 export let sessionStore: InMemorySessionStore
 export let messageStore: InMemoryMessageStore
+export let gameStore: InMemoryGameStore
+
+export let cleanStores: (roomName: string) => void
 
 export default function SocketHandler(
     _: NextApiRequest,
@@ -39,22 +43,25 @@ export default function SocketHandler(
 
     sessionStore = new InMemorySessionStore()
     messageStore = new InMemoryMessageStore()
+    gameStore = new InMemoryGameStore()
     const randomId = (): string => crypto.randomBytes(8).toString("hex");
     io.use((socket: Socket, next) => {
+
         // find an existing session
         const sessionId = socket.handshake.auth.sessionId
         if (sessionId) {
             const session: Session | undefined = sessionStore.findSession(sessionId)
             if (session) {
                 const messages = messageStore.findMessagesForRoom(session.roomName)
+                const game = gameStore.createOrFindGame(session.roomName, io, [])
                 socket.data.sessionId = sessionId
                 socket.data.userId = session.userId
                 socket.data.roomName = session.roomName
                 socket.data.playerName = session.playerName
                 socket.data.messages = messages
+                socket.data.game = game
                 return next()
             }
-
         }
 
         const playerName = socket.handshake.auth.playerName;
@@ -68,6 +75,7 @@ export default function SocketHandler(
 
         // create a new session
         socket.data.messages = messageStore.findMessagesForRoom(roomName)
+        socket.data.game = gameStore.createOrFindGame(roomName, io, [])
         socket.data.sessionId = randomId();
         socket.data.userId = randomId();
         socket.data.roomName = roomName
@@ -77,6 +85,12 @@ export default function SocketHandler(
 
     const onConnection = (socket: Socket) => {
         GameHandler(io, socket)
+    }
+
+    cleanStores = (roomName: string) => {
+        sessionStore.removeSessionsFromRoom(roomName)
+        messageStore.removeMessagesFromRoom(roomName)
+        gameStore.removeGameFromRoom(roomName)
     }
 
     io.on('connection', onConnection)

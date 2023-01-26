@@ -1,6 +1,5 @@
 import { Server, Socket } from "socket.io"
 import { BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLS, FRAMERATE, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
-import { RemoteSocketWithProps } from "./game-handler"
 import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
@@ -23,10 +22,8 @@ export type Stack = {
     color: RGB
 }
 export class Game {
-    players: Player[] = []
-    // stack: Stack[]
-    // currentPiece: Piece
-    // nextPiece: Piece
+    players: Player[]
+    firstPieces: Piece[] = Array<Piece>(2)
     isOver: boolean
     io: Server
     private tickRate: number
@@ -36,34 +33,36 @@ export class Game {
         this.io = io
         this.tickRate = 1000 / FRAMERATE
         this.frameCount = 0
-        const currentPiece = new Piece(this.getPiece())
-        const nextPiece = new Piece(this.getPiece())
-        for (const player of players) {
-            player.pieces.push(currentPiece, nextPiece)
-        }
+        this.firstPieces = [new Piece(this.getPiece()), new Piece(this.getPiece())]
         this.players = players
-        // this.stack = new Array<Stack>(ROWS*COLS)
-        // for (let i = 0; i < ROWS*COLS; i++) {
-        //     this.stack[i] = { isFilled: false, color: [230, 230, 230] }
-        // }
 
         this.isOver = false
     }
 
-    loop = (playerId: string) => {
+    addPlayer = (player: Player) => {
+        player.pieces.push(this.firstPieces[0], this.firstPieces[1])
+        this.players.push(player)
+    }
+
+    removePlayer = (player: Player) => {
+        //
+    }
+
+    loop = (socket: Socket) => {
         setTimeout(() => {
+            const playerStack = this.getPlayerStack(socket.data.userId)
+            const playerPieces = this.getPlayerPieces(socket.data.userId)
             /* On every new frame */
             if (this.frameCount % FRAMERATE === 0) {
-                const stack = this.getPlayerStack(playerId)
-                const playerPieces = this.getPlayerPieces(playerId)
                 const currentPiece = playerPieces[0]
 
                 /* Send new y position to the client */
                 const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
-                this.io.to(playerId).emit('newPosition', newY)
+                this.io.to(socket.id).emit('newPosition', newY)
+                // socket.emit('newPosition', newY)
 
                  /* Effectively moves the tetrimino if active && has not hit anything down */
-                currentPiece.setY(newY, stack)
+                currentPiece.setY(newY, playerStack)
 
                 /* If the tetrimino has hit something down */
                 if (!currentPiece.isActive() && !currentPiece.isDisabled()) {
@@ -76,30 +75,25 @@ export class Game {
 
                     /* Add the tetrimino to the stack and send the next one */
                     currentPiece.disable()
-                    this.addToStack(currentPiece, stack)
-                    // for (let i = 0; i < 10; i++) {
-                    //     console.log(stack[19*COLS + i]);
-                    // }
-                    // console.log('\n');
-                    this.io.to(playerId).emit('newStack', stack)
+                    this.addToStack(currentPiece, playerStack)
+                    this.io.to(socket.id).emit('newStack', playerStack)
+                    // socket.emit('newStack', playerStack)
+
                     playerPieces.shift()
                     if (playerPieces.length === 1) {
                         for (const player of this.players) {
                             player.pieces.push(new Piece(this.getPiece()))
                         }
                     }
-                    // pas besoin de ca puisque cest une reference, mais au cas ou...
-                    // playerPieces = this.getPlayerPieces(playerId)
 
-                    // currentPiece = this.nextPiece
-                    // this.nextPiece = new Piece(this.getPiece())
                     const newCurrentPiece = this.getPieceProps(playerPieces[0])
                     const newNextPiece = this.getPieceProps(playerPieces[1])
-                    this.io.to(playerId).emit('newPiece', { newCurrentPiece, newNextPiece })
+                    this.io.to(socket.id).emit('newPiece', { newCurrentPiece, newNextPiece })
+                    // socket.emit('newPiece', { newCurrentPiece, newNextPiece })
                 }
             }
             this.frameCount++
-            this.loop(playerId)
+            this.loop(socket)
         }, this.tickRate)
     }
 
@@ -424,7 +418,8 @@ export class Player {
         this.score = 0
         this.stack = new Array<Stack>(ROWS*COLS)
         for (let i = 0; i < ROWS*COLS; i++) {
-            this.stack[i] = { isFilled: false, color: [230, 230, 230] }
+            this.stack[i] = { isFilled: false, color: [255,0, 0] }
+            // this.stack[i] = { isFilled: false, color: [230, 230, 230] }
         }
         this.pieces = []
     }
