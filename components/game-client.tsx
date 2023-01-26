@@ -5,10 +5,10 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
 import { useEffectAfterMount } from "../utils/hooks"
-import { useContext, useState } from "react"
+import { Dispatch, SetStateAction, useContext, useState } from "react"
 import { SocketContext } from "../context/socket"
-import { CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
-import { Piece, RGB, Stack } from "../utils/game"
+import { BOARDWIDTH, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
+import { PieceProps, Stack } from "../utils/game"
 import { Point } from "../utils/points"
 
 enum ARROW {
@@ -16,13 +16,6 @@ enum ARROW {
     DOWN = 40,
     LEFT = 37,
     RIGHT = 39
-}
-
-type PieceProps = {
-    x: number,
-    y: number,
-    points: [Point, Point, Point, Point]
-    color: RGB
 }
 
 let currentPiece = {
@@ -46,7 +39,11 @@ let stack = function () {
     return newStack
 }()
 
-const Game = () => {
+type GameClientProps = {
+    // playerName: string,
+}
+
+const GameClient = () => {
     const socket = useContext(SocketContext)
     const [loading, setLoading] = useState(true)
 
@@ -93,8 +90,6 @@ const Game = () => {
 
     const sketch: Sketch = (p5) => {
 
-        let accuDelta = 0
-        let tickRate = 1000 / FRAMERATE
         p5.setup = () => {
             p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
             p5.frameRate(FRAMERATE)
@@ -105,6 +100,8 @@ const Game = () => {
             handleKeyboard(p5)
 
             drawPiece(p5)
+
+            drawNextPiece(p5)
         }
     }
 
@@ -145,21 +142,46 @@ const Game = () => {
         }
     }
 
+    const drawNextPiece = (p5: P5CanvasInstance) => {
+        // cover previous draw
+        p5.fill(248, 250, 252)
+        p5.noStroke()
+        p5.rect(BOARDWIDTH, 0, 320, 128)
 
+        // "Next:" text
+        p5.textSize(20)
+        p5.fill(0,0,0)
+        p5.textSize(38)
+        p5.textFont('Helvetica')
+        p5.text('Next:', BOARDWIDTH + 32, 32)
+
+        p5.fill(nextPiece.color[0], nextPiece.color[1], nextPiece.color[2])
+        for (let i = 0; i < 4; i++) {
+            const newX = nextPiece.x + nextPiece.points[i].x + 228
+            const newY = nextPiece.y + nextPiece.points[i].y + 64
+            p5.rect(
+                newX,
+                newY,
+                TILEWIDTH,
+                TILEHEIGHT,
+                RADIUS
+            )
+        }
+    }
 
     const handleKeyboard = (p5: P5CanvasInstance) => {
         if (p5.keyIsDown(ARROW.DOWN)) {
             socket.emit('moveDown')
         }
-        if (p5.keyIsDown(ARROW.LEFT)) {
-            socket.emit('moveLeft')
-        }
-        if (p5.keyIsDown(ARROW.RIGHT)) {
-            socket.emit('moveRight')
-        }
         p5.keyPressed = (event: KeyboardEvent) => {
             if (event.key ===  'ArrowUp') {
                 socket.emit('rotate')
+            }
+            if (event.key === 'ArrowLeft') {
+                socket.emit('moveLeft')
+            }
+            if (event.key === 'ArrowRight') {
+                socket.emit('moveRight')
             }
         }
     }
@@ -169,4 +191,4 @@ const Game = () => {
     )
 }
 
-export default Game
+export default GameClient

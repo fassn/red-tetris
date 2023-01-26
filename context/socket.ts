@@ -1,6 +1,10 @@
 import React from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
-export const socket = io()
+interface ClientSocketWithProps extends Socket {
+    userId?: string
+}
 
+const URL = process.env.NEXT_PUBLIC_SOCKET_URL
+export const socket: ClientSocketWithProps = io(URL, { autoConnect: false })
 export const SocketContext = React.createContext(socket);
