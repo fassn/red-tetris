@@ -129,6 +129,13 @@ const GameHandler = (io: Server, socket: Socket) => {
         }
     }
 
+    const gameIsOver = () => {
+        if (!game) {
+            throw new Error('Cannot end a game that does\'nt exist!')
+        }
+        game.isOver = true
+    }
+
     socket.on('createdMessage', createdMessage)
 
     socket.on('setReady', setReady)
@@ -141,6 +148,8 @@ const GameHandler = (io: Server, socket: Socket) => {
     socket.on('moveLeft', moveLeft)
     socket.on('moveRight', moveRight)
     socket.on('rotate', rotate)
+
+    socket.on('gameIsOver', gameIsOver)
 }
 
 export default GameHandler

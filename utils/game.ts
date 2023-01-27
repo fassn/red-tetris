@@ -1,5 +1,5 @@
 import { Server } from "socket.io"
-import { BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLS, FRAMERATE, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { ALPHA_MIN, BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
@@ -21,19 +21,19 @@ export type Stack = {
     color: RGBA
 }
 export class Game {
+    io: Server
     players: Player[]
     firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
     isOver: boolean
-    io: Server
 
     constructor(io: Server, players: Player[]) {
         this.io = io
-        this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.players = players
+        this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
 
-        this.isOver = false
         this.isStarted = false
+        this.isOver = false
     }
 
     addPlayer = (player: Player) => {
@@ -95,8 +95,9 @@ export class Game {
         const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
         const type: PieceType = types[Math.floor(Math.random() * types.length)]
 
-        const colors: RGBA[] = [{ r: 248, g: 113, b: 113 }, { r: 132, g: 204, b: 22 }, { r: 96, g: 165, b: 250}]
-        const color: RGBA = colors[Math.floor(Math.random() * colors.length)]
+        const colors: RGBA[] = COLOR_PALETTE
+        const alpha = Math.floor(Math.random() * (255 - ALPHA_MIN)) + ALPHA_MIN
+        const color: RGBA = { ...colors[Math.floor(Math.random() * colors.length)], a: alpha}
 
         return { type, color }
     }

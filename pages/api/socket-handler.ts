@@ -109,7 +109,7 @@ export default function SocketHandler(
             const rooms = new Set(roomsArray)
             for (const room of rooms) {
                 const game = gameStore.findGame(room)
-                if (game && game.isStarted) {
+                if (game && game.isStarted && !game.isOver) {
                     for (const socket of sockets) {
                         const playerStack = game.getPlayerStack(socket.data.userId)
                         const playerPieces = game.getPlayerPieces(socket.data.userId)
@@ -117,7 +117,7 @@ export default function SocketHandler(
                         if (frameCount % FRAMERATE === 0) {
                             const currentPiece = playerPieces[0]
 
-                            /* Send new y position to the client */
+                            /* Incrementally change the y position down */
                             const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
                             io.to(socket.id).emit('newPosition', newY)
 
@@ -129,7 +129,15 @@ export default function SocketHandler(
 
                                 /* The tetrimino has hit down && is at the top row */
                                 if (currentPiece.getY() === 0) {
-                                    // console.log('Lose! Set a Winner and a Loser here');
+
+                                    /* Send to other players the good news */
+                                    for (const otherSocket of sockets) {
+                                        if (otherSocket.data.userId !== socket.data.userId) {
+                                            io.to(otherSocket.id).emit('gameWon')
+                                        }
+                                    }
+                                    /* Send the bad news to the current player */
+                                    io.to(socket.id).emit('gameLost')
                                     game.isOver = true
                                 }
 
