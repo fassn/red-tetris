@@ -19,6 +19,15 @@ enum ARROW {
     RIGHT = 39
 }
 
+type TileProps = {
+    x: number
+    y: number
+    dy: number
+    gravity: number
+    friction: number
+    color: RGBA
+}
+
 let color = BACKGROUND_COLOR
 let currentPiece: PieceProps = {
     x: 0,
@@ -41,6 +50,9 @@ let stack = function () {
     return newStack
 }()
 
+let getCascadeTilesCalled = false
+let cascadeTiles: TileProps[] = []
+
 let score = 0
 let gameOver = false
 let gameWon = false
@@ -54,7 +66,6 @@ const getRandomProps = (): { points: [Point, Point, Point, Point], min_h: number
     const type: PieceType = types[Math.floor(Math.random() * types.length)]
 
     let points: [Point, Point, Point, Point] = structuredClone(POINTS[type][Math.floor(Math.random() * 3)])
-    // let points: [Point, Point, Point, Point] = structuredClone(POINTS.bar[0])
     let randomX = Math.floor(Math.random() * 8) * (TILEWIDTH + SPACING) - TILEWIDTH - SPACING
     let randomY = Math.floor(Math.random() * 10) * (TILEHEIGHT + SPACING)
 
@@ -136,7 +147,6 @@ const GameClient = () => {
     }, [])
 
     const sketch: Sketch = (p5) => {
-
         p5.setup = () => {
             p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
             p5.frameRate(FRAMERATE)
@@ -150,6 +160,9 @@ const GameClient = () => {
                 drawScore(p5)
             } else {
                 if (gameWon) {
+                    if (!getCascadeTilesCalled) {
+                        getCascadeTiles()
+                    }
                     drawWin(p5)
                 } else {
                     drawLose(p5)
@@ -159,55 +172,58 @@ const GameClient = () => {
     }
 
     const drawWin = (p5: P5CanvasInstance) => {
-        //redraw interline spacings
+        // redraw interline spacings
         const color = APP_BACKGROUND_COLOR
         p5.fill(color.r, color.g, color.b)
         p5.stroke(255,255,255)
         p5.rect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
+        // reset stack tiles
+        stack = function () {
+            let newStack = new Array<Stack>(ROWS*COLS)
+            for (let i = 0; i < ROWS*COLS; i++) {
+                newStack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
+            }
+            return newStack
+        }()
         drawStack(p5)
 
-        for (let i = 0; i < PIECES_RAIN; i++) {
-            const piece = piecesProps[i]
-            if (piece.max_h + (TILEHEIGHT+SPACING) > BOARDHEIGHT) {
-                piece.dy = -piece.dy
-                // prevent "gliding"
-                // if (piece.dy < 0 && piece.dy > -0.5) {
-                //     piece.dy = 0
-                // }
-                // if (piece.dy > 0 && piece.dy < 0.5) {
-                //     piece.dy = 0
-                // }
+        // draw cascade tiles
+        for (let tile of cascadeTiles) {
+            if (tile.y > BOARDHEIGHT - TILEHEIGHT + SPACING) {
+                tile.dy = -tile.dy
             } else {
-                piece.dy = piece.dy + piece.gravity
+                tile.dy += tile.gravity
             }
-            for (let tile = 0; tile < 4; tile++) {
-                p5.fill(piece.color.r, piece.color.g, piece.color.b, piece.color.a)
-                p5.rect(piece.points[tile].x, piece.points[tile].y, TILEWIDTH, TILEHEIGHT, RADIUS)
-                piece.points[tile].y = piece.points[tile].y + piece.dy
-                if (piece.dy > 0) {
-                    if (piece.max_h < piece.points[tile].y) {
-                        piece.max_h = piece.points[tile].y
-                    }
-                    if (piece.points[tile].y < piece.min_h ) {
-                        piece.min_h = piece.points[tile].y
-                    }
-                }
-                if (piece.dy < 0) {
-                    if (piece.max_h > piece.points[tile].y) {
-                        piece.max_h = piece.points[tile].y
-                    }
-                    if (piece.points[tile].y > piece.min_h) {
-                        piece.min_h = piece.points[tile].y
-                    }
-                }
-            }
+            p5.fill(tile.color.r, tile.color.g, tile.color.b, tile.color.a)
+            p5.rect(tile.x, tile.y, TILEWIDTH, TILEHEIGHT, RADIUS)
+            tile.y += tile.dy
         }
 
+        // "ATTA BOY!!!" text
         p5.fill(0,0,0)
         p5.textSize(55)
         p5.textFont('Helvetica')
         p5.text('ATTA BOY!!!', 5, BOARDHEIGHT / 2 )
+    }
+
+    const getCascadeTiles = () => {
+        for (let col = 0; col < COLS; col++) {
+            for (let row = 0; row < ROWS; row++) {
+                if (stack[row * COLS + col].isFilled) {
+                    const tile: TileProps = {
+                        x: col * (TILEWIDTH + SPACING),
+                        y: row * (TILEHEIGHT + SPACING),
+                        dy: 1,
+                        gravity: 1,
+                        friction: 0.9,
+                        color: stack[row * COLS + col].color
+                    }
+                    cascadeTiles.push(tile)
+                }
+            }
+        }
+        getCascadeTilesCalled = true
     }
 
     let i = 0;
@@ -267,7 +283,7 @@ const GameClient = () => {
     }
 
     const drawNextPiece = (p5: P5CanvasInstance) => {
-        // cover previous draw
+        // cover previous NextPiece
         const color = APP_BACKGROUND_COLOR
         p5.fill(color.r, color.g, color.b)
         p5.noStroke()
@@ -297,7 +313,6 @@ const GameClient = () => {
         // cover previous score
         const color = APP_BACKGROUND_COLOR
         p5.fill(color.r, color.g, color.b)
-        // p5.fill(0,0,0)
         p5.noStroke()
         p5.rect(BOARDWIDTH, 196, 320, 128)
 
