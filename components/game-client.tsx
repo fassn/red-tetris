@@ -49,7 +49,6 @@ const GameClient = () => {
             stack = newStack
             currentPiece = firstPiece
             nextPiece = secondPiece
-            socket.emit('startGameLoop')
         })
 
         socket.on('newStack', (newStack: Stack[]) => {
@@ -66,6 +65,7 @@ const GameClient = () => {
         })
 
         socket.on('newMoveDown', (newY) => {
+            console.log('movedown');
             currentPiece.y = newY
         })
 

@@ -10,12 +10,12 @@ import { Game, Player } from "./game"
 
 export default class InMemoryGameStore extends GameStore {
     games: Map<string, Game>
-    // players: Player[]
+    players: Map<String, Player[]>
 
     constructor() {
         super()
-        // this.players = players
         this.games = new Map()
+        this.players = new Map()
     }
 
     createOrFindGame(roomName: string, io: Server, players: Player[]): Game | undefined {

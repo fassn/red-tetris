@@ -1,4 +1,4 @@
-import { Server, Socket } from "socket.io"
+import { Server } from "socket.io"
 import { BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLS, FRAMERATE, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import { Point, POINTS } from "./points"
 
@@ -23,78 +23,29 @@ export type Stack = {
 }
 export class Game {
     players: Player[]
-    firstPieces: Piece[] = Array<Piece>(2)
+    firstPiecesRandomProps: { type: PieceType, color: RGB }[] = Array<{ type: PieceType, color: RGB }>(2)
+    isStarted: boolean
     isOver: boolean
     io: Server
-    private tickRate: number
-    private frameCount: number
 
     constructor(io: Server, players: Player[]) {
         this.io = io
-        this.tickRate = 1000 / FRAMERATE
-        this.frameCount = 0
-        this.firstPieces = [new Piece(this.getPiece()), new Piece(this.getPiece())]
+        this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.players = players
 
         this.isOver = false
+        this.isStarted = false
     }
 
     addPlayer = (player: Player) => {
-        player.pieces.push(this.firstPieces[0], this.firstPieces[1])
+        const firstPiece = new Piece(this.firstPiecesRandomProps[0])
+        const secondPiece = new Piece(this.firstPiecesRandomProps[1])
+        player.pieces.push(firstPiece, secondPiece)
         this.players.push(player)
     }
 
     removePlayer = (player: Player) => {
         //
-    }
-
-    loop = (socket: Socket) => {
-        setTimeout(() => {
-            const playerStack = this.getPlayerStack(socket.data.userId)
-            const playerPieces = this.getPlayerPieces(socket.data.userId)
-            /* On every new frame */
-            if (this.frameCount % FRAMERATE === 0) {
-                const currentPiece = playerPieces[0]
-
-                /* Send new y position to the client */
-                const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
-                this.io.to(socket.id).emit('newPosition', newY)
-                // socket.emit('newPosition', newY)
-
-                 /* Effectively moves the tetrimino if active && has not hit anything down */
-                currentPiece.setY(newY, playerStack)
-
-                /* If the tetrimino has hit something down */
-                if (!currentPiece.isActive() && !currentPiece.isDisabled()) {
-
-                    /* The tetrimino has hit down && is at the top row */
-                    if (currentPiece.getY() === 0) {
-                        // console.log('Lose! Set a Winner and a Loser here');
-                        this.isOver = true
-                    }
-
-                    /* Add the tetrimino to the stack and send the next one */
-                    currentPiece.disable()
-                    this.addToStack(currentPiece, playerStack)
-                    this.io.to(socket.id).emit('newStack', playerStack)
-                    // socket.emit('newStack', playerStack)
-
-                    playerPieces.shift()
-                    if (playerPieces.length === 1) {
-                        for (const player of this.players) {
-                            player.pieces.push(new Piece(this.getPiece()))
-                        }
-                    }
-
-                    const newCurrentPiece = this.getPieceProps(playerPieces[0])
-                    const newNextPiece = this.getPieceProps(playerPieces[1])
-                    this.io.to(socket.id).emit('newPiece', { newCurrentPiece, newNextPiece })
-                    // socket.emit('newPiece', { newCurrentPiece, newNextPiece })
-                }
-            }
-            this.frameCount++
-            this.loop(socket)
-        }, this.tickRate)
     }
 
     getPlayerStack = (playerId: string) => {
@@ -133,7 +84,7 @@ export class Game {
         }
     }
 
-    private getPiece = () => {
+    getRandomPieceProps = (): { type: PieceType, color: RGB} => {
         const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
         const type: PieceType = types[Math.floor(Math.random() * types.length)]
 
@@ -143,7 +94,7 @@ export class Game {
         return { type, color }
     }
 
-    private addToStack = (piece: Piece, stack: Stack[]) => {
+    addToStack = (piece: Piece, stack: Stack[]) => {
         const points = piece.getPoints()
         const x = piece.getX()
         const y = piece.getY()
@@ -298,7 +249,7 @@ export class Piece {
         }
     }
 
-    rotate = (stack: Stack[]): boolean => {
+    rotate(stack: Stack[]): boolean {
         let hasChanged = false
         if (this.canRotate(stack) && !this.isDisabled()) {
             hasChanged = true
@@ -324,7 +275,7 @@ export class Piece {
         return hasChanged
     }
 
-    down = (stack: Stack[]) => {
+    down(stack: Stack[]) {
         if (!this.isDisabled()) {
             const y = this.y + TILEHEIGHT + SPACING
             if (this.isHittingDown(y, stack)) {

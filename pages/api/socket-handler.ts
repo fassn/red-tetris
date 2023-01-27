@@ -9,6 +9,8 @@ import GameHandler from "../../utils/game-handler";
 import InMemorySessionStore, { Session } from '../../utils/session-store'
 import InMemoryMessageStore from '../../utils/message-store'
 import InMemoryGameStore from '../../utils/game-store'
+import { FRAMERATE, SPACING, TILEHEIGHT } from '../../utils/config'
+import { Piece } from '../../utils/game'
 
 interface SocketServer extends HTTPServer {
     io?: IOServer | undefined
@@ -94,6 +96,70 @@ export default function SocketHandler(
     }
 
     io.on('connection', onConnection)
+
+
+    let frameCount = 0
+    const loop = () => {
+        setTimeout(async () => {
+            let roomsArray = []
+            const sockets = await io.fetchSockets()
+            for (const socket of sockets) {
+                roomsArray.push(socket.data.roomName)
+            }
+            const rooms = new Set(roomsArray)
+            for (const room of rooms) {
+                const game = gameStore.findGame(room)
+                if (game && game.isStarted) {
+                    for (const socket of sockets) {
+                        const playerStack = game.getPlayerStack(socket.data.userId)
+                        const playerPieces = game.getPlayerPieces(socket.data.userId)
+                        /* On every new frame */
+                        if (frameCount % FRAMERATE === 0) {
+                            const currentPiece = playerPieces[0]
+
+                            /* Send new y position to the client */
+                            const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
+                            io.to(socket.id).emit('newPosition', newY)
+
+                             /* Effectively moves the tetrimino if active && has not hit anything down */
+                            currentPiece.setY(newY, playerStack)
+
+                            /* If the tetrimino has hit something down */
+                            if (!currentPiece.isActive() && !currentPiece.isDisabled()) {
+
+                                /* The tetrimino has hit down && is at the top row */
+                                if (currentPiece.getY() === 0) {
+                                    // console.log('Lose! Set a Winner and a Loser here');
+                                    game.isOver = true
+                                }
+
+                                /* Add the tetrimino to the stack and send the next one */
+                                currentPiece.disable()
+                                game.addToStack(currentPiece, playerStack)
+                                io.to(socket.id).emit('newStack', playerStack)
+
+                                playerPieces.shift()
+                                if (playerPieces.length === 1) {
+                                    const randomProps = game.getRandomPieceProps()
+                                    for (const player of game.players) {
+                                        player.pieces.push(new Piece(randomProps))
+                                    }
+                                }
+
+                                const newCurrentPiece = game.getPieceProps(playerPieces[0])
+                                const newNextPiece = game.getPieceProps(playerPieces[1])
+                                io.to(socket.id).emit('newPiece', { newCurrentPiece, newNextPiece })
+                            }
+                        }
+                    }
+                }
+            }
+            frameCount++
+            loop()
+        }, 1000 / FRAMERATE)
+    }
+    loop()
+
 
     console.log('Setting up socket.')
     res.end()
