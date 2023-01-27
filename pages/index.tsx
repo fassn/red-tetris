@@ -119,7 +119,7 @@ const Home: NextPage = () => {
     }
 
     return (
-        <div className='px-8'>
+        <div>
             <Head>
                 <title>Red Tetris</title>
                 <meta name="description" content="A Typescript Implementation of Tetris" />
@@ -127,33 +127,29 @@ const Home: NextPage = () => {
             </Head>
             {
                 isLobby ?
-                <main className='h-screen'>
-                    <div className='flex flex-col p-20'>
-                        <div className='flex'>
-                            <div className='flex w-1/3 justify-start'>
-                                <Chat playerName={playerName} />
-                            </div>
-                            <div className='flex w-2/3 justify-start'>
-                                {
-                                    <GameClient />
-                                }
-                            </div>
-                            {/* <div className='border-l border-2 border-red-500'></div> */}
-                        </div>
+                <main className='h-screen px-8'>
+                    <div className='flex py-20'>
                         {
                             hasStarted ?
                             <></> :
                             isGameLeader ?
-                            <div className='flex flex-grow flex-col w-2/3 h-1/2 my-10'>
-                                <div className='self-center text-lg mt-20 mb-4'>{opponentIsReady ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
+                            <div className='flex flex-col w-1/5 self-end'>
+                                <div className='text-center text-lg mb-4'>{opponentIsReady ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
                                 <div className='border-t border-2 border-red-500'></div>
-                                <button onClick={startGame} className='py-4 w-1/3 self-center text-xl uppercase my-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
+                                <button onClick={startGame} className='py-4 w-72 self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
                             </div> :
-                            <div>
+                            <div className='flex w-1/5'>
                                 <label htmlFor='ready'>Ready?</label>
                                 <input id='ready' name='ready' type='checkbox' onChange={setReady} />
                             </div>
                         }
+                        <div className='flex w-full justify-center'>
+                            <GameClient />
+                        </div>
+                        <div className='flex w-auto justify-end'>
+                            <div className='border-l border-2 border-red-500'></div>
+                            <Chat playerName={playerName} />
+                        </div>
                     </div>
                 </main>
                 :
@@ -175,7 +171,9 @@ const Home: NextPage = () => {
                 </main>
             }
 
-            {/* <footer className={styles.footer}></footer> */}
+            <footer className='fixed bottom-0 flex w-full h-24 bg-red-400 px-8 justify-center items-center'>
+                <div className='text-center uppercase text-xl'>© 2023 fassn</div>
+            </footer>
         </div>
     )
 }
