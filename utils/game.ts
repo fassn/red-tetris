@@ -3,8 +3,7 @@ import { BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLS, FRAMERATE, ROWS, SPACING, 
 import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
-export type RGB = [number, number, number]
-
+export type RGBA = { r: number, g: number, b: number, a?: number}
 enum ROTATION {
     FIRST,
     SECOND,
@@ -15,15 +14,15 @@ export type PieceProps = {
     x: number,
     y: number,
     points: [Point, Point, Point, Point]
-    color: RGB
+    color: RGBA
 }
 export type Stack = {
     isFilled: boolean,
-    color: RGB
+    color: RGBA
 }
 export class Game {
     players: Player[]
-    firstPiecesRandomProps: { type: PieceType, color: RGB }[] = Array<{ type: PieceType, color: RGB }>(2)
+    firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
     isOver: boolean
     io: Server
@@ -84,12 +83,12 @@ export class Game {
         }
     }
 
-    getRandomPieceProps = (): { type: PieceType, color: RGB} => {
+    getRandomPieceProps = (): { type: PieceType, color: RGBA} => {
         const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
         const type: PieceType = types[Math.floor(Math.random() * types.length)]
 
-        const colors: RGB[] = [[248, 113, 113], [132, 204, 22], [96, 165, 250]]
-        const color: RGB = colors[Math.floor(Math.random() * colors.length)]
+        const colors: RGBA[] = [{ r: 248, g: 113, b: 113 }, { r: 132, g: 204, b: 22 }, { r: 96, g: 165, b: 250}]
+        const color: RGBA = colors[Math.floor(Math.random() * colors.length)]
 
         return { type, color }
     }
@@ -159,7 +158,7 @@ export class Game {
 
 export class Piece {
     private type: PieceType
-    private color: RGB
+    private color: RGBA
     private points: [Point, Point, Point, Point]
     private x: number
     private y: number
@@ -167,7 +166,7 @@ export class Piece {
     private disabled: boolean
     private r_state: ROTATION
 
-    constructor(props: { type: PieceType, color: RGB }) {
+    constructor(props: { type: PieceType, color: RGBA }) {
         this.type = props.type
         this.color = props.color
         this.x = CANVASCENTER
@@ -369,8 +368,7 @@ export class Player {
         this.score = 0
         this.stack = new Array<Stack>(ROWS*COLS)
         for (let i = 0; i < ROWS*COLS; i++) {
-            this.stack[i] = { isFilled: false, color: [255,0, 0] }
-            // this.stack[i] = { isFilled: false, color: [230, 230, 230] }
+            this.stack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
         }
         this.pieces = []
     }

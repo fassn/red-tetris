@@ -5,7 +5,7 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
 import { useEffectAfterMount } from "../utils/hooks"
-import { useContext, useState } from "react"
+import { useContext } from "react"
 import { SocketContext } from "../context/socket"
 import { BACKGROUND_COLOR, BOARDWIDTH, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../utils/config"
 import { PieceProps, Stack } from "../utils/game"
@@ -18,28 +18,27 @@ enum ARROW {
     RIGHT = 39
 }
 
-let currentPiece = {
+let currentPiece: PieceProps = {
     x: 0,
     y: 0,
     points: [new Point(0, 0), new Point(0, 0), new Point(0, 0), new Point(0, 0)],
-    color: [0, 0, 0]
+    color: { r: 0, g: 0, b: 0, a: 0 }
 }
-let nextPiece = {
+let nextPiece: PieceProps = {
     x: 0,
     y: 0,
     points: [new Point(0, 0), new Point(0, 0), new Point(0, 0), new Point(0, 0)],
-    color: [0, 0, 0]
+    color: { r: 0, g: 0, b: 0, a: 0 }
 }
 
 let stack = function () {
     let newStack = new Array<Stack>(ROWS*COLS)
     for (let i = 0; i < ROWS*COLS; i++) {
-        newStack[i] = { isFilled: false, color: BACKGROUND_COLOR }
+        newStack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
     }
     return newStack
-}(
+}()
 
-)
 const GameClient = () => {
     const socket = useContext(SocketContext)
 
@@ -108,7 +107,7 @@ const GameClient = () => {
             for (let j = 0; j < ROWS; j++) {
                 const tile = stack[j * COLS + i]
                 if (tile.isFilled) {
-                    p5.fill(tile.color[0], tile.color[1], tile.color[2])
+                    p5.fill(tile.color.r, tile.color.g, tile.color.b)
                     p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
                 } else {
                     p5.fill(BACKGROUND_COLOR)
@@ -122,7 +121,7 @@ const GameClient = () => {
     }
 
     const drawPiece = (p5: P5CanvasInstance) => {
-        p5.fill(currentPiece.color[0], currentPiece.color[1], currentPiece.color[2])
+        p5.fill(currentPiece.color.r, currentPiece.color.g, currentPiece.color.b, currentPiece.color.a)
         for (let i = 0; i < 4; i++) {
             const newX = currentPiece.x + currentPiece.points[i].x
             const newY = currentPiece.y + currentPiece.points[i].y
@@ -149,10 +148,10 @@ const GameClient = () => {
         p5.textFont('Helvetica')
         p5.text('Next:', BOARDWIDTH + 32, 32)
 
-        p5.fill(nextPiece.color[0], nextPiece.color[1], nextPiece.color[2])
+        p5.fill(nextPiece.color.r, nextPiece.color.g, nextPiece.color.b, nextPiece.color.a)
         for (let i = 0; i < 4; i++) {
-            const newX = nextPiece.x + nextPiece.points[i].x + 228
-            const newY = nextPiece.y + nextPiece.points[i].y + 64
+            const newX = nextPiece.x + nextPiece.points[i].x + (TILEWIDTH + SPACING) * 7
+            const newY = nextPiece.y + nextPiece.points[i].y + (TILEWIDTH + SPACING) * 2
             p5.rect(
                 newX,
                 newY,
