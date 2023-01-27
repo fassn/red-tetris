@@ -51,10 +51,10 @@ const Home: NextPage = () => {
 
         router.events.on('hashChangeComplete', handleHashChange)
 
-        socket.on('session', ({ sessionId, userId }) => {
+        socket.on('session', ({ sessionId, playerId }) => {
             socket.auth = { sessionId }
             localStorage.setItem('sessionId', sessionId)
-            socket.userId = userId
+            socket.playerId = playerId
         })
 
         socket.on('isOpponentReady', (isReady) => {
