@@ -57,7 +57,7 @@ export default function SocketHandler(
                 const messages = messageStore.findMessagesForRoom(session.roomName)
                 const game = gameStore.createOrFindGame(session.roomName, io, [])
                 socket.data.sessionId = sessionId
-                socket.data.userId = session.userId
+                socket.data.playerId = session.playerId
                 socket.data.roomName = session.roomName
                 socket.data.playerName = session.playerName
                 socket.data.messages = messages
@@ -79,7 +79,7 @@ export default function SocketHandler(
         socket.data.messages = messageStore.findMessagesForRoom(roomName)
         socket.data.game = gameStore.createOrFindGame(roomName, io, [])
         socket.data.sessionId = randomId();
-        socket.data.userId = randomId();
+        socket.data.playerId = randomId();
         socket.data.roomName = roomName
         socket.data.playerName = playerName
         next();
@@ -111,8 +111,8 @@ export default function SocketHandler(
                 const game = gameStore.findGame(room)
                 if (game && game.isStarted && !game.isOver) {
                     for (const socket of sockets) {
-                        const playerStack = game.getPlayerStack(socket.data.userId)
-                        const playerPieces = game.getPlayerPieces(socket.data.userId)
+                        const playerStack = game.getPlayerStack(socket.data.playerId)
+                        const playerPieces = game.getPlayerPieces(socket.data.playerId)
                         /* On every new frame */
                         if (frameCount % FRAMERATE === 0) {
                             const currentPiece = playerPieces[0]
@@ -132,7 +132,7 @@ export default function SocketHandler(
 
                                     /* Send to other players the good news */
                                     for (const otherSocket of sockets) {
-                                        if (otherSocket.data.userId !== socket.data.userId) {
+                                        if (otherSocket.data.playerId !== socket.data.playerId) {
                                             io.to(otherSocket.id).emit('gameWon')
                                         }
                                     }
@@ -147,7 +147,7 @@ export default function SocketHandler(
 
                                 /* Increase score upon filled lines */
                                 const lineCount = game.countFilledLines(playerStack)
-                                const score = game.addToScore(lineCount, socket.data.userId)
+                                const score = game.addToScore(lineCount, socket.data.playerId)
 
                                 /* Update the stack and score */
                                 io.to(socket.id).emit('newStack', { newStack: playerStack, newScore: score })

@@ -1,6 +1,6 @@
 /* abstract */ class MessageStore {
     saveMessage(roomName:string, message: Message) {}
-    findMessagesForRoom(userId: string) {}
+    findMessagesForRoom(playerId: string) {}
     removeMessagesFromRoom(roomName: string) {}
 }
 

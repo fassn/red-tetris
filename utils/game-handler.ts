@@ -7,14 +7,14 @@ import { Message } from "./message-store"
 
 export interface RemoteSocketWithProps extends RemoteSocket<DefaultEventsMap, any> {
     playerName: string
-    userId: string
+    playerId: string
 }
 
 const GameHandler = (io: Server, socket: Socket) => {
     // Join room upon connection
     socket.join(socket.data.roomName)
 
-    socket.emit('session', { sessionId: socket.data.sessionId, userId: socket.data.userId })
+    socket.emit('session', { sessionId: socket.data.sessionId, playerId: socket.data.playerId })
     socket.emit('messages', socket.data.messages)
 
     // Join game upon connection
@@ -23,12 +23,12 @@ const GameHandler = (io: Server, socket: Socket) => {
         if (game) {
             let hasPlayer = false
             for (const player of game.players) {
-                if (player.id === socket.data.userId) {
+                if (player.id === socket.data.playerId) {
                     hasPlayer = true
                 }
             }
             if (!hasPlayer) {
-                game.addPlayer(new Player(socket.data.userId, socket.data.playerName))
+                game.addPlayer(new Player(socket.data.playerId, socket.data.playerName))
             }
         }
     }
@@ -51,7 +51,7 @@ const GameHandler = (io: Server, socket: Socket) => {
         setGameLeader()
 
         sessionStore.saveSession(socket.data.sessionId, {
-            userId: socket.data.userId,
+            playerId: socket.data.playerId,
             playerName: socket.data.playerName,
             roomName: socket.data.roomName
         });
@@ -75,7 +75,7 @@ const GameHandler = (io: Server, socket: Socket) => {
 
         const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
         for (const sock of sockets) {
-            const playerId = sock.data.userId
+            const playerId = sock.data.playerId
             const stack = game.getPlayerStack(playerId)
             const pieces = game.getPlayerPieces(playerId)
             io.to(sock.id).emit('newGame', { newStack: stack, firstPiece: pieces[0], secondPiece: pieces[1] })
@@ -88,8 +88,8 @@ const GameHandler = (io: Server, socket: Socket) => {
         if (!game) {
             throw new Error('Game does\'nt exist when calling moveDown!')
         }
-        const playerStack = game.getPlayerStack(socket.data.userId)
-        const playerCurrentPiece = game.getPlayerPieces(socket.data.userId)[0]
+        const playerStack = game.getPlayerStack(socket.data.playerId)
+        const playerCurrentPiece = game.getPlayerPieces(socket.data.playerId)[0]
         playerCurrentPiece.down(playerStack)
         const newY = playerCurrentPiece.getY()
         io.to(socket.id).emit('newMoveDown', newY)
@@ -99,8 +99,8 @@ const GameHandler = (io: Server, socket: Socket) => {
         if (!game) {
             throw new Error('Game does\'nt exist when calling moveLeft!')
         }
-        const playerStack = game.getPlayerStack(socket.data.userId)
-        const playerCurrentPiece = game.getPlayerPieces(socket.data.userId)[0]
+        const playerStack = game.getPlayerStack(socket.data.playerId)
+        const playerCurrentPiece = game.getPlayerPieces(socket.data.playerId)[0]
         playerCurrentPiece.setX(playerCurrentPiece.getX() - TILEWIDTH - SPACING, playerStack)
         const newX = playerCurrentPiece.getX()
         io.to(socket.id).emit('newMoveLeft', newX)
@@ -110,8 +110,8 @@ const GameHandler = (io: Server, socket: Socket) => {
         if (!game) {
             throw new Error('Game does\'nt exist when calling moveRight!')
         }
-        const playerStack = game.getPlayerStack(socket.data.userId)
-        const playerCurrentPiece = game.getPlayerPieces(socket.data.userId)[0]
+        const playerStack = game.getPlayerStack(socket.data.playerId)
+        const playerCurrentPiece = game.getPlayerPieces(socket.data.playerId)[0]
         playerCurrentPiece.setX(playerCurrentPiece.getX() + TILEWIDTH + SPACING, playerStack)
         const newX = playerCurrentPiece.getX()
         io.to(socket.id).emit('newMoveRight', newX)
@@ -121,8 +121,8 @@ const GameHandler = (io: Server, socket: Socket) => {
         if (!game) {
             throw new Error('Game does\'nt exist when calling rotate!')
         }
-        const playerStack = game.getPlayerStack(socket.data.userId)
-        const playerCurrentPiece = game.getPlayerPieces(socket.data.userId)[0]
+        const playerStack = game.getPlayerStack(socket.data.playerId)
+        const playerCurrentPiece = game.getPlayerPieces(socket.data.playerId)[0]
         if (playerCurrentPiece.rotate(playerStack)) {
             const newPoints = playerCurrentPiece.getPoints()
             io.to(socket.id).emit('newPoints', newPoints)

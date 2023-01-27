@@ -5,7 +5,7 @@
     removeSessionsFromRoom(roomName: string) {}
 }
 export type Session = {
-    userId: string
+    playerId: string
     playerName: string
     roomName: string
 }
