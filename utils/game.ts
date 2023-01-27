@@ -74,6 +74,14 @@ export class Game {
         throw new Error('Score for the player not found!')
     }
 
+    private setPlayerScore(score: number, playerId: string) {
+        for (const player of this.players) {
+            if (player.id === playerId) {
+                player.score = score
+            }
+        }
+    }
+
     getPieceProps = (piece: Piece): PieceProps => {
         return {
             x: piece.getX(),
@@ -103,10 +111,9 @@ export class Game {
             stack[idxY * COLS + idxX].isFilled = true
             stack[idxY * COLS + idxX].color = piece.getColor()
         }
-        this.checkLines(stack)
     }
 
-    private checkLines = (stack: Stack[]) => {
+    countFilledLines = (stack: Stack[]) => {
         let lineCount = 0
         for (let y = 0; y < ROWS; y++) {
             let lineFilled = true;
@@ -121,7 +128,26 @@ export class Game {
                 this.removeLine(stack, y)
             }
         }
-        // this.addToScore(lineCount, player)
+        return lineCount
+    }
+
+    addToScore(lineCount: number, playerId: string) {
+        let score = this.getPlayerScore(playerId)
+        switch (lineCount) {
+            case 1:
+                score += 40
+                break;
+            case 2:
+                score += 100
+                break;
+            case 3:
+                score += 300
+                break;
+            case 4:
+                score += 1200
+        }
+        this.setPlayerScore(score, playerId)
+        return score
     }
 
     private removeLine = (stack: Stack[], row: number) => {
@@ -136,22 +162,6 @@ export class Game {
             for (let x = 0; x < COLS; x++) {
                 stack[(y + 1) * COLS + x] = stack[y * COLS + x]
             }
-        }
-    }
-
-    private addToScore(lineCount: number, player: Player) {
-        switch (lineCount) {
-            case 1:
-                player.score += 40
-                break;
-            case 2:
-                player.score += 100
-                break;
-            case 3:
-                player.score += 300
-                break;
-            case 4:
-                player.score += 1200
         }
     }
 }

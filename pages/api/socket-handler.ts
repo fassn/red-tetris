@@ -133,11 +133,18 @@ export default function SocketHandler(
                                     game.isOver = true
                                 }
 
-                                /* Add the tetrimino to the stack and send the next one */
+                                /* Add the tetrimino to the stack */
                                 currentPiece.disable()
                                 game.addToStack(currentPiece, playerStack)
-                                io.to(socket.id).emit('newStack', playerStack)
 
+                                /* Increase score upon filled lines */
+                                const lineCount = game.countFilledLines(playerStack)
+                                const score = game.addToScore(lineCount, socket.data.userId)
+
+                                /* Update the stack and score */
+                                io.to(socket.id).emit('newStack', { newStack: playerStack, newScore: score })
+
+                                /* Get the next tetrimino */
                                 playerPieces.shift()
                                 if (playerPieces.length === 1) {
                                     const randomProps = game.getRandomPieceProps()
@@ -146,6 +153,7 @@ export default function SocketHandler(
                                     }
                                 }
 
+                                /* Update the tetriminos */
                                 const newCurrentPiece = game.getPieceProps(playerPieces[0])
                                 const newNextPiece = game.getPieceProps(playerPieces[1])
                                 io.to(socket.id).emit('newPiece', { newCurrentPiece, newNextPiece })

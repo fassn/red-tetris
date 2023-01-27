@@ -39,6 +39,8 @@ let stack = function () {
     return newStack
 }()
 
+let score = 0
+
 const GameClient = () => {
     const socket = useContext(SocketContext)
 
@@ -50,8 +52,9 @@ const GameClient = () => {
             nextPiece = secondPiece
         })
 
-        socket.on('newStack', (newStack: Stack[]) => {
+        socket.on('newStack', ({ newStack, newScore }: { newStack: Stack[], newScore: number }) => {
             stack = newStack
+            score = newScore
         })
 
         socket.on('newPosition', (newY) => {
@@ -64,7 +67,6 @@ const GameClient = () => {
         })
 
         socket.on('newMoveDown', (newY) => {
-            console.log('movedown');
             currentPiece.y = newY
         })
 
@@ -95,6 +97,8 @@ const GameClient = () => {
             drawPiece(p5)
 
             drawNextPiece(p5)
+
+            drawScore(p5)
         }
     }
 
@@ -160,6 +164,23 @@ const GameClient = () => {
                 RADIUS
             )
         }
+    }
+
+    const drawScore = (p5: P5CanvasInstance) => {
+        // cover previous score
+        p5.fill(248, 250, 252)
+        // p5.fill(0,0,0)
+        p5.noStroke()
+        p5.rect(BOARDWIDTH, 196, 320, 128)
+
+        // "Score:" text
+        p5.textSize(20)
+        p5.fill(0,0,0)
+        p5.textSize(38)
+        p5.textFont('Helvetica')
+        p5.text('Score:', BOARDWIDTH + 32, 224)
+
+        p5.text(score, BOARDWIDTH + 32, 288)
     }
 
     const handleKeyboard = (p5: P5CanvasInstance) => {
