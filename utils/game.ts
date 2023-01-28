@@ -25,7 +25,6 @@ export class Game {
     players: Player[]
     firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
-    isOver: boolean
 
     constructor(io: Server, players: Player[]) {
         this.io = io
@@ -33,7 +32,22 @@ export class Game {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
 
         this.isStarted = false
-        this.isOver = false
+    }
+
+    reset() {
+        this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
+        this.isStarted = false
+        for (const player of this.players) {
+            player.score = 0
+            player.stack = new Array<Stack>(ROWS*COLS)
+            for (let i = 0; i < ROWS*COLS; i++) {
+                player.stack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
+            }
+            player.pieces = []
+            const firstPiece = new Piece(this.firstPiecesRandomProps[0])
+            const secondPiece = new Piece(this.firstPiecesRandomProps[1])
+            player.pieces.push(firstPiece, secondPiece)
+        }
     }
 
     addPlayer = (player: Player) => {
@@ -43,8 +57,8 @@ export class Game {
         this.players.push(player)
     }
 
-    removePlayer = (player: Player) => {
-        //
+    removePlayer = (playerId: string) => {
+        this.players = this.players.filter(player => player.id !== playerId)
     }
 
     getPlayerStack = (playerId: string) => {
@@ -368,13 +382,15 @@ export class Piece {
 
 export class Player {
     id: string
+    socketId: string
     name: string
     score: number
     stack: Stack[]
     pieces: Piece[]
 
-    constructor(id: string, name: string) {
+    constructor(id: string, socketId: string, name: string) {
         this.id = id
+        this.socketId = socketId
         this.name = name
         this.score = 0
         this.stack = new Array<Stack>(ROWS*COLS)

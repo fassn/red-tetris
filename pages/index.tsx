@@ -17,9 +17,9 @@ const Home: NextPage = () => {
     const socket = useContext(SocketContext)
     const router = useRouter()
 
-    const [room, setRoom] = useState('')
     const [playerName, setPlayerName] = useState('')
     const [isLobby, setIsLobby] = useState(false)
+    const [isReady, setIsReady] = useState(false)
     const [opponentIsReady, setOpponentIsReady] = useState(false)
     const [isGameLeader, setIsGameLeader] = useState(false)
     const [hasStarted, setHasStarted] = useState(false)
@@ -32,7 +32,6 @@ const Home: NextPage = () => {
         // direct URL connection
         let { room, name } = parseHash(router.asPath)
         if (room && name) {
-            setRoom(room)
             setPlayerName(name)
             setIsLobby(true)
             connectSocketClient(room, name)
@@ -42,7 +41,6 @@ const Home: NextPage = () => {
         const handleHashChange = (url: any, { shallow }: any) => {
             ({ room, name } = parseHash(url))
             if (room && name) {
-                setRoom(room)
                 setPlayerName(name)
                 setIsLobby(true)
                 connectSocketClient(room, name)
@@ -65,10 +63,15 @@ const Home: NextPage = () => {
             if (playerName === name) {
                 setIsGameLeader(true)
             }
+            setOpponentIsReady(false)
         })
 
         socket.on('hasStarted', (bool) => {
             setHasStarted(bool)
+        })
+
+        socket.on('resetGame', () => {
+            setHasStarted(false)
         })
 
         return () => {
@@ -94,7 +97,7 @@ const Home: NextPage = () => {
     }
 
     const validateInput = (event: EventTarget & FormData) => {
-        //
+        // TODO
         return true
     }
 
@@ -111,6 +114,7 @@ const Home: NextPage = () => {
     }
 
     const setReady = (event: ChangeEvent<HTMLInputElement>) => {
+        setIsReady(event.target.checked)
         socket.emit('setReady', event.target.checked)
     }
 
@@ -129,25 +133,45 @@ const Home: NextPage = () => {
                 isLobby ?
                 <main className='h-screen px-8'>
                     <div className='flex py-20'>
+                        <div className='flex flex-shrink-0 flex-col w-96 place-content-between'>
                         {
                             hasStarted ?
-                            <></> :
+                                <div className='flex h-32 justify-center items-center bg-red-400 mx-5 rounded'>
+                                    <h1 className='text-5xl uppercase'>Red Tetris</h1>
+                                </div>
+                            :
                             isGameLeader ?
-                            <div className='flex flex-col w-1/5 self-end'>
-                                <div className='text-center text-lg mb-4'>{opponentIsReady ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
-                                <div className='border-t border-2 border-red-500'></div>
-                                <button onClick={startGame} className='py-4 w-72 self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
-                            </div> :
-                            <div className='flex w-1/5'>
-                                <label htmlFor='ready'>Ready?</label>
-                                <input id='ready' name='ready' type='checkbox' onChange={setReady} />
-                            </div>
+                            <>
+                                <div className='flex h-32 justify-center items-center bg-red-400 px-4 mx-5 rounded'>
+                                    <h1 className='text-5xl uppercase'>Red Tetris</h1>
+                                </div>
+                                <div className='flex flex-col justify-center'>
+                                    <div className='text-center text-lg mb-4'>{opponentIsReady ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
+                                    <div className='border-t border-2 border-red-500'></div>
+                                    <button onClick={startGame} className='py-4 w-72 self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
+                                </div>
+                            </>
+                            :
+                            <>
+                                <div className='flex h-32 justify-center items-center bg-red-400 px-4 mx-5 rounded'>
+                                    <h1 className='text-5xl uppercase'>Red Tetris</h1>
+                                </div>
+                                <div className='flex flex-col text-lg justify-center'>
+                                    <div className='text-center mb-4'>Wait for the game leader to start the game !</div>
+                                    <div className='border-t border-2 border-red-500'></div>
+                                    <div className='flex justify-center mt-10 mb-4'>
+                                        <label htmlFor='ready'>Ready?</label>
+                                        <input id='ready' name='ready' type='checkbox' checked={isReady} className='accent-red-400 mx-6 w-7' onChange={setReady} />
+                                    </div>
+                                </div>
+                            </>
                         }
+                        </div>
                         <div className='flex w-full justify-center'>
                             <GameClient />
                         </div>
                         <div className='flex w-auto justify-end'>
-                            <div className='border-l border-2 border-red-500'></div>
+                            <div className='border-l border-2 border-red-500 mr-24'></div>
                             <Chat playerName={playerName} />
                         </div>
                     </div>
@@ -171,7 +195,7 @@ const Home: NextPage = () => {
                 </main>
             }
 
-            <footer className='fixed bottom-0 flex w-full h-24 bg-red-400 px-8 justify-center items-center'>
+            <footer className='fixed bottom-0 flex w-full h-20 bg-red-400 px-8 justify-center items-center'>
                 <div className='text-center uppercase text-xl'>© 2023 fassn</div>
             </footer>
         </div>
