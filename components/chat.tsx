@@ -1,7 +1,6 @@
-import { KeyboardEvent, useContext, useState } from "react";
+import { KeyboardEvent, useContext, useEffect, useState } from "react";
 import { SocketContext } from "../context/socket";
 import { BOARDHEIGHT } from "../utils/config";
-import { useEffectAfterMount } from "../utils/hooks";
 
 type Message = {
     author: string,
@@ -10,7 +9,6 @@ type Message = {
 
 type ChatProps = {
     playerName: string
-    // room: string
 }
 
 const Chat = ({ playerName }: ChatProps) => {
@@ -18,7 +16,7 @@ const Chat = ({ playerName }: ChatProps) => {
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState<Array<Message>>([])
 
-    useEffectAfterMount(() => {
+    useEffect(() => {
         socket.on('messages', (messages) => {
             setMessages(messages)
         })

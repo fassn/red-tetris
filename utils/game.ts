@@ -1,5 +1,5 @@
-import { Server } from "socket.io"
-import { ALPHA_MIN, BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { Server, Socket } from "socket.io"
+import { ALPHA_MIN, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import { Point, POINTS } from "./points"
 
 export type PieceType = 'bar'|'left_L'|'right_L'|'cube'|'T'|'Z'|'rev_Z'
@@ -37,17 +37,7 @@ export class Game {
     reset() {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.isStarted = false
-        for (const player of this.players) {
-            player.score = 0
-            player.stack = new Array<Stack>(ROWS*COLS)
-            for (let i = 0; i < ROWS*COLS; i++) {
-                player.stack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
-            }
-            player.pieces = []
-            const firstPiece = new Piece(this.firstPiecesRandomProps[0])
-            const secondPiece = new Piece(this.firstPiecesRandomProps[1])
-            player.pieces.push(firstPiece, secondPiece)
-        }
+        this.players = []
     }
 
     addPlayer = (player: Player) => {
@@ -175,7 +165,11 @@ export class Game {
     private moveDownUpperLines = (stack: Stack[], row: number) => {
         for (let y = row - 1; y > 0; y--) {
             for (let x = 0; x < COLS; x++) {
-                stack[(y + 1) * COLS + x] = stack[y * COLS + x]
+                /* I have NO IDEA why the latter makes the array "corrupt"
+                after 18 cleared lines */
+                const tile = stack[y * COLS + x]
+                stack[(y + 1) * COLS + x] = {...tile}
+                // stack[(y + 1) * COLS + x] = stack[y * COLS + x]
             }
         }
     }
@@ -382,15 +376,15 @@ export class Piece {
 
 export class Player {
     id: string
-    socketId: string
+    socket: Socket
     name: string
     score: number
     stack: Stack[]
     pieces: Piece[]
 
-    constructor(id: string, socketId: string, name: string) {
+    constructor(id: string, socket: Socket, name: string) {
         this.id = id
-        this.socketId = socketId
+        this.socket = socket
         this.name = name
         this.score = 0
         this.stack = new Array<Stack>(ROWS*COLS)

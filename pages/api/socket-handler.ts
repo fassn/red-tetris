@@ -11,6 +11,7 @@ import InMemoryMessageStore from '../../utils/message-store'
 import InMemoryGameStore from '../../utils/game-store'
 import { FRAMERATE, SPACING, TILEHEIGHT } from '../../utils/config'
 import { Piece } from '../../utils/game'
+import { PlayerState, PlayState } from '..'
 
 interface SocketServer extends HTTPServer {
     io?: IOServer | undefined
@@ -58,6 +59,7 @@ export default function SocketHandler(
                 socket.data.playerId = session.playerId
                 socket.data.roomName = session.roomName
                 socket.data.playerName = session.playerName
+                socket.data.playerState = session.playerState
                 socket.data.messages = messages
                 socket.data.game = gameStore.findGame(session.roomName)
                 return next()
@@ -74,6 +76,11 @@ export default function SocketHandler(
         }
 
         // create a new session
+        socket.data.sessionId = randomId();
+        socket.data.playerId = randomId();
+        socket.data.roomName = roomName
+        socket.data.playerName = playerName
+        socket.data.playerState = { host: false, playState: PlayState.WAITING }
         socket.data.messages = messageStore.findMessagesForRoom(roomName)
         const game = gameStore.findGame(roomName)
         if (game) {
@@ -81,10 +88,6 @@ export default function SocketHandler(
         } else {
             socket.data.game = gameStore.create(roomName, io, [])
         }
-        socket.data.sessionId = randomId();
-        socket.data.playerId = randomId();
-        socket.data.roomName = roomName
-        socket.data.playerName = playerName
         next();
     });
 
@@ -111,70 +114,74 @@ export default function SocketHandler(
             }
             const rooms = new Set(roomsArray)
             for (const room of rooms) {
-                try {
-                    const game = gameStore.findGame(room)
-                    if (game && game.isStarted) {
-                        for (const player of game.players) {
-                            const playerStack = game.getPlayerStack(player.id)
-                            const playerPieces = game.getPlayerPieces(player.id)
-                            /* On every new frame */
-                            if (frameCount % FRAMERATE === 0) {
-                                const currentPiece = playerPieces[0]
+                const game = gameStore.findGame(room)
+                if (game && game.isStarted) {
+                    for (const player of game.players) {
+                        const playerStack = player.stack
+                        const playerPieces = player.pieces
+                        /* On every new frame */
+                        if (frameCount % FRAMERATE === 0) {
+                            const currentPiece = playerPieces[0]
 
-                                /* Incrementally change the y position down */
-                                const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
-                                io.to(player.socketId).emit('newPosition', newY)
+                            /* Incrementally change the y position down */
+                            const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
+                            io.to(player.socket.id).emit('newPosition', newY)
 
-                                 /* Effectively moves the tetrimino if active && has not hit anything down */
-                                currentPiece.setY(newY, playerStack)
+                            /* Effectively moves the tetrimino if active && has not hit anything down */
+                            currentPiece.setY(newY, playerStack)
 
-                                /* If the tetrimino has hit something down */
-                                if (!currentPiece.isActive() && !currentPiece.isDisabled()) {
+                            /* If the tetrimino has hit something down */
+                            if (!currentPiece.isActive() && !currentPiece.isDisabled()) {
 
-                                    /* The tetrimino has hit down && is at the top row */
-                                    if (currentPiece.getY() === 0) {
+                                /* The tetrimino has hit down && is at the top row */
+                                if (currentPiece.getY() === 0) {
 
-                                        /* Send to other players the good news */
-                                        for (const otherPlayer of game.players) {
-                                            if (otherPlayer.id !== player.id) {
-                                                io.to(otherPlayer.socketId).emit('gameWon')
-                                            }
-                                        }
-                                        /* Send the bad news to the current player */
-                                        io.to(player.socketId).emit('gameLost')
-                                        game.reset()
-                                    }
-
-                                    /* Add the tetrimino to the stack */
-                                    currentPiece.disable()
-                                    game.addToStack(currentPiece, playerStack)
-
-                                    /* Increase score upon filled lines */
-                                    const lineCount = game.countFilledLines(playerStack)
-                                    const score = game.addToScore(lineCount, player.id)
-
-                                    /* Update the stack and score */
-                                    io.to(player.socketId).emit('newStack', { newStack: playerStack, newScore: score })
-
-                                    /* Get the next tetrimino */
-                                    playerPieces.shift()
-                                    if (playerPieces.length === 1) {
-                                        const randomProps = game.getRandomPieceProps()
-                                        for (const player of game.players) {
-                                            player.pieces.push(new Piece(randomProps))
+                                    /* Send to other players the good news */
+                                    player.socket.data.playerState.playState = PlayState.ENDGAME
+                                    let otherPlayerState: PlayerState
+                                    for (const otherPlayer of game.players) {
+                                        if (otherPlayer.id !== player.id) {
+                                            io.to(otherPlayer.socket.id).emit('gameWon')
+                                            otherPlayer.socket.data.playerState.playState = PlayState.ENDGAME
+                                            otherPlayerState = otherPlayer.socket.data.playerState
+                                            io.to(otherPlayer.socket.id).emit('newState', otherPlayerState)
+                                            io.to(otherPlayer.socket.id).emit('newOtherPlayerState', player.socket.data.playerState.playState)
+                                            io.to(player.socket.id).emit('newOtherPlayerState', otherPlayerState)
                                         }
                                     }
-
-                                    /* Update the tetriminos */
-                                    const newCurrentPiece = game.getPieceProps(playerPieces[0])
-                                    const newNextPiece = game.getPieceProps(playerPieces[1])
-                                    io.to(player.socketId).emit('newPiece', { newCurrentPiece, newNextPiece })
+                                    /* Send the bad news to the current player */
+                                    io.to(player.socket.id).emit('newState', player.socket.data.playerState)
+                                    game.reset()
+                                    break
                                 }
+
+                                /* Add the tetrimino to the stack */
+                                currentPiece.disable()
+                                game.addToStack(currentPiece, playerStack)
+
+                                /* Increase score upon filled lines */
+                                const lineCount = game.countFilledLines(playerStack)
+                                const score = game.addToScore(lineCount, player.id)
+
+                                /* Update the stack and score */
+                                io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score })
+
+                                /* Get the next tetrimino */
+                                playerPieces.shift()
+                                if (playerPieces.length === 1) {
+                                    const randomProps = game.getRandomPieceProps()
+                                    for (const player of game.players) {
+                                        player.pieces.push(new Piece(randomProps))
+                                    }
+                                }
+
+                                /* Update the tetriminos */
+                                const newCurrentPiece = game.getPieceProps(playerPieces[0])
+                                const newNextPiece = game.getPieceProps(playerPieces[1])
+                                io.to(player.socket.id).emit('newPiece', { newCurrentPiece, newNextPiece })
                             }
                         }
                     }
-                } catch (e) {
-                    continue
                 }
             }
             frameCount++

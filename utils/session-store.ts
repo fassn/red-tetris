@@ -1,3 +1,5 @@
+import { PlayerState } from "../pages"
+
 /* abstract */ class SessionStore {
     findSession(id: string) {}
     saveSession(id: string, session: Session) {}
@@ -7,6 +9,7 @@
 export type Session = {
     playerId: string
     playerName: string
+    playerState: PlayerState
     roomName: string
 }
 
