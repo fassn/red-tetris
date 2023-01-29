@@ -24,7 +24,7 @@ const GameHandler = (io: Server, socket: Socket) => {
         } else {
             socket.data.playerState.host = false
         }
-        io.to(socket.id).emit('newState', socket.data.playerState)
+        io.to(socket.id).emit('newState', { playerState: socket.data.playerState })
     }
     setGameHost()
 
@@ -32,21 +32,33 @@ const GameHandler = (io: Server, socket: Socket) => {
         socket.data.game.isStarted = true
         addPlayer()
 
+        // emit to self the new PLAYING state
+        const playerSocketIds = []
         for (const player of socket.data.game.players) {
+            playerSocketIds.push(player.socket.id)
             if (player.socket.data.playerState.host === true || (player.socket.data.playerState.playState === PlayState.READY)) {
                 player.socket.data.playerState.playState = PlayState.PLAYING
-                io.to(player.socket.id).emit('newState', player.socket.data.playerState)
+                io.to(player.socket.id).emit('newState', { playerState: player.socket.data.playerState })
             }
             io.to(player.socket.id).emit('newGame', { newStack: player.stack, firstPiece: player.pieces[0], secondPiece: player.pieces[1] })
         }
 
-        // send otherPlayerState to each other
+        // emit otherPlayerState to each other players
         let otherPlayerState: PlayerState
         for (const player of socket.data.game.players) {
             if (player.socket.id !== socket.id) {
                 otherPlayerState = player.socket.data.playerState
-                io.to(socket.id).emit('newOtherPlayerState', otherPlayerState)
-                io.to(player.socket.id).emit('newOtherPlayerState', socket.data.playerState)
+                io.to(socket.id).emit('newState', { otherPlayerState: otherPlayerState })
+                io.to(player.socket.id).emit('newState', { otherPlayerState: socket.data.playerState })
+            }
+        }
+
+        // finally also emit if the 2nd person is NOT a player
+        let playerState = socket.data.playerState
+        const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
+        for (const sock of sockets) {
+            if (!playerSocketIds.includes(sock.id)) {
+                io.to(sock.id).emit('newState', { otherPlayerState: playerState })
             }
         }
     }
@@ -62,9 +74,9 @@ const GameHandler = (io: Server, socket: Socket) => {
         const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
         for (const sock of sockets) {
             if (sock.id === socket.id) {
-                io.to(sock.id).emit('newState', socket.data.playerState)
+                io.to(sock.id).emit('newState', { playerState: socket.data.playerState })
             } else {
-                io.to(sock.id).emit('newOtherPlayerState', socket.data.playerState)
+                io.to(sock.id).emit('newState', { otherPlayerState: socket.data.playerState })
             }
         }
     }
@@ -144,9 +156,9 @@ const GameHandler = (io: Server, socket: Socket) => {
         const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
         for (const sock of sockets) {
             if (sock.id === socket.id) {
-                io.to(sock.id).emit('newState', socket.data.playerState)
+                io.to(sock.id).emit('newState', { playerState: socket.data.playerState })
             } else {
-                io.to(sock.id).emit('newOtherPlayerState', socket.data.playerState)
+                io.to(sock.id).emit('newState', { otherPlayerState: socket.data.playerState })
             }
         }
     }

@@ -10,8 +10,8 @@ import InMemorySessionStore, { Session } from '../../utils/session-store'
 import InMemoryMessageStore from '../../utils/message-store'
 import InMemoryGameStore from '../../utils/game-store'
 import { FRAMERATE, SPACING, TILEHEIGHT } from '../../utils/config'
-import { Piece } from '../../utils/game'
-import { PlayerState, PlayState } from '..'
+import { Piece, Player } from '../../utils/game'
+import { PlayState } from '..'
 
 interface SocketServer extends HTTPServer {
     io?: IOServer | undefined
@@ -101,8 +101,18 @@ export default function SocketHandler(
         gameStore.removeGameFromRoom(roomName)
     }
 
-    io.on('connection', onConnection)
+    const getOtherPlayer = (player: Player, players: Player[]): Player | undefined => {
+        let otherPlayer
+        players.forEach((p, i) => {
+            if (p.id === player.id) {
+                if (i === 0) otherPlayer = players[1]
+                if (i === 1) otherPlayer = players[0]
+            }
+        })
+        return otherPlayer
+    }
 
+    io.on('connection', onConnection)
 
     let frameCount = 0
     const loop = () => {
@@ -117,6 +127,7 @@ export default function SocketHandler(
                 const game = gameStore.findGame(room)
                 if (game && game.isStarted) {
                     for (const player of game.players) {
+                        const otherPlayer = getOtherPlayer(player, game.players)
                         const playerStack = player.stack
                         const playerPieces = player.pieces
                         /* On every new frame */
@@ -136,21 +147,19 @@ export default function SocketHandler(
                                 /* The tetrimino has hit down && is at the top row */
                                 if (currentPiece.getY() === 0) {
 
-                                    /* Send to other players the good news */
+                                    /* Send to other player the good news */
                                     player.socket.data.playerState.playState = PlayState.ENDGAME
-                                    let otherPlayerState: PlayerState
-                                    for (const otherPlayer of game.players) {
-                                        if (otherPlayer.id !== player.id) {
-                                            io.to(otherPlayer.socket.id).emit('gameWon')
-                                            otherPlayer.socket.data.playerState.playState = PlayState.ENDGAME
-                                            otherPlayerState = otherPlayer.socket.data.playerState
-                                            io.to(otherPlayer.socket.id).emit('newState', otherPlayerState)
-                                            io.to(otherPlayer.socket.id).emit('newOtherPlayerState', player.socket.data.playerState.playState)
-                                            io.to(player.socket.id).emit('newOtherPlayerState', otherPlayerState)
-                                        }
+                                    let otherPlayerState
+
+                                    if (otherPlayer) {
+                                        io.to(otherPlayer.socket.id).emit('gameWon')
+                                        otherPlayer.socket.data.playerState.playState = PlayState.ENDGAME
+                                        otherPlayerState = otherPlayer.socket.data.playerState
+                                        io.to(otherPlayer.socket.id).emit('newState', { playerState: otherPlayerState, otherPlayerState: player.socket.data.playerState.playState })
                                     }
+
                                     /* Send the bad news to the current player */
-                                    io.to(player.socket.id).emit('newState', player.socket.data.playerState)
+                                    io.to(player.socket.id).emit('newState', { playerState: player.socket.data.playerState, otherPlayerState: otherPlayerState })
                                     game.reset()
                                     break
                                 }

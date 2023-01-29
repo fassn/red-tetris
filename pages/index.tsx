@@ -116,12 +116,13 @@ const Home: NextPage = () => {
             socket.playerId = playerId
         })
 
-        socket.on('newState', (newState) => {
-            setPlayerState(newState)
-        })
-
-        socket.on('newOtherPlayerState', (newOtherPlayerState) => {
-            setOtherPlayerState(newOtherPlayerState)
+        socket.on('newState', ({ playerState, otherPlayerState }: { playerState: PlayerState, otherPlayerState: PlayerState }) => {
+            if (playerState) {
+                setPlayerState(playerState)
+            }
+            if (otherPlayerState) {
+                setOtherPlayerState(otherPlayerState)
+            }
         })
 
         socket.on('newGame', ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
@@ -500,12 +501,14 @@ const Home: NextPage = () => {
             return <GuestMenu />
         }
         if (playerState.host === false && otherPlayerState.playState === PlayState.PLAYING) {
-            <>
-                <Logo />
-                <div className='flex flex-col text-lg justify-center'>
-                    <div className="text-center mx-4">A game is on-going. Please wait for it to finish !</div>
-                </div>
-            </>
+            return (
+                <>
+                    <Logo />
+                    <div className='flex flex-col text-lg justify-center'>
+                        <div className="text-center mx-4">A game is on-going. Please wait for it to finish !</div>
+                    </div>
+                </>
+            )
         }
         return <></>
     }
