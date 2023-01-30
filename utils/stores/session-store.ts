@@ -1,4 +1,4 @@
-import { PlayerState } from "./types"
+import { PlayerState } from "..//types"
 
 /* abstract */ class SessionStore {
     findSession(id: string) {}

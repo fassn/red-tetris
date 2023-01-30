@@ -45,12 +45,10 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
         })
 
         socket.on('newMoveRight', (newX) => {
-            // currentPiece.x = newX
             currentPiece.current.x = newX
         })
 
         socket.on('newPoints', (newPoints) => {
-            // currentPiece.points = newPoints
             currentPiece.current.points = newPoints
         })
 

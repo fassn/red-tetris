@@ -2,7 +2,7 @@ import { RemoteSocket, Server, Socket } from "socket.io"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
 import { cleanStores, messageStore, sessionStore } from "../pages/api/socket-handler"
 import { SPACING, TILEWIDTH } from "./config"
-import { Message } from "./message-store"
+import { Message } from "./stores/message-store"
 import Player from "./player"
 import { PlayerState, PlayState } from "./types"
 

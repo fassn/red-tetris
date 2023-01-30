@@ -6,13 +6,13 @@ import * as crypto from 'crypto'
 
 import { Server } from 'socket.io'
 import GameHandler from "../../utils/game-handler";
-import InMemorySessionStore, { Session } from '../../utils/session-store'
-import InMemoryMessageStore from '../../utils/message-store'
-import InMemoryGameStore from '../../utils/game-store'
-import { FRAMERATE, SPACING, TILEHEIGHT } from '../../utils/config'
+import InMemorySessionStore, { Session } from '../../utils/stores/session-store'
+import InMemoryMessageStore from '../../utils/stores/message-store'
+import InMemoryGameStore from '../../utils/stores/game-store'
+import { FRAMERATE } from '../../utils/config'
 import Player from '../../utils/player'
-import Piece from '../../utils/piece'
 import { PlayState } from '../../utils/types'
+import { checkIfPieceHasHit, emitEndGameToPlayers, emitNextPiece, emitStackAndScore, movePieceDown, updatePiecesStack } from '../../utils/gameloop'
 
 interface SocketServer extends HTTPServer {
     io?: IOServer | undefined
@@ -37,7 +37,7 @@ export default function SocketHandler(
     res: NextApiResponseWithSocket
 ) {
     if (res.socket.server.io) {
-        console.log('Already set up')
+        console.info('Already set up')
         res.end()
         return
     }
@@ -107,12 +107,14 @@ export default function SocketHandler(
             return
         }
 
+        let otherPlayer
         players.forEach((p, i) => {
             if (p.id === player.id) {
-                if (i === 0) return players[1]
-                if (i === 1) return players[0]
+                if (i === 0) otherPlayer = players[1]
+                if (i === 1) otherPlayer = players[0]
             }
         })
+        return otherPlayer
     }
 
     io.on('connection', onConnection)
@@ -133,64 +135,27 @@ export default function SocketHandler(
                         const otherPlayer = getOtherPlayer(player, game.players)
                         const playerStack = player.stack
                         const playerPieces = player.pieces
+
                         /* On every new frame */
                         if (frameCount % FRAMERATE === 0) {
                             const currentPiece = playerPieces[0]
 
-                            /* Incrementally change the y position down */
-                            const newY = currentPiece.getY() + (TILEHEIGHT + SPACING)
-                            io.to(player.socket.id).emit('newPosition', newY)
+                            movePieceDown(io, currentPiece, player, playerStack)
 
-                            /* Effectively moves the tetrimino if active && has not hit anything down */
-                            currentPiece.setY(newY, playerStack)
-
-                            /* If the tetrimino has hit something down */
-                            if (!currentPiece.isActive() && !currentPiece.isDisabled()) {
-
-                                /* The tetrimino has hit down && is at the top row */
+                            if (checkIfPieceHasHit(currentPiece)) {
                                 if (currentPiece.getY() === 0) {
-
-                                    /* Send to other player the good news */
-                                    player.socket.data.playerState.playState = PlayState.ENDGAME
-                                    let otherPlayerState
-
-                                    if (otherPlayer) {
-                                        io.to(otherPlayer.socket.id).emit('gameWon')
-                                        otherPlayer.socket.data.playerState.playState = PlayState.ENDGAME
-                                        otherPlayerState = otherPlayer.socket.data.playerState
-                                        io.to(otherPlayer.socket.id).emit('newState', { playerState: otherPlayerState, otherPlayerState: player.socket.data.playerState.playState })
-                                    }
-
-                                    /* Send the bad news to the current player */
-                                    io.to(player.socket.id).emit('newState', { playerState: player.socket.data.playerState, otherPlayerState: otherPlayerState })
+                                    emitEndGameToPlayers(io, player, otherPlayer)
                                     game.reset()
                                     break
                                 }
 
-                                /* Add the tetrimino to the stack */
-                                currentPiece.disable()
                                 game.addToStack(currentPiece, playerStack)
 
-                                /* Increase score upon filled lines */
-                                const lineCount = game.countFilledLines(playerStack)
-                                const score = game.addToScore(lineCount, player.id)
+                                emitStackAndScore(io, game, player, playerStack)
 
-                                /* Update the stack and score */
-                                io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score })
+                                updatePiecesStack(playerPieces, game)
 
-                                /* Get the next tetrimino */
-                                playerPieces.shift()
-                                if (playerPieces.length === 1) {
-                                    const randomProps = game.getRandomPieceProps()
-                                    for (const player of game.players) {
-                                        player.pieces.push(new Piece(randomProps))
-                                    }
-                                }
-
-                                /* Update the tetriminos */
-                                const newCurrentPiece = game.getPieceProps(playerPieces[0])
-                                const newNextPiece = game.getPieceProps(playerPieces[1])
-                                io.to(player.socket.id).emit('newPiece', { newCurrentPiece, newNextPiece })
+                                emitNextPiece(io, game, player, playerPieces)
                             }
                         }
                     }
@@ -203,6 +168,6 @@ export default function SocketHandler(
     loop()
 
 
-    console.log('Setting up socket.')
+    console.info('Setting up socket.')
     res.end()
 }
