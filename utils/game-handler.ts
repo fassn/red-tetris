@@ -11,13 +11,20 @@ export interface RemoteSocketWithProps extends RemoteSocket<DefaultEventsMap, an
     playerId: string
 }
 
-const GameHandler = (io: Server, socket: Socket) => {
+const GameHandler = async (io: Server, socket: Socket) => {
     // Join room upon connection
+    const allSockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
+
+    if (allSockets.length === 2) {
+        io.to(socket.id).emit('roomIsFull')
+        socket.disconnect()
+    }
+
     socket.join(socket.data.roomName)
     socket.emit('session', { sessionId: socket.data.sessionId, playerId: socket.data.playerId })
     socket.emit('messages', socket.data.messages)
 
-    const setGameHost = async () => {
+    const setGameHostToSocket = async (socket: Socket|RemoteSocketWithProps) => {
         const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
         if (sockets.length === 1) {
             socket.data.playerState.host = true
@@ -25,8 +32,15 @@ const GameHandler = (io: Server, socket: Socket) => {
             socket.data.playerState.host = false
         }
         io.to(socket.id).emit('newState', { playerState: socket.data.playerState })
+
+        for (const sock of sockets) {
+            if (sock.id !== socket.id) {
+                io.to(sock.id).emit('newState', { otherPlayerState: socket.data.playerState })
+            }
+        }
     }
-    setGameHost()
+
+    setGameHostToSocket(socket)
 
     const startGame = async () => {
         socket.data.game.isStarted = true
@@ -81,6 +95,13 @@ const GameHandler = (io: Server, socket: Socket) => {
         }
     }
 
+    // const isGameFull = (players: Player[]) => {
+    //     if (players.length === 0) {
+    //         return false
+    //     }
+    //     return true
+    // }
+
     const addPlayer = () => {
         let hasPlayer = false
         for (const player of socket.data.game.players) {
@@ -132,7 +153,12 @@ const GameHandler = (io: Server, socket: Socket) => {
     }
 
     const onDisconnect = async () => {
-        setGameHost()
+        const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
+        for (const sock of sockets) {
+            if (sock.id !== socket.id) {
+                setGameHostToSocket(sock)
+            }
+        }
 
         socket.data.game.removePlayer(socket.data.playerId)
 
@@ -143,7 +169,6 @@ const GameHandler = (io: Server, socket: Socket) => {
             playerState: socket.data.playerState
         });
 
-        const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
         if (sockets.length === 0) {
             cleanStores(socket.data.roomName)
         }

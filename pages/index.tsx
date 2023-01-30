@@ -110,6 +110,11 @@ const Home: NextPage = () => {
 
         router.events.on('hashChangeComplete', handleHashChange)
 
+        socket.on('roomIsFull', () => {
+            router.push('/?error=roomIsFull')
+            setIsLobby(false)
+        })
+
         socket.on('session', ({ sessionId, playerId }) => {
             socket.auth = { sessionId }
             localStorage.setItem('sessionId', sessionId)
@@ -207,15 +212,7 @@ const Home: NextPage = () => {
         event.preventDefault()
         const target = event.target as EventTarget & FormData
 
-        if (validateInput(target)) {
-            target.room_name
-            router.push(`/#${target.room_name.value}[${target.player_name.value}]`)
-        }
-    }
-
-    const validateInput = (event: EventTarget & FormData) => {
-        // TODO
-        return true
+        router.push(`/#${target.room_name.value}[${target.player_name.value}]`)
     }
 
     const socketInit = async () => {
