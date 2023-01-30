@@ -1,8 +1,8 @@
-import { Server, Socket } from "socket.io"
-import { ALPHA_MIN, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { Server } from "socket.io"
+import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import Piece from "./piece"
 import Player from "./player"
-import { PieceProps, PieceType, Point, RGBA, ROTATION, Stack } from "./types"
+import { PieceProps, PieceType, RGBA, Stack } from "./types"
 class Game {
     io: Server
     players: Player[]
