@@ -1,4 +1,4 @@
-import { RGBA } from "./game"
+import { RGBA } from "./types"
 
 export const FRAMERATE = 15
 export const ROWS = 20

@@ -1,10 +1,10 @@
 import { RemoteSocket, Server, Socket } from "socket.io"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
-import { PlayerState, PlayState } from "../pages"
 import { cleanStores, messageStore, sessionStore } from "../pages/api/socket-handler"
 import { SPACING, TILEWIDTH } from "./config"
-import { Player } from "./game"
 import { Message } from "./message-store"
+import Player from "./player"
+import { PlayerState, PlayState } from "./types"
 
 export interface RemoteSocketWithProps extends RemoteSocket<DefaultEventsMap, any> {
     playerName: string

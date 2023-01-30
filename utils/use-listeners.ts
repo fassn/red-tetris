@@ -1,8 +1,7 @@
 import { MutableRefObject, useContext, useEffect } from "react"
 import { initPiece, initStack } from "../components/game-client"
 import { SocketContext } from "../context/socket"
-import { TileProps } from "./draw"
-import { PieceProps, Stack } from "./game"
+import { PieceProps, Stack, TileProps } from "./types"
 
 type useListenersProps = {
     stack: MutableRefObject<Stack[]>,

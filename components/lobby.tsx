@@ -1,6 +1,6 @@
 import { ChangeEvent, useContext } from "react"
 import { SocketContext } from "../context/socket"
-import { PlayerState, PlayState } from "../pages"
+import { PlayerState, PlayState } from "../utils/types"
 
 type LobbyProps = {
     playerState: PlayerState,

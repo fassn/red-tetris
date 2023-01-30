@@ -1,13 +1,6 @@
 import { TILEWIDTH, TILEHEIGHT, SPACING } from "./config"
+import { Points } from "./types"
 
-export type Point = {
-    x: number
-    y: number
-}
-
-type Points = {
-    [key: number]: [Point, Point, Point, Point]
-}
 const w = TILEWIDTH+SPACING
 const h = TILEHEIGHT+SPACING
 
@@ -53,6 +46,7 @@ const rev_Z: Points = {
     2: [{x: 2*w, y: h}, {x: w, y: h}, {x: w, y: 2*h}, {x: 0, y: 2*h}],
     3: [{x: w, y: 2*h}, {x: w, y: h}, {x: 0, y: h}, {x: 0, y: 0}],
 }
+
 export const POINTS = {
     bar, left_L, right_L, cube, T, Z, rev_Z
 }

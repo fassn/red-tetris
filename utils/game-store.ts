@@ -1,5 +1,6 @@
 import { Server } from "socket.io"
-import { Game, Player } from "./game"
+import Game from "./game"
+import Player from "./player"
 
 /* abstract */ class GameStore {
     create(roomName: string, io: Server, players: Player[]) {}

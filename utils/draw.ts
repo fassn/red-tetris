@@ -1,15 +1,6 @@
 import { P5CanvasInstance } from "react-p5-wrapper"
 import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
-import { PieceProps, RGBA, Stack } from "./game"
-
-export type TileProps = {
-    x: number
-    y: number
-    dy: number
-    gravity: number
-    friction: number
-    color: RGBA
-}
+import { PieceProps, RGBA, Stack, TileProps } from "./types"
 
 export const drawWin = (p5: P5CanvasInstance, stack: Stack[], cascadeTiles: TileProps[]) => {
     // redraw interline spacings

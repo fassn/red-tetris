@@ -10,8 +10,9 @@ import InMemorySessionStore, { Session } from '../../utils/session-store'
 import InMemoryMessageStore from '../../utils/message-store'
 import InMemoryGameStore from '../../utils/game-store'
 import { FRAMERATE, SPACING, TILEHEIGHT } from '../../utils/config'
-import { Piece, Player } from '../../utils/game'
-import { PlayState } from '..'
+import Player from '../../utils/player'
+import Piece from '../../utils/piece'
+import { PlayState } from '../../utils/types'
 
 interface SocketServer extends HTTPServer {
     io?: IOServer | undefined

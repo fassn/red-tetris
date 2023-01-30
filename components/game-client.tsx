@@ -6,12 +6,11 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
 import { useContext, useRef } from "react"
 import { SocketContext } from "../context/socket"
-import { PlayerState, PlayState } from "../pages"
 
 import { BACKGROUND_COLOR, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, ROWS } from "../utils/config"
-import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles, TileProps } from "../utils/draw"
-import { PieceProps, Stack } from "../utils/game"
+import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles } from "../utils/draw"
 import useListeners from "../utils/use-listeners"
+import { PieceProps, PlayerState, PlayState, Stack, TileProps } from "../utils/types"
 
 enum ARROW {
     UP,

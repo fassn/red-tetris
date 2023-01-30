@@ -10,18 +10,7 @@ import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
-
-export enum PlayState {
-    WAITING,
-    READY,
-    PLAYING,
-    ENDGAME
-}
-
-export type PlayerState = {
-    host: boolean
-    playState: PlayState
-}
+import { PlayerState, PlayState } from '../utils/types'
 
 const Home: NextPage = () => {
     const socket = useContext(SocketContext)

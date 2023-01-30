@@ -1,6 +1,6 @@
 import { ALPHA_MIN, BOARDHEIGHT, COLOR_PALETTE, COLS, PIECES_RAIN, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
-import { PieceType, RGBA, Stack } from "./game"
-import { Point, POINTS } from "./points"
+import { POINTS } from "./points"
+import { PieceType, Point, RGBA, Stack } from "./types"
 
 /* Get a stack with random filled & random colored tiles */
 export const stack = function () {
