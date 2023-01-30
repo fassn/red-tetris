@@ -102,14 +102,16 @@ export default function SocketHandler(
     }
 
     const getOtherPlayer = (player: Player, players: Player[]): Player | undefined => {
-        let otherPlayer
+        if (players.length === 1) {
+            return
+        }
+
         players.forEach((p, i) => {
             if (p.id === player.id) {
-                if (i === 0) otherPlayer = players[1]
-                if (i === 1) otherPlayer = players[0]
+                if (i === 0) return players[1]
+                if (i === 1) return players[0]
             }
         })
-        return otherPlayer
     }
 
     io.on('connection', onConnection)

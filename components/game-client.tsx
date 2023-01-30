@@ -4,13 +4,14 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
     .then(mod => mod.ReactP5Wrapper), {
     ssr: false
 }) as unknown as React.NamedExoticComponent<P5WrapperProps>
-import { useContext, useEffect } from "react"
+import { useContext, useRef } from "react"
 import { SocketContext } from "../context/socket"
 import { PlayerState, PlayState } from "../pages"
 
 import { BACKGROUND_COLOR, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, ROWS } from "../utils/config"
 import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles, TileProps } from "../utils/draw"
 import { PieceProps, Stack } from "../utils/game"
+import useListeners from "../utils/use-listeners"
 
 enum ARROW {
     UP,
@@ -23,104 +24,36 @@ type GameClientProps = {
     playerState: PlayerState,
 }
 
-let color = BACKGROUND_COLOR
-let currentPiece: PieceProps = {
-    x: 0,
-    y: 0,
-    points: [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}],
-    color: { r: color.r, g: color.g, b: color.b }
-}
-let nextPiece: PieceProps = {
-    x: 0,
-    y: 0,
-    points: [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}],
-    color: { r: color.r, g: color.g, b: color.b }
-}
-
-let stack = function () {
+export function initStack() {
     let newStack = new Array<Stack>(ROWS*COLS)
     for (let i = 0; i < ROWS*COLS; i++) {
         newStack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
     }
     return newStack
-}()
+}
 
-let getCascadeTilesCalled = false
-let cascadeTiles: TileProps[] = []
-
-let score = 0
-let gameWon = false
+export function initPiece(): PieceProps {
+    let color = BACKGROUND_COLOR
+    return {
+        x: 0,
+        y: 0,
+        points: [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}],
+        color: { r: color.r, g: color.g, b: color.b }
+    }
+}
 
 const GameClient = ({ playerState }: GameClientProps) => {
     const socket = useContext(SocketContext)
 
-    useEffect(() => {
-        socket.on('newGame', ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
-            stack = newStack
-            currentPiece = firstPiece
-            nextPiece = secondPiece
-        })
+    const stack = useRef<Stack[]>(initStack())
+    const currentPiece = useRef<PieceProps>(initPiece())
+    const nextPiece = useRef<PieceProps>(initPiece())
+    const getCascadeTilesCalled = useRef<boolean>(false)
+    const cascadeTiles = useRef<TileProps[]>([])
+    const score = useRef<number>(0)
+    const gameWon = useRef<boolean>(false)
 
-        socket.on('newStack', ({ newStack, newScore }: { newStack: Stack[], newScore: number }) => {
-            stack = newStack
-            score = newScore
-        })
-
-        socket.on('newPosition', (newY) => {
-            currentPiece.y = newY
-        })
-
-        socket.on('newPiece', ({ newCurrentPiece, newNextPiece }: { newCurrentPiece: PieceProps, newNextPiece: PieceProps }) => {
-            currentPiece = newCurrentPiece
-            nextPiece = newNextPiece
-        })
-
-        socket.on('newMoveDown', (newY) => {
-            currentPiece.y = newY
-        })
-
-        socket.on('newMoveLeft', (newX) => {
-            currentPiece.x = newX
-        })
-
-        socket.on('newMoveRight', (newX) => {
-            currentPiece.x = newX
-        })
-
-        socket.on('newPoints', (newPoints) => {
-            currentPiece.points = newPoints
-        })
-
-        socket.on('gameWon', () => {
-            gameWon = true
-        })
-
-        socket.on('resetGame', () => {
-            currentPiece = {
-                x: 0,
-                y: 0,
-                points: [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}],
-                color: { r: color.r, g: color.g, b: color.b }
-            }
-            nextPiece = {
-                x: 0,
-                y: 0,
-                points: [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}],
-                color: { r: color.r, g: color.g, b: color.b }
-            }
-            stack = function () {
-                let newStack = new Array<Stack>(ROWS*COLS)
-                for (let i = 0; i < ROWS*COLS; i++) {
-                    newStack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
-                }
-                return newStack
-            }()
-            getCascadeTilesCalled = false
-            cascadeTiles = []
-            score = 0
-            gameWon = false
-        })
-    }, [])
+    useListeners({ stack, currentPiece, nextPiece, score, gameWon, cascadeTiles, getCascadeTilesCalled })
 
     const sketch: Sketch = (p5) => {
         p5.setup = () => {
@@ -128,21 +61,21 @@ const GameClient = ({ playerState }: GameClientProps) => {
             p5.frameRate(FRAMERATE)
         }
         p5.draw = () => {
-            drawStack(p5, stack)
+            drawStack(p5, stack.current)
             if (playerState.playState === PlayState.PLAYING) {
                 handleKeyboard(p5)
-                drawPiece(p5, currentPiece)
-                drawNextPiece(p5, nextPiece)
-                drawScore(p5, score)
+                drawPiece(p5, currentPiece.current)
+                drawNextPiece(p5, nextPiece.current)
+                drawScore(p5, score.current)
             }
             if (playerState.playState === PlayState.ENDGAME) {
                 handleMouse(p5)
-                if (gameWon) {
-                    if (!getCascadeTilesCalled) {
-                        getCascadeTiles(cascadeTiles, stack)
-                        getCascadeTilesCalled = true
+                if (gameWon.current) {
+                    if (!getCascadeTilesCalled.current) {
+                        getCascadeTiles(cascadeTiles.current, stack.current)
+                        getCascadeTilesCalled.current = true
                     }
-                    drawWin(p5, stack, cascadeTiles)
+                    drawWin(p5, stack.current, cascadeTiles.current)
                 }
                 else {
                     drawLose(p5)
