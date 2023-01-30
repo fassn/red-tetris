@@ -38,21 +38,11 @@ const Home: NextPage = () => {
         sessionId = localStorage.getItem('sessionId')
 
         // direct URL connection
-        let { room, name } = parseHash(router.asPath)
-        if (room && name) {
-            setPlayerName(name)
-            setIsLobby(true)
-            connectSocketClient(room, name)
-        }
+        handleParams(router.asPath)
 
         // after form submit
-        const handleHashChange = (url: any, { shallow }: any) => {
-            ({ room, name } = parseHash(url))
-            if (room && name) {
-                setPlayerName(name)
-                setIsLobby(true)
-                connectSocketClient(room, name)
-            }
+        const handleHashChange = (url: any) => {
+            handleParams(url)
         }
 
         router.events.on('hashChangeComplete', handleHashChange)
@@ -85,8 +75,17 @@ const Home: NextPage = () => {
     const parseHash = (url: string) => {
         const hash: string = url.split('#')[1] || '';
         const match = hash.match(/[^\[\]]+/g)
-        if (match) return { room: match[0], name: match[1] }
+        if (match) return { room: match[0], playerName: match[1] }
         return {}
+    }
+
+    const handleParams = (url: string) => {
+        const { room, playerName } = parseHash(url)
+        if (room && playerName) {
+            setPlayerName(playerName)
+            setIsLobby(true)
+            connectSocketClient(room, playerName)
+        }
     }
 
     const socketInit = async () => {
