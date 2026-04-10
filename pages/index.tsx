@@ -120,7 +120,7 @@ const Home: NextPage = () => {
     }, [])
 
     return (
-        <div className='min-h-screen flex flex-col'>
+        <div className='min-h-screen flex flex-col overflow-x-hidden'>
             <Head>
                 <title>Red Tetris</title>
                 <meta name="description" content="A Typescript Implementation of Tetris" />

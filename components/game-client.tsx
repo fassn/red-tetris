@@ -131,7 +131,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     return (
-        <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start'>
+        <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start h-[calc(100dvh-5.5rem)] sm:h-auto'>
             {isPlaying && (
                 <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-around sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
                     <div className='flex flex-row sm:flex-col items-center sm:items-start gap-4'>
@@ -174,7 +174,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                 ref={canvasRef}
                 width={BOARDWIDTH}
                 height={BOARDHEIGHT}
-                className='order-2 sm:order-1 block max-w-full h-[calc(100dvh-11rem)] sm:h-auto w-auto'
+                className='order-2 sm:order-1 block min-h-0 max-w-full w-auto sm:min-h-[auto]'
                 onClick={handleClick}
                 role='img'
                 aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
