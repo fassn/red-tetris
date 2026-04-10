@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
 import { CANVASHEIGHT, CANVASWIDTH, COLOR_PALETTE, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
-import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles, advanceWinAnimation } from "../utils/draw"
+import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles, advanceWinAnimation, clearCanvas } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
@@ -51,6 +51,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
             if (timestamp - lastFrame < interval) return
             lastFrame = timestamp - ((timestamp - lastFrame) % interval)
 
+            clearCanvas(ctx)
             drawStack(ctx, stack.current)
 
             if (playerState.playState === PlayState.PLAYING) {

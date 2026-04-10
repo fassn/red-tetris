@@ -1,4 +1,4 @@
-import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, CANVASHEIGHT, CANVASWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import { createEmptyStack } from "../shared/stack"
 import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
 
@@ -11,6 +11,11 @@ function tile(ctx: CanvasRenderingContext2D, x: number, y: number, stroke = true
     ctx.roundRect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
     ctx.fill()
     if (stroke) ctx.stroke()
+}
+
+export const clearCanvas = (ctx: CanvasRenderingContext2D) => {
+    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
+    ctx.fillRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
 }
 
 export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
