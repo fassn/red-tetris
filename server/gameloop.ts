@@ -25,6 +25,14 @@ export function emitStackAndScore(io: TypedServer, game: Game, player: Player, p
     const lineCount = game.countFilledLines(playerStack)
     const score = game.addToScore(lineCount, player.id)
     io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score })
+
+    // Check for level-up after scoring
+    const newLevel = game.updateLevel()
+    if (newLevel !== null) {
+        for (const p of game.players) {
+            io.to(p.socket.id).emit('levelUp', { level: newLevel, dropInterval: game.dropInterval })
+        }
+    }
 }
 
 export function broadcastOpponentStack(io: TypedServer, game: Game, player: Player) {

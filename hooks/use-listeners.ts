@@ -8,12 +8,13 @@ type useListenersProps = {
     currentPiece: MutableRefObject<PieceProps>,
     nextPiece: MutableRefObject<PieceProps>,
     score: MutableRefObject<number>,
+    level: MutableRefObject<number>,
     gameWon: MutableRefObject<boolean>,
     cascadeTiles: MutableRefObject<TileProps[]>,
     getCascadeTilesCalled: MutableRefObject<boolean>,
 }
 
-const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeTiles, getCascadeTilesCalled }: useListenersProps) => {
+const useListeners = ({ stack, currentPiece, nextPiece, score, level, gameWon, cascadeTiles, getCascadeTilesCalled }: useListenersProps) => {
     const socket = useContext(SocketContext)
     useEffect(() => {
         const handleNewGame = ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
@@ -56,6 +57,10 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
             gameWon.current = won
         }
 
+        const handleLevelUp = ({ level: newLevel }: { level: number }) => {
+            level.current = newLevel
+        }
+
         const handleResetGame = () => {
             currentPiece.current = createEmptyPiece()
             nextPiece.current = createEmptyPiece()
@@ -63,6 +68,7 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
             getCascadeTilesCalled.current = false
             cascadeTiles.current = []
             score.current = 0
+            level.current = 0
             gameWon.current = false
         }
 
@@ -75,6 +81,7 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
         socket.on('newMoveRight', handleMoveRight)
         socket.on('newPoints', handleNewPoints)
         socket.on('gameOver', handleGameOver)
+        socket.on('levelUp', handleLevelUp)
         socket.on('resetGame', handleResetGame)
 
         return () => {
@@ -87,6 +94,7 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
             socket.off('newMoveRight', handleMoveRight)
             socket.off('newPoints', handleNewPoints)
             socket.off('gameOver', handleGameOver)
+            socket.off('levelUp', handleLevelUp)
             socket.off('resetGame', handleResetGame)
         }
     }, [])

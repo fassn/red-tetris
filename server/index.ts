@@ -82,40 +82,35 @@ app.prepare().then(() => {
         GameHandler(io, socket, { sessionStore, messageStore, cleanStores })
     })
 
-    // Game loop
-    let frameCount = 0
+    // Game loop — each game tracks its own tick count and drop interval
     const loop = () => {
-        setTimeout(async () => {
+        setTimeout(() => {
             try {
-                const sockets = await io.fetchSockets()
-                const rooms = new Set(sockets.map((s) => s.data.roomName))
-
-                for (const room of rooms) {
-                    const game = gameStore.findGame(room)
-                    if (!game?.isStarted) continue
+                for (const [, game] of gameStore.games) {
+                    if (!game.isStarted) continue
+                    const shouldDrop = game.tick()
 
                     for (const player of game.players) {
                         if (player.socket.data.playerState.playState !== PlayState.PLAYING) continue
+                        if (!shouldDrop) continue
+
                         const playerStack = player.stack
                         const playerPieces = player.pieces
+                        const currentPiece = playerPieces[0]
 
-                        if (frameCount % FRAMERATE === 0) {
-                            const currentPiece = playerPieces[0]
+                        movePieceDown(io, currentPiece, player, playerStack)
 
-                            movePieceDown(io, currentPiece, player, playerStack)
-
-                            if (checkIfPieceHasHit(currentPiece)) {
-                                if (currentPiece.getY() === 0) {
-                                    emitEndGameToPlayers(io, player, game)
-                                    break
-                                }
-
-                                game.addToStack(currentPiece, playerStack)
-                                emitStackAndScore(io, game, player, playerStack)
-                                broadcastOpponentStack(io, game, player)
-                                updatePiecesStack(playerPieces, game)
-                                emitNextPiece(io, game, player, playerPieces)
+                        if (checkIfPieceHasHit(currentPiece)) {
+                            if (currentPiece.getY() === 0) {
+                                emitEndGameToPlayers(io, player, game)
+                                break
                             }
+
+                            game.addToStack(currentPiece, playerStack)
+                            emitStackAndScore(io, game, player, playerStack)
+                            broadcastOpponentStack(io, game, player)
+                            updatePiecesStack(playerPieces, game)
+                            emitNextPiece(io, game, player, playerPieces)
                         }
                     }
                 }
@@ -123,7 +118,6 @@ app.prepare().then(() => {
                 console.error('Game loop error:', err)
             }
 
-            frameCount++
             loop()
         }, 1000 / FRAMERATE)
     }

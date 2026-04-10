@@ -1,13 +1,36 @@
 import type { TypedServer } from "./io-types"
-import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { ALPHA_MIN, COLOR_PALETTE, COLS, FRAMERATE, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
 import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
+
+/**
+ * NES-style speed curve scaled to our tick rate.
+ * Every 10 lines cleared = 1 level up.
+ * Drop interval decreases with level: starts at FRAMERATE ticks (1s),
+ * reaches 1 tick (~67ms) at level 15+.
+ */
+function dropIntervalForLevel(level: number): number {
+    if (level <= 0) return FRAMERATE       // 15 ticks = 1.00s
+    if (level === 1) return 13             //           = 0.87s
+    if (level === 2) return 11             //           = 0.73s
+    if (level === 3) return 9              //           = 0.60s
+    if (level === 4) return 8              //           = 0.53s
+    if (level <= 6) return 6              //           = 0.40s
+    if (level <= 8) return 4              //           = 0.27s
+    if (level <= 10) return 3              //           = 0.20s
+    if (level <= 13) return 2              //           = 0.13s
+    return 1                               //           = 0.07s
+}
 class Game {
     io: TypedServer
     players: Player[]
     firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
+    tickCount: number
+    dropInterval: number
+    level: number
+    totalLinesCleared: number
 
     constructor(io: TypedServer, players: Player[]) {
         this.io = io
@@ -15,12 +38,39 @@ class Game {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
 
         this.isStarted = false
+        this.tickCount = 0
+        this.dropInterval = FRAMERATE // 15 ticks = 1 second at level 0
+        this.level = 0
+        this.totalLinesCleared = 0
     }
 
     reset() {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.isStarted = false
+        this.tickCount = 0
+        this.dropInterval = FRAMERATE
+        this.level = 0
+        this.totalLinesCleared = 0
         this.players = []
+    }
+
+    /** Advance tick counter. Returns true when a gravity drop should happen. */
+    tick(): boolean {
+        this.tickCount++
+        return this.tickCount % this.dropInterval === 0
+    }
+
+    /**
+     * Recalculate level from total lines cleared and adjust drop speed.
+     * Uses NES-style curve scaled to our tick rate (FRAMERATE ticks/sec).
+     * Returns the new level if it changed, or null.
+     */
+    updateLevel(): number | null {
+        const newLevel = Math.floor(this.totalLinesCleared / 10)
+        if (newLevel === this.level) return null
+        this.level = newLevel
+        this.dropInterval = dropIntervalForLevel(newLevel)
+        return newLevel
     }
 
     addPlayer = (player: Player) => {
@@ -120,19 +170,22 @@ class Game {
     }
 
     addToScore(lineCount: number, playerId: string) {
+        this.totalLinesCleared += lineCount
         let score = this.getPlayerScore(playerId)
+        // NES scoring: base points × (level + 1)
+        const multiplier = this.level + 1
         switch (lineCount) {
             case 1:
-                score += 40
+                score += 40 * multiplier
                 break;
             case 2:
-                score += 100
+                score += 100 * multiplier
                 break;
             case 3:
-                score += 300
+                score += 300 * multiplier
                 break;
             case 4:
-                score += 1200
+                score += 1200 * multiplier
         }
         this.setPlayerScore(score, playerId)
         return score

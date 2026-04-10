@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
 import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../shared/config"
-import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles } from "../utils/draw"
+import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
@@ -26,10 +26,11 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const getCascadeTilesCalled = useRef<boolean>(false)
     const cascadeTiles = useRef<TileProps[]>([])
     const score = useRef<number>(0)
+    const level = useRef<number>(0)
     const gameWon = useRef<boolean>(false)
     const loseColorIndex = useRef<number>(0)
 
-    useListeners({ stack, currentPiece, nextPiece, score, gameWon, cascadeTiles, getCascadeTilesCalled })
+    useListeners({ stack, currentPiece, nextPiece, score, level, gameWon, cascadeTiles, getCascadeTilesCalled })
 
     // Render loop — throttled to FRAMERATE to match server tick rate
     useEffect(() => {
@@ -56,6 +57,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                 drawPiece(ctx, currentPiece.current)
                 drawNextPiece(ctx, nextPiece.current)
                 drawScore(ctx, score.current)
+                drawLevel(ctx, level.current)
             }
 
             if (playerState.playState === PlayState.ENDGAME) {

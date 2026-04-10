@@ -71,6 +71,16 @@ export const drawScore = (ctx: CanvasRenderingContext2D, score: number) => {
     ctx.fillText(String(score), BOARDWIDTH + 32, 288)
 }
 
+export const drawLevel = (ctx: CanvasRenderingContext2D, level: number) => {
+    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
+    ctx.fillRect(BOARDWIDTH, 324, 320, 96)
+
+    ctx.fillStyle = 'black'
+    ctx.font = '38px Helvetica'
+    ctx.fillText('Level:', BOARDWIDTH + 32, 356)
+    ctx.fillText(String(level), BOARDWIDTH + 32, 416)
+}
+
 export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTiles: TileProps[]) => {
     ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
     ctx.strokeStyle = 'white'

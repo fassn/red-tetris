@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Game from '../server/game'
 import Piece from '../server/piece'
 import { createEmptyStack } from '../shared/stack'
-import { COLS, ROWS, SPACING, TILEWIDTH, TILEHEIGHT } from '../shared/config'
+import { COLS, FRAMERATE, ROWS, SPACING, TILEWIDTH, TILEHEIGHT } from '../shared/config'
 
 // Minimal mock for TypedServer (not used in pure logic tests)
 const mockIo = {} as any
@@ -222,6 +222,87 @@ describe('Game', () => {
             game.reset()
             expect(game.players).toHaveLength(0)
             expect(game.isStarted).toBe(false)
+            expect(game.tickCount).toBe(0)
+            expect(game.level).toBe(0)
+            expect(game.totalLinesCleared).toBe(0)
+            expect(game.dropInterval).toBe(FRAMERATE)
+        })
+    })
+
+    describe('tick', () => {
+        it('returns false when not at drop interval', () => {
+            const game = createTestGame()
+            // First tick: tickCount becomes 1, 1 % 15 !== 0
+            expect(game.tick()).toBe(false)
+        })
+
+        it('returns true when tickCount aligns with dropInterval', () => {
+            const game = createTestGame()
+            // Tick FRAMERATE times to reach the drop interval
+            for (let i = 1; i < FRAMERATE; i++) {
+                game.tick()
+            }
+            // The FRAMERATE-th tick should trigger a drop
+            expect(game.tick()).toBe(true)
+        })
+
+        it('increments tickCount each call', () => {
+            const game = createTestGame()
+            game.tick()
+            game.tick()
+            game.tick()
+            expect(game.tickCount).toBe(3)
+        })
+    })
+
+    describe('updateLevel', () => {
+        it('returns null when level has not changed', () => {
+            const game = createTestGame()
+            game.totalLinesCleared = 5
+            expect(game.updateLevel()).toBeNull()
+        })
+
+        it('returns new level when threshold crossed', () => {
+            const game = createTestGame()
+            game.totalLinesCleared = 10
+            expect(game.updateLevel()).toBe(1)
+            expect(game.level).toBe(1)
+        })
+
+        it('adjusts dropInterval on level up', () => {
+            const game = createTestGame()
+            game.totalLinesCleared = 10
+            game.updateLevel()
+            expect(game.dropInterval).toBe(13) // Level 1 = 13 ticks
+        })
+
+        it('calculates high levels correctly', () => {
+            const game = createTestGame()
+            game.totalLinesCleared = 150 // Level 15
+            game.updateLevel()
+            expect(game.level).toBe(15)
+            expect(game.dropInterval).toBe(1) // Max speed
+        })
+    })
+
+    describe('addToScore with levels', () => {
+        it('multiplies score by (level + 1)', () => {
+            const game = createTestGame()
+            const player = createMockPlayer('p1')
+            game.players.push(player)
+            game.level = 5
+            const score = game.addToScore(1, 'p1')
+            // 40 * (5 + 1) = 240
+            expect(score).toBe(240)
+        })
+
+        it('accumulates totalLinesCleared', () => {
+            const game = createTestGame()
+            const player = createMockPlayer('p1')
+            game.players.push(player)
+            game.addToScore(2, 'p1')
+            game.addToScore(3, 'p1')
+            expect(game.totalLinesCleared).toBe(5)
         })
     })
 })

@@ -17,6 +17,7 @@ export interface ServerToClientEvents {
     resetGame: () => void
     newIncomingMsg: (msg: Message) => void
     opponentStack: (data: { playerId: string; playerName: string; stack: Stack[] }) => void
+    levelUp: (data: { level: number; dropInterval: number }) => void
 }
 
 export interface ClientToServerEvents {
