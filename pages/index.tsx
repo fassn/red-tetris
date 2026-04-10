@@ -1,10 +1,10 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 
 import Chat from '../components/chat'
-import { SocketContext } from '../context/socket'
+import { socket } from '../context/socket'
 
 import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
@@ -12,8 +12,25 @@ import Footer from "../components/footer"
 import GameClient from "../components/game-client"
 import { PlayerState, PlayState } from '../shared/types'
 
+function parseHash(url: string) {
+    const hash = url.split('#')[1] || ''
+    const separatorIndex = hash.indexOf('/')
+    if (separatorIndex === -1) return {}
+    const room = decodeURIComponent(hash.slice(0, separatorIndex))
+    const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
+    if (!room || !playerName) return {}
+    return { room, playerName }
+}
+
+function connectSocket(roomName: string, playerName: string) {
+    const sessionId = localStorage.getItem('sessionId')
+    socket.auth = sessionId
+        ? { sessionId, playerName, roomName }
+        : { playerName, roomName }
+    socket.connect()
+}
+
 const Home: NextPage = () => {
-    const socket = useContext(SocketContext)
     const router = useRouter()
 
     const [playerName, setPlayerName] = useState('')
@@ -22,12 +39,21 @@ const Home: NextPage = () => {
     const [otherPlayerState, setOtherPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
 
     useEffect(() => {
-        // direct URL connection
-        handleParams(router.asPath)
+        // URL hash is unavailable during SSR, so initial state must be set in an effect
+        const { room, playerName: name } = parseHash(router.asPath)
+        if (room && name) {
+            setPlayerName(name)
+            setIsLobby(true)
+            connectSocket(room, name)
+        }
 
-        // after form submit
         const handleHashChange = (url: string) => {
-            handleParams(url)
+            const { room, playerName: name } = parseHash(url)
+            if (room && name) {
+                setPlayerName(name)
+                setIsLobby(true)
+                connectSocket(room, name)
+            }
         }
 
         const handleRoomFull = () => {
@@ -61,35 +87,8 @@ const Home: NextPage = () => {
             socket.off('session', handleSession)
             socket.off('newState', handleNewState)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    const parseHash = (url: string) => {
-        const hash = url.split('#')[1] || ''
-        const separatorIndex = hash.indexOf('/')
-        if (separatorIndex === -1) return {}
-        const room = decodeURIComponent(hash.slice(0, separatorIndex))
-        const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
-        if (!room || !playerName) return {}
-        return { room, playerName }
-    }
-
-    const handleParams = (url: string) => {
-        const { room, playerName } = parseHash(url)
-        if (room && playerName) {
-            setPlayerName(playerName)
-            setIsLobby(true)
-            connectSocketClient(room, playerName)
-        }
-    }
-
-    const connectSocketClient = (roomName: string, playerName: string) => {
-        const sessionId = localStorage.getItem('sessionId')
-        socket.auth = { playerName, roomName }
-        if (sessionId) {
-            socket.auth = { sessionId, playerName, roomName }
-        }
-        socket.connect()
-    }
 
     return (
         <div>
