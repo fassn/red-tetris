@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
-import { CANVASHEIGHT, CANVASWIDTH, TICK_RATE } from "../shared/config"
+import { CANVASHEIGHT, CANVASWIDTH, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
 import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
@@ -41,6 +41,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
 
         let animId: number
         let lastFrame = 0
+        let lastSoftDrop = 0
         const interval = 1000 / TICK_RATE
 
         const render = (timestamp: number) => {
@@ -51,8 +52,9 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
             drawStack(ctx, stack.current)
 
             if (playerState.playState === PlayState.PLAYING) {
-                if (keysDown.current.has('ArrowDown')) {
+                if (keysDown.current.has('ArrowDown') && timestamp - lastSoftDrop >= SOFT_DROP_MS) {
                     socket.emit('moveDown')
+                    lastSoftDrop = timestamp
                 }
                 drawPiece(ctx, currentPiece.current)
                 drawNextPiece(ctx, nextPiece.current)

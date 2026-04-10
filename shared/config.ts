@@ -1,6 +1,7 @@
 import { RGBA } from "./types"
 
-export const TICK_RATE = 15 // Server ticks per second (~67ms per tick)
+export const TICK_RATE = 60 // Server ticks per second (~16.67ms per tick)
+export const SOFT_DROP_MS = 50 // Minimum ms between soft-drop moves (down key held)
 export const MAX_PLAYERS = 4
 export const ROWS = 20
 export const COLS = 10
