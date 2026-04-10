@@ -12,6 +12,7 @@ module.exports = {
                 brand: colors.brand,
                 surface: colors.surface,
                 status: colors.status,
+                neutral: colors.neutral,
             },
         },
     },

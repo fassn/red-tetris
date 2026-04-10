@@ -32,7 +32,7 @@ const ConnectionOverlay = ({ status, error }: ConnectionOverlayProps) => {
                         <p className='text-neutral-500 text-sm mt-1'>{error || 'Unable to reach the server'}</p>
                         <button
                             onClick={() => window.location.reload()}
-                            className='mt-4 px-6 py-2 bg-brand text-white rounded hover:bg-brand-hover transition-colors'
+                            className='mt-4 px-6 py-2 bg-brand rounded font-semibold uppercase hover:bg-brand-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2'
                         >
                             Retry
                         </button>

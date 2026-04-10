@@ -117,7 +117,7 @@ const Home: NextPage = () => {
     }, [])
 
     return (
-        <div>
+        <div className='min-h-screen flex flex-col'>
             <Head>
                 <title>Red Tetris</title>
                 <meta name="description" content="A Typescript Implementation of Tetris" />
@@ -131,7 +131,7 @@ const Home: NextPage = () => {
             )}
             {
                 isLobby ?
-                <main id='main-content' className='min-h-screen px-4 pb-24 lg:px-8' aria-label='Game room'>
+                <main id='main-content' className='flex-1 px-4 lg:px-8' aria-label='Game room'>
                     <div className='flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-6 py-8 lg:py-20'>
                         <section className='flex flex-shrink-0 flex-col w-full max-w-sm lg:w-80 xl:w-96 lg:place-content-between order-2 lg:order-1' aria-label='Lobby'>
                             <Lobby playerState={playerState} otherPlayers={otherPlayers} />
