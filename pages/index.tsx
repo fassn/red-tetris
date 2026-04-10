@@ -13,6 +13,7 @@ import Footer from "../components/footer"
 import GameClient from "../components/game-client"
 import { useConnectionStatus } from '../hooks/use-connection-status'
 import { PlayerState, PlayState, RoomPlayer, Stack } from '../shared/types'
+import { BOARDHEIGHT } from '../shared/config'
 
 export type OpponentBoard = {
     playerId: string
@@ -47,6 +48,8 @@ const Home: NextPage = () => {
     const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
     const [otherPlayers, setOtherPlayers] = useState<RoomPlayer[]>([])
     const [opponentBoards, setOpponentBoards] = useState<Map<string, OpponentBoard>>(new Map())
+
+    const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     useEffect(() => {
         // URL hash is unavailable during SSR, so initial state must be set in an effect
@@ -132,16 +135,16 @@ const Home: NextPage = () => {
             {
                 isLobby ?
                 <main id='main-content' className='flex-1 px-4 lg:px-8' aria-label='Game room'>
-                    <div className='flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-6 py-8 lg:py-12'>
-                        <div className='flex flex-col gap-6 w-full max-w-sm lg:w-80 xl:w-96 order-2 lg:order-1'>
+                    <div className='flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-6 py-4 lg:py-12'>
+                        <div className={`flex flex-col gap-4 w-full max-w-sm lg:w-80 xl:w-96${isInGame ? ' hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
                             <section aria-label='Lobby'>
                                 <Lobby playerState={playerState} otherPlayers={otherPlayers} />
                             </section>
-                            <section aria-label='Chat'>
+                            <section className='flex-1 min-h-0 flex flex-col' aria-label='Chat'>
                                 <Chat playerName={playerName} />
                             </section>
                         </div>
-                        <section className='order-1 lg:order-2' aria-label='Game'>
+                        <section aria-label='Game'>
                             <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} />
                         </section>
                     </div>
