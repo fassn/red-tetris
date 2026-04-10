@@ -58,7 +58,7 @@ const Chat = ({ playerName }: ChatProps) => {
     }
 
     return (
-        <div className='flex flex-col bg-white w-full rounded-lg shadow-sm shadow-brand overflow-hidden h-72 lg:h-auto lg:flex-1' role='region' aria-label='Chat'>
+        <div className='flex flex-col bg-white w-full rounded-lg shadow-sm shadow-brand overflow-hidden flex-1' role='region' aria-label='Chat'>
             <div className='flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-brand' aria-live='polite' aria-relevant='additions'>
             {messages.map((msg, i) => {
                 return (
