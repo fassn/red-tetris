@@ -16,6 +16,7 @@ export interface ServerToClientEvents {
     gameOver: (data: { won: boolean }) => void
     resetGame: () => void
     newIncomingMsg: (msg: Message) => void
+    opponentStack: (data: { playerId: string; playerName: string; stack: Stack[] }) => void
 }
 
 export interface ClientToServerEvents {

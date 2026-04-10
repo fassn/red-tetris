@@ -27,6 +27,17 @@ export function emitStackAndScore(io: TypedServer, game: Game, player: Player, p
     io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score })
 }
 
+export function broadcastOpponentStack(io: TypedServer, game: Game, player: Player) {
+    for (const other of game.players) {
+        if (other.id === player.id) continue
+        io.to(other.socket.id).emit('opponentStack', {
+            playerId: player.id,
+            playerName: player.name,
+            stack: player.stack,
+        })
+    }
+}
+
 export function checkIfPieceHasHit(currentPiece: Piece) {
     return !currentPiece.isActive() && !currentPiece.isDisabled()
 }

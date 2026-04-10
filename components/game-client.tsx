@@ -5,13 +5,17 @@ import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../shared/config"
 import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
-import { PieceProps, PlayerState, PlayState, Stack, TileProps } from "../shared/types"
+import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
+import MiniBoard from "./mini-board"
+import type { OpponentBoard } from "../pages/index"
 
 type GameClientProps = {
     playerState: PlayerState,
+    opponentBoards: Map<string, OpponentBoard>,
+    otherPlayers: RoomPlayer[],
 }
 
-const GameClient = ({ playerState }: GameClientProps) => {
+const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const keysDown = useRef(new Set<string>())
@@ -100,8 +104,10 @@ const GameClient = ({ playerState }: GameClientProps) => {
         }
     }
 
+    const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
+
     return (
-        <div className='flex w-full justify-center'>
+        <div className='flex flex-col items-center gap-4 lg:flex-row lg:items-start'>
             <canvas
                 ref={canvasRef}
                 width={CANVASWIDTH}
@@ -112,6 +118,21 @@ const GameClient = ({ playerState }: GameClientProps) => {
                 aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
                 tabIndex={0}
             />
+            {isPlaying && otherPlayers.length > 0 && (
+                <aside className='flex flex-row lg:flex-col gap-3' aria-label='Opponent boards'>
+                    {otherPlayers.map((p) => {
+                        const board = opponentBoards.get(p.playerId)
+                        return (
+                            <MiniBoard
+                                key={p.playerId}
+                                playerName={p.playerName}
+                                playState={p.state.playState}
+                                stack={board?.stack ?? createEmptyStack()}
+                            />
+                        )
+                    })}
+                </aside>
+            )}
         </div>
     )
 }

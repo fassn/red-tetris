@@ -12,6 +12,7 @@ import { PlayState } from '../shared/types'
 import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
 import type { SocketData } from './io-types'
 import {
+    broadcastOpponentStack,
     checkIfPieceHasHit,
     emitEndGameToPlayers,
     emitNextPiece,
@@ -111,6 +112,7 @@ app.prepare().then(() => {
 
                                 game.addToStack(currentPiece, playerStack)
                                 emitStackAndScore(io, game, player, playerStack)
+                                broadcastOpponentStack(io, game, player)
                                 updatePiecesStack(playerPieces, game)
                                 emitNextPiece(io, game, player, playerPieces)
                             }

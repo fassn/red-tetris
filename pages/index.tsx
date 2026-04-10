@@ -12,7 +12,13 @@ import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
 import { useConnectionStatus } from '../hooks/use-connection-status'
-import { PlayerState, PlayState, RoomPlayer } from '../shared/types'
+import { PlayerState, PlayState, RoomPlayer, Stack } from '../shared/types'
+
+export type OpponentBoard = {
+    playerId: string
+    playerName: string
+    stack: Stack[]
+}
 
 function parseHash(url: string) {
     const hash = url.split('#')[1] || ''
@@ -40,6 +46,7 @@ const Home: NextPage = () => {
     const [isLobby, setIsLobby] = useState(false)
     const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
     const [otherPlayers, setOtherPlayers] = useState<RoomPlayer[]>([])
+    const [opponentBoards, setOpponentBoards] = useState<Map<string, OpponentBoard>>(new Map())
 
     useEffect(() => {
         // URL hash is unavailable during SSR, so initial state must be set in an effect
@@ -75,22 +82,36 @@ const Home: NextPage = () => {
         const handleNewState = ({ playerState, otherPlayers }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[] }) => {
             if (playerState) {
                 setPlayerState(playerState)
+                // Clear opponent boards when returning to lobby
+                if (playerState.playState === PlayState.WAITING) {
+                    setOpponentBoards(new Map())
+                }
             }
             if (otherPlayers) {
                 setOtherPlayers(otherPlayers)
             }
         }
 
+        const handleOpponentStack = ({ playerId, playerName, stack }: { playerId: string; playerName: string; stack: Stack[] }) => {
+            setOpponentBoards((prev) => {
+                const next = new Map(prev)
+                next.set(playerId, { playerId, playerName, stack })
+                return next
+            })
+        }
+
         router.events.on('hashChangeComplete', handleHashChange)
         socket.on('roomIsFull', handleRoomFull)
         socket.on('session', handleSession)
         socket.on('newState', handleNewState)
+        socket.on('opponentStack', handleOpponentStack)
 
         return () => {
             router.events.off('hashChangeComplete', handleHashChange)
             socket.off('roomIsFull', handleRoomFull)
             socket.off('session', handleSession)
             socket.off('newState', handleNewState)
+            socket.off('opponentStack', handleOpponentStack)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -116,7 +137,7 @@ const Home: NextPage = () => {
                             <Lobby playerState={playerState} otherPlayers={otherPlayers} />
                         </section>
                         <section className='order-1 lg:order-2' aria-label='Game'>
-                            <GameClient playerState={playerState} />
+                            <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} />
                         </section>
                         <section className='flex flex-col w-full max-w-sm lg:w-72 xl:w-80 order-3' aria-label='Chat'>
                             <Chat playerName={playerName} />
