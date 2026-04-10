@@ -1,5 +1,42 @@
 # Copilot Instructions — Red Tetris
 
+## Project Overview
+
+Multiplayer Tetris (up to 4 players) built with Next.js 16, React 19, Socket.IO 4.8, TypeScript 5.8, and Tailwind CSS 3.4. Uses the Pages Router (not App Router).
+
+## Architecture
+
+- **Custom server pattern**: `server/index.ts` creates an HTTP server, attaches the Next.js request handler and Socket.IO. The game loop runs via `setTimeout` recursion at `1000/FRAMERATE`.
+- **Directory convention**: `server/` (server-only), `shared/` (both client+server), `hooks/` (React hooks), `utils/` (client-only), `components/`, `context/`, `pages/`.
+- **State is in-memory**: `server/stores/` uses Maps. No database — state is ephemeral and lost on restart.
+- **Socket.IO is fully typed**: Event interfaces in `shared/socket-events.ts` (client+server) and `server/io-types.ts` (server-only). Client socket created in `context/socket.ts` with `autoConnect: false`.
+
+## Commands
+
+- **Dev**: `npm run dev` (runs `tsx server/index.ts`)
+- **Build**: `npm run build` (runs `next build`)
+- **Start**: `npm start` (runs `NODE_ENV=production tsx server/index.ts`)
+- **Lint**: `npm run lint` (runs `eslint .` — NOT `next lint`, which was removed in Next.js 16)
+- **Test**: `npm test` (runs `vitest run`)
+- **Type check**: `npx tsc --noEmit`
+
+## Coding Conventions
+
+- Use **interfaces** (not abstract classes) for store contracts.
+- All socket event handlers must validate player state before acting (e.g., check `PlayState.PLAYING`).
+- Every `useEffect` that registers socket listeners must clean up with `.off()` in the return function.
+- Import socket directly from `context/socket.ts` (not via `useContext`) in files that mutate `socket.auth` — React 19's immutability rule forbids mutating context values.
+- Canvas rendering uses the native Canvas 2D API — no external rendering libraries.
+- Tailwind classes must be static strings (no dynamic interpolation like `` `h-[${value}px]` `` — Tailwind can't detect these at build time).
+
+## Known Constraints
+
+- **Node.js ≥ 20.9.0** required (Next.js 16 requirement).
+- **ESLint 9** (not 10) — `eslint-plugin-react` bundled in `eslint-config-next` is incompatible with ESLint 10.
+- `eslint-config-next@16` exports a native flat config array (no FlatCompat needed).
+- Two pre-existing `react-hooks/exhaustive-deps` warnings in `chat.tsx` and `use-listeners.ts` — intentional (socket refs are stable singletons).
+- Deployment target is Docker-based (Coolify), not serverless. `NEXT_PUBLIC_SOCKET_URL` is set via environment variable.
+
 ## Claude Model Interaction Instructions
 
 ### Rules for Claude models
@@ -21,5 +58,3 @@ ask_user({
   "choices": ["Start implementation (Recommended)", "Write tests", "Update docs", "Other"],
   "allow_freeform": true
 });
-
----
