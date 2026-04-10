@@ -160,9 +160,11 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                             <span className='text-2xl font-bold'>{level}</span>
                         </div>
                     </div>
-                    {otherPlayers.length > 0 && (
+                    {otherPlayers.filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME).length > 0 && (
                         <aside className='flex flex-row gap-3' aria-label='Opponent boards'>
-                            {otherPlayers.map((p) => {
+                            {otherPlayers
+                                .filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME)
+                                .map((p) => {
                                 const board = opponentBoards.get(p.playerId)
                                 return (
                                     <MiniBoard
