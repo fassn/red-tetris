@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Game from '../server/game'
 import Piece from '../server/piece'
 import { createEmptyStack } from '../shared/stack'
-import { COLS, INITIAL_DROP_INTERVAL, ROWS, SPACING, TICK_RATE, TILEWIDTH, TILEHEIGHT } from '../shared/config'
+import { COLS, ROWS, SPACING, TICK_RATE, TILEWIDTH, TILEHEIGHT } from '../shared/config'
 
 // Minimal mock for TypedServer (not used in pure logic tests)
 const mockIo = {} as any
@@ -225,7 +225,7 @@ describe('Game', () => {
             expect(game.tickCount).toBe(0)
             expect(game.level).toBe(0)
             expect(game.totalLinesCleared).toBe(0)
-            expect(game.dropInterval).toBe(INITIAL_DROP_INTERVAL)
+            expect(game.dropInterval).toBe(Math.round(1.0 * TICK_RATE))
         })
     })
 
@@ -273,7 +273,7 @@ describe('Game', () => {
             const game = createTestGame()
             game.totalLinesCleared = 10
             game.updateLevel()
-            expect(game.dropInterval).toBe(13) // Level 1 = 13 ticks
+            expect(game.dropInterval).toBe(Math.round(0.87 * TICK_RATE)) // Level 1
         })
 
         it('calculates high levels correctly', () => {

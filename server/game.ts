@@ -1,26 +1,27 @@
 import type { TypedServer } from "./io-types"
-import { ALPHA_MIN, COLOR_PALETTE, COLS, INITIAL_DROP_INTERVAL, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
 import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
 
 /**
- * NES-style speed curve scaled to our tick rate.
+ * NES-style speed curve expressed in seconds, converted to ticks.
  * Every 10 lines cleared = 1 level up.
- * Drop interval decreases with level: starts at INITIAL_DROP_INTERVAL ticks (1s),
- * reaches 1 tick (~67ms) at level 15+.
+ * Changing TICK_RATE affects resolution/smoothness but NOT drop speed.
  */
 function dropIntervalForLevel(level: number): number {
-    if (level <= 0) return INITIAL_DROP_INTERVAL // 15 ticks = 1.00s
-    if (level === 1) return 13             //           = 0.87s
-    if (level === 2) return 11             //           = 0.73s
-    if (level === 3) return 9              //           = 0.60s
-    if (level === 4) return 8              //           = 0.53s
-    if (level <= 6) return 6              //           = 0.40s
-    if (level <= 8) return 4              //           = 0.27s
-    if (level <= 10) return 3              //           = 0.20s
-    if (level <= 13) return 2              //           = 0.13s
-    return 1                               //           = 0.07s
+    let seconds: number
+    if (level <= 0)  seconds = 1.0
+    else if (level === 1)  seconds = 0.87
+    else if (level === 2)  seconds = 0.73
+    else if (level === 3)  seconds = 0.60
+    else if (level === 4)  seconds = 0.53
+    else if (level <= 6)   seconds = 0.40
+    else if (level <= 8)   seconds = 0.27
+    else if (level <= 10)  seconds = 0.20
+    else if (level <= 13)  seconds = 0.13
+    else seconds = 0.07
+    return Math.max(1, Math.round(seconds * TICK_RATE))
 }
 class Game {
     io: TypedServer
@@ -39,7 +40,7 @@ class Game {
 
         this.isStarted = false
         this.tickCount = 0
-        this.dropInterval = INITIAL_DROP_INTERVAL // 15 ticks = 1 second at level 0
+        this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
         this.totalLinesCleared = 0
     }
@@ -48,7 +49,7 @@ class Game {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.isStarted = false
         this.tickCount = 0
-        this.dropInterval = INITIAL_DROP_INTERVAL
+        this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
         this.totalLinesCleared = 0
         this.players = []
