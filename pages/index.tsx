@@ -134,9 +134,9 @@ const Home: NextPage = () => {
             )}
             {
                 isLobby ?
-                <main id='main-content' className='flex-1 px-4 lg:px-8' aria-label='Game room'>
-                    <div className='flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-6 py-4 lg:py-12'>
-                        <div className={`flex flex-col gap-4 w-full max-w-sm lg:w-80 xl:w-96${isInGame ? ' hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
+                <main id='main-content' className='flex-1 px-4 sm:px-8' aria-label='Game room'>
+                    <div className='flex flex-col items-center sm:flex-row sm:items-start sm:justify-center gap-6 py-4 sm:py-12'>
+                        <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96${isInGame ? ' hidden sm:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
                             <section aria-label='Lobby'>
                                 <Lobby playerState={playerState} otherPlayers={otherPlayers} />
                             </section>
@@ -144,7 +144,7 @@ const Home: NextPage = () => {
                                 <Chat playerName={playerName} />
                             </section>
                         </div>
-                        <section className={`w-full lg:w-auto${isInGame ? '' : ' hidden lg:block'}`} aria-label='Game'>
+                        <section className={`w-full sm:w-auto${isInGame ? '' : ' hidden sm:block'}`} aria-label='Game'>
                             <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} />
                         </section>
                     </div>
