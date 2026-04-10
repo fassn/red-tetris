@@ -81,25 +81,29 @@ export const drawLevel = (ctx: CanvasRenderingContext2D, level: number) => {
     ctx.fillText(String(level), BOARDWIDTH + 32, 416)
 }
 
-export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTiles: TileProps[]) => {
-    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
-    ctx.strokeStyle = 'white'
-    ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
-    ctx.strokeRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
-
-    stack = createEmptyStack()
-    drawStack(ctx, stack)
-
-    // Draw bouncing cascade tiles
+export const advanceWinAnimation = (cascadeTiles: TileProps[]) => {
     for (const t of cascadeTiles) {
         if (t.y > BOARDHEIGHT - TILEHEIGHT + SPACING) {
             t.dy = -t.dy
         } else {
             t.dy += t.gravity
         }
+        t.y += t.dy
+    }
+}
+
+export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTiles: TileProps[]) => {
+    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
+    ctx.strokeStyle = 'white'
+    ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
+    ctx.strokeRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
+
+    const emptyStack = createEmptyStack()
+    drawStack(ctx, emptyStack)
+
+    for (const t of cascadeTiles) {
         ctx.fillStyle = rgba(t.color)
         tile(ctx, t.x, t.y)
-        t.y += t.dy
     }
 
     ctx.fillStyle = 'black'
@@ -127,7 +131,7 @@ export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
     }
 }
 
-export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number): number => {
+export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number) => {
     const colors = COLOR_PALETTE
     ctx.fillStyle = rgba(colors[colorIndex])
     ctx.strokeStyle = 'white'
@@ -139,6 +143,4 @@ export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number): num
     ctx.fillText('YOU SUCK', 15, BOARDHEIGHT / 2)
     ctx.font = '20px Helvetica'
     ctx.fillText('(click to quit game)', 75, BOARDHEIGHT - 40)
-
-    return (colorIndex + 1) % colors.length
 }

@@ -281,7 +281,7 @@ describe('Game', () => {
             game.totalLinesCleared = 150 // Level 15
             game.updateLevel()
             expect(game.level).toBe(15)
-            expect(game.dropInterval).toBe(1) // Max speed
+            expect(game.dropInterval).toBe(Math.max(1, Math.round(0.07 * TICK_RATE)))
         })
     })
 

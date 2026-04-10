@@ -1,8 +1,8 @@
 import { useContext, useEffect, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
-import { CANVASHEIGHT, CANVASWIDTH, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
-import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles } from "../utils/draw"
+import { CANVASHEIGHT, CANVASWIDTH, COLOR_PALETTE, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
+import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles, advanceWinAnimation } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
@@ -42,7 +42,9 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
         let animId: number
         let lastFrame = 0
         let lastSoftDrop = 0
+        let lastAnimStep = 0
         const interval = 1000 / TICK_RATE
+        const ANIM_STEP_MS = 67 // ~15fps for endgame animations
 
         const render = (timestamp: number) => {
             animId = requestAnimationFrame(render)
@@ -63,14 +65,21 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
             }
 
             if (playerState.playState === PlayState.ENDGAME) {
+                const shouldAdvance = timestamp - lastAnimStep >= ANIM_STEP_MS
+                if (shouldAdvance) lastAnimStep = timestamp
+
                 if (gameWon.current) {
                     if (!getCascadeTilesCalled.current) {
                         getCascadeTiles(cascadeTiles.current, stack.current)
                         getCascadeTilesCalled.current = true
                     }
+                    if (shouldAdvance) advanceWinAnimation(cascadeTiles.current)
                     drawWin(ctx, stack.current, cascadeTiles.current)
                 } else {
-                    loseColorIndex.current = drawLose(ctx, loseColorIndex.current)
+                    if (shouldAdvance) {
+                        loseColorIndex.current = (loseColorIndex.current + 1) % COLOR_PALETTE.length
+                    }
+                    drawLose(ctx, loseColorIndex.current)
                 }
             }
         }
