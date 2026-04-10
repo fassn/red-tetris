@@ -136,12 +136,14 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     }
 
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
+    const activeOpponents = otherPlayers.filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME)
+    const hasMiniboards = activeOpponents.length > 0
 
     return (
         <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start h-[calc(100dvh-5.5rem)] sm:h-auto'>
             {isPlaying && (
                 <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-3 sm:gap-0 flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
-                    <div className='flex flex-col items-center sm:items-start gap-3 sm:gap-4'>
+                    <div className={`flex ${hasMiniboards ? 'flex-col' : 'flex-row'} sm:flex-col items-center sm:items-start gap-3 sm:gap-4`}>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
                             <canvas
@@ -160,11 +162,9 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                             <span className='text-2xl font-bold'>{level}</span>
                         </div>
                     </div>
-                    {otherPlayers.filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME).length > 0 && (
+                    {hasMiniboards && (
                         <aside className='flex flex-row gap-3' aria-label='Opponent boards'>
-                            {otherPlayers
-                                .filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME)
-                                .map((p) => {
+                            {activeOpponents.map((p) => {
                                 const board = opponentBoards.get(p.playerId)
                                 return (
                                     <MiniBoard
