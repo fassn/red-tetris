@@ -1,15 +1,15 @@
-import { Server } from "socket.io"
+import type { TypedServer } from "./socket-types"
 import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
 import Piece from "./piece"
 import Player from "./player"
 import { PieceProps, PieceType, RGBA, Stack } from "./types"
 class Game {
-    io: Server
+    io: TypedServer
     players: Player[]
     firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
 
-    constructor(io: Server, players: Player[]) {
+    constructor(io: TypedServer, players: Player[]) {
         this.io = io
         this.players = players
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]

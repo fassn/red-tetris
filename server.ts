@@ -1,6 +1,6 @@
 import { createServer } from 'http'
 import next from 'next'
-import { Server, Socket } from 'socket.io'
+import { Server } from 'socket.io'
 import * as crypto from 'crypto'
 
 import GameHandler from './utils/game-handler'
@@ -10,6 +10,8 @@ import InMemoryGameStore from './utils/stores/game-store'
 import { FRAMERATE } from './utils/config'
 import Player from './utils/player'
 import { PlayState } from './utils/types'
+import type { ClientToServerEvents, ServerToClientEvents, SocketData } from './utils/socket-types'
+import { socketData } from './utils/socket-types'
 import {
     checkIfPieceHasHit,
     emitEndGameToPlayers,
@@ -45,10 +47,10 @@ const getOtherPlayer = (player: Player, players: Player[]): Player | undefined =
 
 app.prepare().then(() => {
     const httpServer = createServer(handle)
-    const io = new Server(httpServer)
+    const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer)
 
     // Session recovery middleware
-    io.use((socket: Socket, next) => {
+    io.use((socket, next) => {
         const sessionId = socket.handshake.auth.sessionId
         if (sessionId) {
             const session: Session | undefined = sessionStore.findSession(sessionId)
@@ -59,7 +61,7 @@ app.prepare().then(() => {
                 socket.data.playerName = session.playerName
                 socket.data.playerState = session.playerState
                 socket.data.messages = messageStore.findMessagesForRoom(session.roomName)
-                socket.data.game = gameStore.findGame(session.roomName)
+                socket.data.game = gameStore.findGame(session.roomName) ?? gameStore.create(session.roomName, io, [])
                 return next()
             }
         }
@@ -81,7 +83,7 @@ app.prepare().then(() => {
         next()
     })
 
-    io.on('connection', (socket: Socket) => {
+    io.on('connection', (socket) => {
         GameHandler(io, socket, { sessionStore, messageStore, cleanStores })
     })
 
@@ -91,7 +93,7 @@ app.prepare().then(() => {
         setTimeout(async () => {
             try {
                 const sockets = await io.fetchSockets()
-                const rooms = new Set(sockets.map((s) => s.data.roomName))
+                const rooms = new Set(sockets.map((s) => socketData(s).roomName))
 
                 for (const room of rooms) {
                     const game = gameStore.findGame(room)

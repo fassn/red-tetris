@@ -13,7 +13,7 @@ const Welcome = () => {
         event.preventDefault()
         const target = event.target as EventTarget & FormData
 
-        router.push(`/#${target.room_name.value}[${target.player_name.value}]`)
+        router.push(`/#${encodeURIComponent(target.room_name.value)}/${encodeURIComponent(target.player_name.value)}`)
     }
 
     return (

@@ -41,7 +41,7 @@ const Home: NextPage = () => {
             socket.playerId = playerId
         }
 
-        const handleNewState = ({ playerState, otherPlayerState }: { playerState: PlayerState, otherPlayerState: PlayerState }) => {
+        const handleNewState = ({ playerState, otherPlayerState }: { playerState?: PlayerState, otherPlayerState?: PlayerState }) => {
             if (playerState) {
                 setPlayerState(playerState)
             }
@@ -64,10 +64,13 @@ const Home: NextPage = () => {
     }, [])
 
     const parseHash = (url: string) => {
-        const hash: string = url.split('#')[1] || '';
-        const match = hash.match(/[^\[\]]+/g)
-        if (match) return { room: match[0], playerName: match[1] }
-        return {}
+        const hash = url.split('#')[1] || ''
+        const separatorIndex = hash.indexOf('/')
+        if (separatorIndex === -1) return {}
+        const room = decodeURIComponent(hash.slice(0, separatorIndex))
+        const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
+        if (!room || !playerName) return {}
+        return { room, playerName }
     }
 
     const handleParams = (url: string) => {
