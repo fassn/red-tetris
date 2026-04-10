@@ -13,26 +13,26 @@ const ConnectionOverlay = ({ status, error }: ConnectionOverlayProps) => {
             <div className='bg-white rounded-lg shadow-xl p-8 mx-4 max-w-sm text-center' role='alert' aria-live='assertive'>
                 {status === 'connecting' && (
                     <>
-                        <div className='animate-spin h-8 w-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto mb-4' aria-hidden='true' />
+                        <div className='animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full mx-auto mb-4' aria-hidden='true' />
                         <p className='text-lg font-semibold'>Connecting…</p>
-                        <p className='text-gray-500 text-sm mt-1'>Please wait</p>
+                        <p className='text-neutral-500 text-sm mt-1'>Please wait</p>
                     </>
                 )}
                 {status === 'disconnected' && (
                     <>
                         <div className='animate-spin h-8 w-8 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4' aria-hidden='true' />
                         <p className='text-lg font-semibold'>Connection lost</p>
-                        <p className='text-gray-500 text-sm mt-1'>Reconnecting…</p>
+                        <p className='text-neutral-500 text-sm mt-1'>Reconnecting…</p>
                     </>
                 )}
                 {status === 'error' && (
                     <>
-                        <div className='h-8 w-8 mx-auto mb-4 text-red-500 text-3xl' aria-hidden='true'>✕</div>
+                        <div className='h-8 w-8 mx-auto mb-4 text-brand-hover text-3xl' aria-hidden='true'>✕</div>
                         <p className='text-lg font-semibold'>Connection failed</p>
-                        <p className='text-gray-500 text-sm mt-1'>{error || 'Unable to reach the server'}</p>
+                        <p className='text-neutral-500 text-sm mt-1'>{error || 'Unable to reach the server'}</p>
                         <button
                             onClick={() => window.location.reload()}
-                            className='mt-4 px-6 py-2 bg-red-400 text-white rounded hover:bg-red-500 transition-colors'
+                            className='mt-4 px-6 py-2 bg-brand text-white rounded hover:bg-brand-hover transition-colors'
                         >
                             Retry
                         </button>

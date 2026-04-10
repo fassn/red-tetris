@@ -58,11 +58,11 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
                 ref={canvasRef}
                 width={MINI_WIDTH}
                 height={MINI_HEIGHT}
-                className='rounded border border-gray-300'
+                className='rounded border border-neutral-300'
                 role='img'
                 aria-label={`${playerName}'s board — ${stateLabel}`}
             />
-            <span className='text-[10px] text-gray-500'>{stateLabel}</span>
+            <span className='text-[10px] text-neutral-500'>{stateLabel}</span>
         </div>
     )
 }
