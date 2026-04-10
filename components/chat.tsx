@@ -58,34 +58,34 @@ const Chat = ({ playerName }: ChatProps) => {
     }
 
     return (
-        <div className='flex flex-col bg-white w-full rounded-lg shadow-sm shadow-brand overflow-hidden flex-1' role='region' aria-label='Chat'>
+        <div className='flex flex-col bg-surface-card w-full rounded-lg shadow-sm shadow-brand overflow-hidden flex-1' role='region' aria-label='Chat'>
             <div className='flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-brand' aria-live='polite' aria-relevant='additions'>
             {messages.map((msg, i) => {
                 return (
                 <div
-                    className="w-full py-2 px-3 border-b border-neutral-100"
+                    className="w-full py-2 px-3 border-b border-edge-subtle"
                     key={i}
                 >
                     <span className='sr-only'>{msg.author} says:</span>
-                    <span className='font-semibold text-brand-dark'>{msg.author}:</span>{' '}
-                    <span className='text-neutral-600'>{msg.message}</span>
+                    <span className='font-semibold text-brand'>{msg.author}:</span>{' '}
+                    <span className='text-content-secondary'>{msg.message}</span>
                 </div>
                 );
             })}
             </div>
-            <div className="border-t border-neutral-200 w-full flex">
+            <div className="border-t border-edge w-full flex">
             <input
                 id='message_input'
                 type="text"
                 placeholder="New message..."
                 value={message}
                 aria-label='Chat message'
-                className="py-2.5 px-3 flex-1 text-sm placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
+                className="py-2.5 px-3 flex-1 text-sm bg-surface-input placeholder:text-content-muted outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyUp={handleKeypress}
             />
             <button
-                className="uppercase px-4 text-sm font-semibold bg-brand hover:bg-brand-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
+                className="uppercase px-4 text-sm font-semibold bg-brand hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
                 aria-label='Send message'
                 onClick={() => {
                     sendMessage();

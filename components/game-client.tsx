@@ -1,8 +1,9 @@
 import { useContext, useEffect, useRef, useState } from "react"
 import { SocketContext } from "../context/socket"
+import { useTheme } from "../context/theme"
 
 import { BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
-import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece } from "../utils/draw"
+import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
@@ -17,6 +18,7 @@ type GameClientProps = {
 
 const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientProps) => {
     const socket = useContext(SocketContext)
+    const { theme } = useTheme()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const previewRef = useRef<HTMLCanvasElement>(null)
     const keysDown = useRef(new Set<string>())
@@ -31,16 +33,21 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const gameWon = useRef<boolean>(false)
     const loseColorIndex = useRef<number>(0)
 
+    // Sync canvas background colors with CSS theme
+    useEffect(() => {
+        syncCanvasTheme()
+    }, [theme])
+
     useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled })
 
-    // Draw next piece preview when it changes
+    // Draw next piece preview when it changes or theme switches
     useEffect(() => {
         const canvas = previewRef.current
         if (!canvas) return
         const ctx = canvas.getContext('2d')
         if (!ctx) return
         drawPreviewPiece(ctx, nextPiece)
-    }, [nextPiece])
+    }, [nextPiece, theme])
 
     // Render loop — throttled to TICK_RATE to match server tick rate
     useEffect(() => {
@@ -133,10 +140,10 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     return (
         <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start h-[calc(100dvh-5.5rem)] sm:h-auto'>
             {isPlaying && (
-                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-around sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
-                    <div className='flex flex-row sm:flex-col items-center sm:items-start gap-4'>
+                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
+                    <div className='flex flex-col items-center sm:items-start gap-3 sm:gap-4'>
                         <div className='flex flex-col gap-1'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Next</span>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
                             <canvas
                                 ref={previewRef}
                                 width={90}
@@ -145,11 +152,11 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                             />
                         </div>
                         <div className='flex flex-col'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Score</span>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Score</span>
                             <span className='text-2xl font-bold tabular-nums'>{score}</span>
                         </div>
                         <div className='flex flex-col'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Level</span>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Level</span>
                             <span className='text-2xl font-bold'>{level}</span>
                         </div>
                     </div>

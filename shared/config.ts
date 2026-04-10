@@ -1,4 +1,4 @@
-export { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, COLOR_PALETTE } from './palette'
+export { BACKGROUND_COLOR, COLOR_PALETTE } from './palette'
 
 export const TICK_RATE = 60 // Server ticks per second (~16.67ms per tick)
 export const SOFT_DROP_MS = 50 // Minimum ms between soft-drop moves (down key held)

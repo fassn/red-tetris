@@ -17,7 +17,7 @@ const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
     <div className='px-4 py-4'>
         <h2 className='text-lg font-semibold mb-2'>Players</h2>
         {otherPlayers.length === 0 ? (
-            <p className='text-neutral-400 text-sm'>Waiting for players to join…</p>
+            <p className='text-content-muted text-sm'>Waiting for players to join…</p>
         ) : (
             <ul className='space-y-1' aria-label='Player list'>
                 {otherPlayers.map((p) => (
@@ -55,7 +55,7 @@ const HostMenu = ({ otherPlayers, onStartGame }: { otherPlayers: RoomPlayer[], o
                         : 'Wait for players to be ready or start alone.'}
                 </div>
                 <div className='border-t-2 border-brand-hover' />
-                <button onClick={onStartGame} className='py-3 w-full max-w-xs self-center text-lg uppercase font-semibold mt-8 bg-brand rounded hover:bg-brand-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2'>Start Game</button>
+                <button onClick={onStartGame} className='py-3 w-full max-w-xs self-center text-lg uppercase font-semibold mt-8 bg-brand rounded hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2'>Start Game</button>
             </div>
         </>
     )
@@ -88,7 +88,7 @@ const Lobby = ({ playerState, otherPlayers }: LobbyProps) => {
     }
 
     const anyPlaying = otherPlayers.some((p) => p.state.playState === PlayState.PLAYING)
-    const card = 'bg-white rounded-lg shadow-sm shadow-brand overflow-hidden'
+    const card = 'bg-surface-card rounded-lg shadow-sm shadow-brand overflow-hidden'
 
     if (playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME) {
         return <div className={card}><Logo /></div>

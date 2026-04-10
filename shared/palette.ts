@@ -1,8 +1,10 @@
 /**
- * TypeScript re-export of the shared color palette with RGBA helpers for canvas rendering.
+ * Canvas-ready RGBA constants for rendering code (server + client).
+ * Hex values match the CSS custom properties defined in globals.css.
+ * Canvas cannot read CSS variables, so these are hardcoded here.
+ *
+ * Client-side theme-aware values are resolved at runtime via syncCanvasTheme() in draw.ts.
  */
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const palette = require('./colors.js')
 import { RGBA } from './types'
 
 function hexToRgba(hex: string, a = 255): RGBA {
@@ -12,13 +14,14 @@ function hexToRgba(hex: string, a = 255): RGBA {
     return { r, g, b, a }
 }
 
-// Canvas-ready RGBA colors
-export const APP_BACKGROUND_COLOR: RGBA = hexToRgba(palette.surface.app)
-export const BACKGROUND_COLOR: RGBA = hexToRgba(palette.surface.board)
+// Default empty tile color (dark circles on the board)
+export const BACKGROUND_COLOR: RGBA = hexToRgba('#1e293b')      // slate-800 — matches --surface-card (dark)
+
+// Piece colors (static — same in both themes)
 export const COLOR_PALETTE: RGBA[] = [
-    hexToRgba(palette.piece.red),
-    hexToRgba(palette.piece.green),
-    hexToRgba(palette.piece.blue),
+    hexToRgba('#f87171'), // red   — matches --brand
+    hexToRgba('#84cc16'), // green
+    hexToRgba('#60a5fa'), // blue
 ]
 
-export { palette, hexToRgba }
+export { hexToRgba }

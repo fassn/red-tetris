@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { BACKGROUND_COLOR, COLS, ROWS, SPACING } from '../shared/config'
+import { COLS, ROWS } from '../shared/config'
+import { getTileBg } from '../utils/draw'
 import { PlayState, RGBA, Stack } from '../shared/types'
 
 const MINI_TILE = 8
@@ -27,14 +28,14 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
-        const bg = BACKGROUND_COLOR
+        const tileBg = getTileBg()
         let x = 0
         let y = 0
 
         for (let col = 0; col < COLS; col++) {
             for (let row = 0; row < ROWS; row++) {
                 const t = stack[row * COLS + col]
-                ctx.fillStyle = t.isFilled ? rgba(t.color) : rgba(bg)
+                ctx.fillStyle = t.isFilled ? rgba(t.color) : tileBg
                 ctx.beginPath()
                 ctx.roundRect(x, y, MINI_TILE, MINI_TILE, MINI_RADIUS)
                 ctx.fill()
@@ -58,11 +59,11 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
                 ref={canvasRef}
                 width={MINI_WIDTH}
                 height={MINI_HEIGHT}
-                className='rounded border border-neutral-300'
+                className='rounded border border-edge'
                 role='img'
                 aria-label={`${playerName}'s board — ${stateLabel}`}
             />
-            <span className='hidden sm:block text-xs text-neutral-500'>{stateLabel}</span>
+            <span className='hidden sm:block text-xs text-content-secondary'>{stateLabel}</span>
         </div>
     )
 }

@@ -3,11 +3,61 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Brand — static across themes */
+    --brand: #f87171;           /* red-400 */
+    --brand-hover: #ef4444;     /* red-500 */
+    --brand-dark: #b91c1c;      /* red-700 */
+    --brand-darker: #7f1d1d;    /* red-900 */
+    --brand-light: #fee2e2;     /* red-100 */
+
+    /* Status — static across themes */
+    --status-ready: #22c55e;    /* green-500 */
+    --status-playing: #3b82f6;  /* blue-500 */
+    --status-inactive: #9ca3af; /* gray-400 */
+    --status-muted: #d1d5db;    /* gray-300 */
+
+    /* Theme-aware surfaces */
+    --surface-app: #f8fafc;     /* slate-50 */
+    --surface-card: #ffffff;
+    --surface-input: #ffffff;
+    --surface-tile: #e2e8f0;    /* slate-200 — board tile bg (needs contrast with app bg) */
+
+    /* Theme-aware content */
+    --content: #111827;         /* gray-900 */
+    --content-secondary: #6b7280; /* gray-500 */
+    --content-muted: #9ca3af;   /* gray-400 */
+    --content-inverse: #ffffff;
+
+    /* Theme-aware edges */
+    --edge: #e5e7eb;            /* gray-200 */
+    --edge-subtle: #f3f4f6;     /* gray-100 */
+  }
+
+  .dark {
+    --surface-app: #0f172a;     /* slate-950 */
+    --surface-card: #1e293b;    /* slate-800 */
+    --surface-input: #334155;   /* slate-700 */
+    --surface-tile: #1e293b;    /* slate-800 — same as card in dark */
+    --content: #f1f5f9;         /* slate-100 */
+    --content-secondary: #94a3b8; /* slate-400 */
+    --content-muted: #64748b;   /* slate-500 */
+    --content-inverse: #0f172a; /* slate-950 */
+    --edge: #334155;            /* slate-700 */
+    --edge-subtle: #1e293b;     /* slate-800 */
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
   body {
-    @apply bg-surface-app;
+    @apply bg-surface-app text-content;
+  }
+
+  /* Adapt focus ring offset to theme automatically */
+  .dark *:focus {
+    --tw-ring-offset-color: var(--surface-card);
   }
 }
