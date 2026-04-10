@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 
 import Chat from '../components/chat'
+import ConnectionOverlay from '../components/connection-overlay'
 import { socket } from '../context/socket'
 
 import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
+import { useConnectionStatus } from '../hooks/use-connection-status'
 import { PlayerState, PlayState, RoomPlayer } from '../shared/types'
 
 function parseHash(url: string) {
@@ -32,6 +34,7 @@ function connectSocket(roomName: string, playerName: string) {
 
 const Home: NextPage = () => {
     const router = useRouter()
+    const { status: connectionStatus, error: connectionError, markConnecting } = useConnectionStatus()
 
     const [playerName, setPlayerName] = useState('')
     const [isLobby, setIsLobby] = useState(false)
@@ -44,6 +47,7 @@ const Home: NextPage = () => {
         if (room && name) {
             setPlayerName(name)
             setIsLobby(true)
+            markConnecting()
             connectSocket(room, name)
         }
 
@@ -52,6 +56,7 @@ const Home: NextPage = () => {
             if (room && name) {
                 setPlayerName(name)
                 setIsLobby(true)
+                markConnecting()
                 connectSocket(room, name)
             }
         }
@@ -97,6 +102,9 @@ const Home: NextPage = () => {
                 <meta name="description" content="A Typescript Implementation of Tetris" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
+            {isLobby && (
+                <ConnectionOverlay status={connectionStatus} error={connectionError} />
+            )}
             {
                 isLobby ?
                 <main className='h-screen px-8'>
