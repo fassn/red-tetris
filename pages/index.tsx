@@ -102,22 +102,25 @@ const Home: NextPage = () => {
                 <meta name="description" content="A Typescript Implementation of Tetris" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
+            <a href='#main-content' className='sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow'>
+                Skip to content
+            </a>
             {isLobby && (
                 <ConnectionOverlay status={connectionStatus} error={connectionError} />
             )}
             {
                 isLobby ?
-                <main className='min-h-screen px-4 pb-24 lg:px-8'>
+                <main id='main-content' className='min-h-screen px-4 pb-24 lg:px-8' aria-label='Game room'>
                     <div className='flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-6 py-8 lg:py-20'>
-                        <div className='flex flex-shrink-0 flex-col w-full max-w-sm lg:w-80 xl:w-96 lg:place-content-between order-2 lg:order-1'>
+                        <section className='flex flex-shrink-0 flex-col w-full max-w-sm lg:w-80 xl:w-96 lg:place-content-between order-2 lg:order-1' aria-label='Lobby'>
                             <Lobby playerState={playerState} otherPlayers={otherPlayers} />
-                        </div>
-                        <div className='order-1 lg:order-2'>
+                        </section>
+                        <section className='order-1 lg:order-2' aria-label='Game'>
                             <GameClient playerState={playerState} />
-                        </div>
-                        <div className='flex flex-col w-full max-w-sm lg:w-72 xl:w-80 order-3'>
+                        </section>
+                        <section className='flex flex-col w-full max-w-sm lg:w-72 xl:w-80 order-3' aria-label='Chat'>
                             <Chat playerName={playerName} />
-                        </div>
+                        </section>
                     </div>
                 </main>
                 :

@@ -58,14 +58,15 @@ const Chat = ({ playerName }: ChatProps) => {
     }
 
     return (
-        <div className='flex flex-col justify-end bg-white w-full rounded-md shadow-sm shadow-red-500'>
-            <div className='h-64 lg:h-96 overflow-y-auto rounded-t-md scrollbar-thin scrollbar-thumb-red-400'>
+        <div className='flex flex-col justify-end bg-white w-full rounded-md shadow-sm shadow-red-500' role='region' aria-label='Chat'>
+            <div className='h-64 lg:h-96 overflow-y-auto rounded-t-md scrollbar-thin scrollbar-thumb-red-400' aria-live='polite' aria-relevant='additions'>
             {messages.map((msg, i) => {
                 return (
                 <div
                     className="w-full text-red-900 py-1 px-2 border-b border-red-100"
                     key={i}
                 >
+                    <span className='sr-only'>{msg.author} says:</span>
                     {msg.author} : {msg.message}
                 </div>
                 );
@@ -77,6 +78,7 @@ const Chat = ({ playerName }: ChatProps) => {
                 type="text"
                 placeholder="New message..."
                 value={message}
+                aria-label='Chat message'
                 className="text-red-700 placeholder-red-700 outline-none py-2 px-2 rounded-bl-md flex-1"
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyUp={handleKeypress}
@@ -84,6 +86,7 @@ const Chat = ({ playerName }: ChatProps) => {
             <div className="flex justify-center text-black bg-red-400 items-center rounded-br-md hover:text-white transition-all">
                 <button
                 className="uppercase px-3 h-full"
+                aria-label='Send message'
                 onClick={() => {
                     sendMessage();
                 }}

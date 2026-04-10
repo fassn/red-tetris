@@ -19,19 +19,19 @@ const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
         {otherPlayers.length === 0 ? (
             <p className='text-gray-400 text-sm'>Waiting for players to join…</p>
         ) : (
-            <ul className='space-y-1'>
+            <ul className='space-y-1' aria-label='Player list'>
                 {otherPlayers.map((p) => (
                     <li key={p.playerId} className='flex items-center justify-between text-sm'>
                         <span>
                             {p.playerName}
-                            {p.state.host && <span className='ml-1 text-red-400'>★</span>}
+                            {p.state.host && <span className='ml-1 text-red-400' aria-label='Host'>★</span>}
                         </span>
                         <span className={
                             p.state.playState === PlayState.READY ? 'text-green-500' :
                             p.state.playState === PlayState.PLAYING ? 'text-blue-500' :
                             p.state.playState === PlayState.ENDGAME ? 'text-gray-400' :
                             'text-gray-300'
-                        }>
+                        } aria-label={`Status: ${PlayState[p.state.playState]}`}>
                             {PlayState[p.state.playState]}
                         </span>
                     </li>

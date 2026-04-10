@@ -108,6 +108,9 @@ const GameClient = ({ playerState }: GameClientProps) => {
                 height={CANVASHEIGHT}
                 className='max-w-full h-auto'
                 onClick={handleClick}
+                role='img'
+                aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
+                tabIndex={0}
             />
         </div>
     )
