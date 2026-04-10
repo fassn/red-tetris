@@ -36,11 +36,13 @@ const Chat = ({ playerName }: ChatProps) => {
         }
     }, [])
 
-    const sendMessage = async () => {
-        socket.emit('createdMessage', { author: playerName, message })
+    const sendMessage = () => {
+        const trimmed = message.trim()
+        if (!trimmed) return
+        socket.emit('createdMessage', { author: playerName, message: trimmed })
         setMessages((currentMsg) => [
             ...currentMsg,
-            { author: playerName, message }
+            { author: playerName, message: trimmed }
         ])
         setMessage('')
     }

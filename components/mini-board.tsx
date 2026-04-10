@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { COLS, ROWS } from '../shared/config'
 import { useTheme } from '../context/theme'
-import { getTileBg } from '../utils/draw'
+import { syncCanvasTheme, getTileBg } from '../utils/draw'
 import { PlayState, RGBA, Stack } from '../shared/types'
 
 const MINI_TILE = 8
@@ -30,6 +30,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
+        syncCanvasTheme()
         const tileBg = getTileBg()
         let x = 0
         let y = 0
