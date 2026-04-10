@@ -32,6 +32,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
 
         syncCanvasTheme()
         const tileBg = getTileBg()
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
         let x = 0
         let y = 0
 
