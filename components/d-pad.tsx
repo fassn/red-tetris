@@ -27,7 +27,7 @@ const DPad = ({ disabled }: DPadProps) => {
     const btn = 'flex items-center justify-center w-16 h-12 rounded-lg bg-surface-card border border-edge text-xl font-bold active:bg-brand active:text-content-inverse select-none transition-colors'
 
     return (
-        <div className='flex sm:hidden items-center justify-center gap-6 py-2' role='group' aria-label='Game controls'>
+        <div className='flex lg:hidden items-center justify-center gap-6 py-2' role='group' aria-label='Game controls'>
             <button
                 className={btn}
                 aria-label='Move left'

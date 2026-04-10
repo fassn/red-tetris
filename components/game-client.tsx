@@ -191,7 +191,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                 tabIndex={0}
             />
             {isPlaying && playerState.playState === PlayState.PLAYING && (
-                <div className='order-3 sm:hidden w-full'>
+                <div className='order-3 lg:hidden w-full'>
                     <DPad />
                 </div>
             )}
