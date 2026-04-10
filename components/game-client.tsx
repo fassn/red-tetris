@@ -141,7 +141,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const hasMiniboards = activeOpponents.length > 0
 
     return (
-        <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:items-start max-h-[calc(100dvh-5rem)] sm:max-h-none'>
+        <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:items-start h-full sm:h-auto'>
             {isPlaying && (
                 <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-2 sm:gap-0 flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
                     <div className={`flex ${hasMiniboards ? 'flex-col' : 'flex-row'} sm:flex-col items-center sm:items-start gap-2 sm:gap-4`}>
