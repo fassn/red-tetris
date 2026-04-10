@@ -131,7 +131,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     return (
-        <div className='flex flex-col items-center gap-4 lg:flex-row lg:items-start'>
+        <div className='flex flex-col items-center gap-4 sm:flex-row sm:items-start'>
             <canvas
                 ref={canvasRef}
                 width={BOARDWIDTH}
