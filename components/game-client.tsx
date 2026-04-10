@@ -132,18 +132,8 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
 
     return (
         <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start'>
-            <canvas
-                ref={canvasRef}
-                width={BOARDWIDTH}
-                height={BOARDHEIGHT}
-                className='block max-w-full max-h-[calc(100dvh-6rem)] w-auto h-auto sm:max-h-none'
-                onClick={handleClick}
-                role='img'
-                aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
-                tabIndex={0}
-            />
             {isPlaying && (
-                <div className='flex flex-row sm:flex-col items-center sm:items-start justify-around sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
+                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-around sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
                     <div className='flex flex-row sm:flex-col items-center sm:items-start gap-4'>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Next</span>
@@ -180,6 +170,16 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                     )}
                 </div>
             )}
+            <canvas
+                ref={canvasRef}
+                width={BOARDWIDTH}
+                height={BOARDHEIGHT}
+                className='order-2 sm:order-1 block max-w-full max-h-[calc(100dvh-11rem)] w-auto h-auto sm:max-h-none'
+                onClick={handleClick}
+                role='img'
+                aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
+                tabIndex={0}
+            />
         </div>
     )
 }
