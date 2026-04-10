@@ -136,7 +136,7 @@ const Home: NextPage = () => {
                 isLobby ?
                 <main id='main-content' className='flex-1 px-4 sm:px-8' aria-label='Game room'>
                     <div className='flex flex-col items-center sm:flex-row sm:items-start sm:justify-center gap-6 py-4 sm:py-12'>
-                        <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96${isInGame ? ' hidden sm:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
+                        <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96${isInGame ? ' hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
                             <section aria-label='Lobby'>
                                 <Lobby playerState={playerState} otherPlayers={otherPlayers} />
                             </section>
