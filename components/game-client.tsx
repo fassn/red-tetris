@@ -141,10 +141,10 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const hasMiniboards = activeOpponents.length > 0
 
     return (
-        <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start h-[calc(100dvh-5.5rem)] sm:h-auto'>
+        <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:items-start max-h-[calc(100dvh-5rem)] sm:max-h-none'>
             {isPlaying && (
-                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-3 sm:gap-0 flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
-                    <div className={`flex ${hasMiniboards ? 'flex-col' : 'flex-row'} sm:flex-col items-center sm:items-start gap-3 sm:gap-4`}>
+                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-2 sm:gap-0 flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
+                    <div className={`flex ${hasMiniboards ? 'flex-col' : 'flex-row'} sm:flex-col items-center sm:items-start gap-2 sm:gap-4`}>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
                             <canvas
@@ -180,12 +180,13 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                     )}
                 </div>
             )}
-            <div className='order-2 sm:order-1 flex flex-col items-center'>
+            <div className='order-2 sm:order-1 flex flex-col items-center min-h-0 flex-1 sm:flex-none'>
                 <canvas
                     ref={canvasRef}
                     width={BOARDWIDTH}
                     height={BOARDHEIGHT}
-                    className='block min-h-0 max-w-full w-auto sm:min-h-[auto]'
+                    className='block max-w-full max-h-full w-auto h-auto object-contain'
+                    style={{ aspectRatio: `${BOARDWIDTH} / ${BOARDHEIGHT}` }}
                     onClick={handleClick}
                     role='img'
                     aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
