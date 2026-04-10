@@ -107,15 +107,15 @@ const Home: NextPage = () => {
             )}
             {
                 isLobby ?
-                <main className='h-screen px-8'>
-                    <div className='flex py-20'>
-                        <div className='flex flex-shrink-0 flex-col w-96 place-content-between'>
+                <main className='min-h-screen px-4 pb-24 lg:px-8'>
+                    <div className='flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-6 py-8 lg:py-20'>
+                        <div className='flex flex-shrink-0 flex-col w-full max-w-sm lg:w-80 xl:w-96 lg:place-content-between order-2 lg:order-1'>
                             <Lobby playerState={playerState} otherPlayers={otherPlayers} />
                         </div>
-                        <GameClient playerState={playerState}
-                        />
-                        <div className='flex w-auto justify-end'>
-                            <div className='border-l border-2 border-red-500 mr-24'></div>
+                        <div className='order-1 lg:order-2'>
+                            <GameClient playerState={playerState} />
+                        </div>
+                        <div className='flex flex-col w-full max-w-sm lg:w-72 xl:w-80 order-3'>
                             <Chat playerName={playerName} />
                         </div>
                     </div>

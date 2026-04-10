@@ -55,7 +55,7 @@ const HostMenu = ({ otherPlayers, onStartGame }: { otherPlayers: RoomPlayer[], o
                         : 'Wait for players to be ready or start alone.'}
                 </div>
                 <div className='border-t border-2 border-red-500'></div>
-                <button onClick={onStartGame} className='py-4 w-72 self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
+                <button onClick={onStartGame} className='py-4 w-full max-w-xs self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
             </div>
         </>
     )

@@ -1,6 +1,5 @@
 import { KeyboardEvent, useContext, useEffect, useState } from "react";
 import { SocketContext } from "../context/socket";
-import { BOARDHEIGHT } from "../shared/config";
 
 type Message = {
     author: string,
@@ -59,8 +58,8 @@ const Chat = ({ playerName }: ChatProps) => {
     }
 
     return (
-        <div className='flex flex-col justify-end bg-white min-w-[33%] rounded-md shadow-sm shadow-red-500 shad'>
-            <div className={`h-[${BOARDHEIGHT - 41}px] rounded-t-md scrollbar-thin scrollbar-thumb-red-400`}>
+        <div className='flex flex-col justify-end bg-white w-full rounded-md shadow-sm shadow-red-500'>
+            <div className='h-64 lg:h-96 overflow-y-auto rounded-t-md scrollbar-thin scrollbar-thumb-red-400'>
             {messages.map((msg, i) => {
                 return (
                 <div

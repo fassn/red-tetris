@@ -106,6 +106,7 @@ const GameClient = ({ playerState }: GameClientProps) => {
                 ref={canvasRef}
                 width={CANVASWIDTH}
                 height={CANVASHEIGHT}
+                className='max-w-full h-auto'
                 onClick={handleClick}
             />
         </div>
