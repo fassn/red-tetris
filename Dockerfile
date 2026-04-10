@@ -25,9 +25,9 @@ COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/server.ts ./
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/tsconfig.json ./
-COPY --from=builder /app/utils ./utils
 COPY --from=builder /app/next.config.js ./
 
 USER nextjs
@@ -35,4 +35,4 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 
-CMD ["npx", "tsx", "server.ts"]
+CMD ["npx", "tsx", "server/index.ts"]

@@ -1,6 +1,6 @@
 import { KeyboardEvent, useContext, useEffect, useState } from "react";
 import { SocketContext } from "../context/socket";
-import { BOARDHEIGHT } from "../utils/config";
+import { BOARDHEIGHT } from "../shared/config";
 
 type Message = {
     author: string,

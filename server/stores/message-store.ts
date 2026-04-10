@@ -1,12 +1,9 @@
+import type { Message } from "../../shared/types"
+
 export interface MessageStore {
     saveMessage(roomName: string, message: Message): void
     findMessagesForRoom(roomName: string): Message[]
     removeMessagesFromRoom(roomName: string): void
-}
-
-export type Message = {
-    author: string,
-    message: string
 }
 
 export default class InMemoryMessageStore implements MessageStore {

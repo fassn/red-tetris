@@ -1,8 +1,8 @@
-import type { TypedServer } from "./socket-types"
-import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import type { TypedServer } from "./io-types"
+import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
-import { PieceProps, PieceType, RGBA, Stack } from "./types"
+import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
 class Game {
     io: TypedServer
     players: Player[]

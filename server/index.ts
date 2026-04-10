@@ -3,14 +3,15 @@ import next from 'next'
 import { Server } from 'socket.io'
 import * as crypto from 'crypto'
 
-import GameHandler from './utils/game-handler'
-import InMemorySessionStore, { Session } from './utils/stores/session-store'
-import InMemoryMessageStore from './utils/stores/message-store'
-import InMemoryGameStore from './utils/stores/game-store'
-import { FRAMERATE } from './utils/config'
-import Player from './utils/player'
-import { PlayState } from './utils/types'
-import type { ClientToServerEvents, ServerToClientEvents, SocketData } from './utils/socket-types'
+import GameHandler from './game-handler'
+import InMemorySessionStore, { Session } from './stores/session-store'
+import InMemoryMessageStore from './stores/message-store'
+import InMemoryGameStore from './stores/game-store'
+import { FRAMERATE } from '../shared/config'
+import Player from './player'
+import { PlayState } from '../shared/types'
+import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
+import type { SocketData } from './io-types'
 import {
     checkIfPieceHasHit,
     emitEndGameToPlayers,
@@ -18,7 +19,7 @@ import {
     emitStackAndScore,
     movePieceDown,
     updatePiecesStack,
-} from './utils/gameloop'
+} from './gameloop'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOST || '0.0.0.0'

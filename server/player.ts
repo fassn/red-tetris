@@ -1,7 +1,7 @@
-import type { TypedSocket } from "./socket-types"
+import type { TypedSocket } from "./io-types"
 import Piece from "./piece"
-import { createEmptyStack } from "./stack"
-import { Stack } from "./types"
+import { createEmptyStack } from "../shared/stack"
+import { Stack } from "../shared/types"
 
 class Player {
     id: string

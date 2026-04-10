@@ -10,7 +10,7 @@ import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
-import { PlayerState, PlayState } from '../utils/types'
+import { PlayerState, PlayState } from '../shared/types'
 
 const Home: NextPage = () => {
     const socket = useContext(SocketContext)

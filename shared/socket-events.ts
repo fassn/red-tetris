@@ -1,7 +1,4 @@
-import type { Server, Socket, RemoteSocket } from "socket.io"
-import type Game from "./game"
-import type { Message } from "./stores/message-store"
-import type { PieceProps, PlayerState, Point, Stack } from "./types"
+import type { PieceProps, PlayerState, Point, Stack, Message } from "./types"
 
 export interface ServerToClientEvents {
     session: (data: { sessionId: string; playerId: string }) => void
@@ -31,17 +28,3 @@ export interface ClientToServerEvents {
     quitGame: () => void
     createdMessage: (msg: Message) => void
 }
-
-export interface SocketData {
-    sessionId: string
-    playerId: string
-    roomName: string
-    playerName: string
-    playerState: PlayerState
-    messages: Message[]
-    game: Game
-}
-
-export type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>
-export type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>
-export type TypedRemoteSocket = RemoteSocket<ServerToClientEvents, SocketData>

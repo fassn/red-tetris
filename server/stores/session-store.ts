@@ -1,4 +1,4 @@
-import { PlayerState } from "../types"
+import { PlayerState } from "../../shared/types"
 
 export interface SessionStore {
     findSession(id: string): Session | undefined

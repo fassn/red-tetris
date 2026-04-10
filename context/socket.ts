@@ -1,6 +1,6 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
-import type { ServerToClientEvents, ClientToServerEvents } from "../utils/socket-types";
+import type { ServerToClientEvents, ClientToServerEvents } from "../shared/socket-events";
 
 interface ClientSocketWithProps extends Socket<ServerToClientEvents, ClientToServerEvents> {
     playerId?: string

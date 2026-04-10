@@ -44,3 +44,8 @@ export type PlayerState = {
     host: boolean
     playState: PlayState
 }
+
+export type Message = {
+    author: string,
+    message: string
+}

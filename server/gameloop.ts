@@ -1,9 +1,9 @@
-import type { TypedServer } from './socket-types'
-import { SPACING, TILEHEIGHT } from "./config"
+import type { TypedServer } from './io-types'
+import { SPACING, TILEHEIGHT } from "../shared/config"
 import Game from "./game"
 import Piece from "./piece"
 import Player from "./player"
-import { PlayState, Stack } from "./types"
+import { PlayState, Stack } from "../shared/types"
 
 export function emitNextPiece(io: TypedServer, game: Game, player: Player, playerPieces: Piece[]) {
     const newCurrentPiece = game.getPieceProps(playerPieces[0])

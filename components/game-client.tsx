@@ -7,11 +7,11 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
 import { useContext, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
-import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../utils/config"
+import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../shared/config"
 import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles } from "../utils/draw"
-import { createEmptyPiece, createEmptyStack } from "../utils/stack"
-import useListeners from "../utils/use-listeners"
-import { PieceProps, PlayerState, PlayState, Stack, TileProps } from "../utils/types"
+import { createEmptyPiece, createEmptyStack } from "../shared/stack"
+import useListeners from "../hooks/use-listeners"
+import { PieceProps, PlayerState, PlayState, Stack, TileProps } from "../shared/types"
 
 enum ARROW {
     UP,

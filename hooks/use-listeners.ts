@@ -1,7 +1,7 @@
 import { MutableRefObject, useContext, useEffect } from "react"
-import { createEmptyPiece, createEmptyStack } from "./stack"
+import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import { SocketContext } from "../context/socket"
-import { PieceProps, Stack, TileProps } from "./types"
+import { PieceProps, Stack, TileProps } from "../shared/types"
 
 type useListenersProps = {
     stack: MutableRefObject<Stack[]>,

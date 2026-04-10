@@ -1,4 +1,4 @@
-import type { TypedServer } from "../socket-types"
+import type { TypedServer } from "../io-types"
 import Game from "../game"
 import Player from "../player"
 

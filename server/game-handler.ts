@@ -1,9 +1,9 @@
-import { SPACING, TILEWIDTH } from "./config"
-import InMemoryMessageStore, { Message } from "./stores/message-store"
+import { SPACING, TILEWIDTH } from "../shared/config"
+import InMemoryMessageStore from "./stores/message-store"
 import InMemorySessionStore from "./stores/session-store"
 import Player from "./player"
-import { PlayerState, PlayState } from "./types"
-import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./socket-types"
+import { PlayerState, PlayState, Message } from "../shared/types"
+import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
 
 export type GameDeps = {
     sessionStore: InMemorySessionStore

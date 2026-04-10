@@ -1,5 +1,5 @@
-import { TILEWIDTH, TILEHEIGHT, SPACING } from "./config"
-import { Points } from "./types"
+import { TILEWIDTH, TILEHEIGHT, SPACING } from "../shared/config"
+import { Points } from "../shared/types"
 
 const w = TILEWIDTH+SPACING
 const h = TILEHEIGHT+SPACING

@@ -1,6 +1,6 @@
-import { BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { BOARDHEIGHT, BOARDWIDTH, CANVASCENTER, COLS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import { POINTS } from "./points"
-import { PieceType, Point, RGBA, ROTATION, Stack } from "./types"
+import { PieceType, Point, RGBA, ROTATION, Stack } from "../shared/types"
 
 class Piece {
     private type: PieceType
