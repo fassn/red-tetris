@@ -1,10 +1,4 @@
-import dynamic from "next/dynamic"
-import { P5CanvasInstance, P5WrapperProps, Sketch } from "react-p5-wrapper"
-const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
-    .then(mod => mod.ReactP5Wrapper), {
-    ssr: false
-}) as unknown as React.NamedExoticComponent<P5WrapperProps>
-import { useContext, useRef } from "react"
+import { useContext, useEffect, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
 import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../shared/config"
@@ -13,19 +7,14 @@ import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, Stack, TileProps } from "../shared/types"
 
-enum ARROW {
-    UP,
-    DOWN = 40,
-    LEFT = 37,
-    RIGHT = 39
-}
-
 type GameClientProps = {
     playerState: PlayerState,
 }
 
 const GameClient = ({ playerState }: GameClientProps) => {
     const socket = useContext(SocketContext)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const keysDown = useRef(new Set<string>())
 
     const stack = useRef<Stack[]>(createEmptyStack())
     const currentPiece = useRef<PieceProps>(createEmptyPiece())
@@ -38,61 +27,87 @@ const GameClient = ({ playerState }: GameClientProps) => {
 
     useListeners({ stack, currentPiece, nextPiece, score, gameWon, cascadeTiles, getCascadeTilesCalled })
 
-    const sketch: Sketch = (p5) => {
-        p5.setup = () => {
-            p5.createCanvas(CANVASWIDTH, CANVASHEIGHT)
-            p5.frameRate(FRAMERATE)
-        }
-        p5.draw = () => {
-            drawStack(p5, stack.current)
+    // Render loop — throttled to FRAMERATE to match server tick rate
+    useEffect(() => {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        let animId: number
+        let lastFrame = 0
+        const interval = 1000 / FRAMERATE
+
+        const render = (timestamp: number) => {
+            animId = requestAnimationFrame(render)
+            if (timestamp - lastFrame < interval) return
+            lastFrame = timestamp - ((timestamp - lastFrame) % interval)
+
+            drawStack(ctx, stack.current)
+
             if (playerState.playState === PlayState.PLAYING) {
-                handleKeyboard(p5)
-                drawPiece(p5, currentPiece.current)
-                drawNextPiece(p5, nextPiece.current)
-                drawScore(p5, score.current)
+                if (keysDown.current.has('ArrowDown')) {
+                    socket.emit('moveDown')
+                }
+                drawPiece(ctx, currentPiece.current)
+                drawNextPiece(ctx, nextPiece.current)
+                drawScore(ctx, score.current)
             }
+
             if (playerState.playState === PlayState.ENDGAME) {
-                handleMouse(p5)
                 if (gameWon.current) {
                     if (!getCascadeTilesCalled.current) {
                         getCascadeTiles(cascadeTiles.current, stack.current)
                         getCascadeTilesCalled.current = true
                     }
-                    drawWin(p5, stack.current, cascadeTiles.current)
+                    drawWin(ctx, stack.current, cascadeTiles.current)
+                } else {
+                    loseColorIndex.current = drawLose(ctx, loseColorIndex.current)
                 }
-                else {
-                    loseColorIndex.current = drawLose(p5, loseColorIndex.current)
-                }
             }
         }
-    }
 
-    const handleKeyboard = (p5: P5CanvasInstance) => {
-        if (p5.keyIsDown(ARROW.DOWN)) {
-            socket.emit('moveDown')
-        }
-        p5.keyPressed = (event: KeyboardEvent) => {
-            if (event.key ===  'ArrowUp') {
-                socket.emit('rotate')
-            }
-            if (event.key === 'ArrowLeft') {
-                socket.emit('moveLeft')
-            }
-            if (event.key === 'ArrowRight') {
-                socket.emit('moveRight')
-            }
-        }
-    }
+        animId = requestAnimationFrame(render)
+        return () => cancelAnimationFrame(animId)
+    }, [playerState.playState, socket])
 
-    const handleMouse = (p5: P5CanvasInstance) => {
-        p5.mouseClicked = () => {
+    // Keyboard controls — skip when typing in input fields
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.target as HTMLElement)?.tagName === 'INPUT') return
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault()
+            }
+            keysDown.current.add(e.key)
+            if (e.key === 'ArrowUp') socket.emit('rotate')
+            if (e.key === 'ArrowLeft') socket.emit('moveLeft')
+            if (e.key === 'ArrowRight') socket.emit('moveRight')
+        }
+        const handleKeyUp = (e: KeyboardEvent) => {
+            keysDown.current.delete(e.key)
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        window.addEventListener('keyup', handleKeyUp)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+            window.removeEventListener('keyup', handleKeyUp)
+        }
+    }, [socket])
+
+    const handleClick = () => {
+        if (playerState.playState === PlayState.ENDGAME) {
             socket.emit('quitGame')
         }
     }
 
     return (
         <div className='flex w-full justify-center'>
-            <ReactP5Wrapper sketch={sketch} />
+            <canvas
+                ref={canvasRef}
+                width={CANVASWIDTH}
+                height={CANVASHEIGHT}
+                onClick={handleClick}
+            />
         </div>
     )
 }

@@ -12,11 +12,9 @@
     "cypress:spec": "cypress run --spec"
   },
   "dependencies": {
-    "@types/p5": "^1.7.7",
     "next": "13.1.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-p5-wrapper": "^3.4.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "tsx": "^4.21.0"

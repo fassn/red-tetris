@@ -1,96 +1,28 @@
-import { P5CanvasInstance } from "react-p5-wrapper"
 import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import { createEmptyStack } from "../shared/stack"
 import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
 
-export const drawWin = (p5: P5CanvasInstance, stack: Stack[], cascadeTiles: TileProps[]) => {
-    // redraw interline spacings
-    const color = APP_BACKGROUND_COLOR
-    p5.fill(color.r, color.g, color.b)
-    p5.stroke(255,255,255)
-    p5.rect(0, 0, BOARDWIDTH, BOARDHEIGHT)
-
-    // reset stack tiles
-    stack = createEmptyStack()
-    drawStack(p5, stack)
-
-    // draw cascade tiles
-    for (let tile of cascadeTiles) {
-        if (tile.y > BOARDHEIGHT - TILEHEIGHT + SPACING) {
-            tile.dy = -tile.dy
-        } else {
-            tile.dy += tile.gravity
-        }
-        p5.fill(tile.color.r, tile.color.g, tile.color.b, tile.color.a)
-        p5.rect(tile.x, tile.y, TILEWIDTH, TILEHEIGHT, RADIUS)
-        tile.y += tile.dy
-    }
-
-    // "ATTA BOY!!!" text
-    p5.fill(0,0,0)
-    p5.textSize(55)
-    p5.textFont('Helvetica')
-    p5.text('ATTA BOY!!!', 5, BOARDHEIGHT / 2 )
-
-    p5.fill(0,0,0)
-    p5.textSize(20)
-    p5.textFont('Helvetica')
-    p5.text('(click to quit game)', 75, BOARDHEIGHT - 40)
+function rgba(c: RGBA): string {
+    return c.a !== undefined ? `rgba(${c.r},${c.g},${c.b},${c.a / 255})` : `rgb(${c.r},${c.g},${c.b})`
 }
 
-export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
-    for (let col = 0; col < COLS; col++) {
-        for (let row = 0; row < ROWS; row++) {
-            if (stack[row * COLS + col].isFilled) {
-                const tile: TileProps = {
-                    x: col * (TILEWIDTH + SPACING),
-                    y: row * (TILEHEIGHT + SPACING),
-                    dy: 1,
-                    gravity: 1,
-                    friction: 0.9,
-                    color: stack[row * COLS + col].color
-                }
-                cascadeTiles.push(tile)
-            }
-        }
-    }
+function tile(ctx: CanvasRenderingContext2D, x: number, y: number, stroke = true) {
+    ctx.beginPath()
+    ctx.roundRect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
+    ctx.fill()
+    if (stroke) ctx.stroke()
 }
 
-export const drawLose = (p5: P5CanvasInstance, colorIndex: number): number => {
-    const colors: RGBA[] = COLOR_PALETTE
-    p5.fill(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b)
-    p5.stroke(255,255,255)
-    p5.rect(0, 0, BOARDWIDTH, BOARDHEIGHT)
-
-    p5.fill(0,0,0)
-    p5.textSize(55)
-    p5.textFont('Helvetica')
-    p5.text('YOU SUCK', 15, BOARDHEIGHT / 2 )
-
-    p5.fill(0,0,0)
-    p5.textSize(20)
-    p5.textFont('Helvetica')
-    p5.text('(click to quit game)', 75, BOARDHEIGHT - 40)
-
-    return (colorIndex + 1) % colors.length
-}
-
-export const drawStack = (p5: P5CanvasInstance, stack: Stack[]) => {
+export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
+    const bg = BACKGROUND_COLOR
+    ctx.strokeStyle = 'white'
     let x = 0
     let y = 0
-    const bg = BACKGROUND_COLOR
-    p5.fill(bg.r, bg.g, bg.b)
-    p5.stroke(255,255,255)
     for (let i = 0; i < COLS; i++) {
         for (let j = 0; j < ROWS; j++) {
-            const tile = stack[j * COLS + i]
-            if (tile.isFilled) {
-                p5.fill(tile.color.r, tile.color.g, tile.color.b)
-                p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-            } else {
-                p5.fill(bg.r, bg.g, bg.b)
-                p5.rect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-            }
+            const t = stack[j * COLS + i]
+            ctx.fillStyle = t.isFilled ? rgba(t.color) : rgba(bg)
+            tile(ctx, x, y)
             y += TILEHEIGHT + SPACING
         }
         y = 0
@@ -98,60 +30,105 @@ export const drawStack = (p5: P5CanvasInstance, stack: Stack[]) => {
     }
 }
 
-export const drawPiece = (p5: P5CanvasInstance, currentPiece: PieceProps) => {
-    p5.fill(currentPiece.color.r, currentPiece.color.g, currentPiece.color.b)
+export const drawPiece = (ctx: CanvasRenderingContext2D, currentPiece: PieceProps) => {
+    ctx.fillStyle = rgba(currentPiece.color)
+    ctx.strokeStyle = 'white'
     for (let i = 0; i < 4; i++) {
-        const newX = currentPiece.x + currentPiece.points[i].x
-        const newY = currentPiece.y + currentPiece.points[i].y
-        p5.rect(
-            newX,
-            newY,
-            TILEWIDTH,
-            TILEHEIGHT,
-            RADIUS
+        tile(ctx, currentPiece.x + currentPiece.points[i].x, currentPiece.y + currentPiece.points[i].y)
+    }
+}
+
+export const drawNextPiece = (ctx: CanvasRenderingContext2D, nextPiece: PieceProps) => {
+    // Cover previous next-piece area
+    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
+    ctx.fillRect(BOARDWIDTH, 0, 320, 128)
+
+    // "Next:" label
+    ctx.fillStyle = 'black'
+    ctx.font = '38px Helvetica'
+    ctx.fillText('Next:', BOARDWIDTH + 32, 32)
+
+    // Draw preview piece (no stroke border)
+    ctx.fillStyle = rgba(nextPiece.color)
+    for (let i = 0; i < 4; i++) {
+        tile(
+            ctx,
+            nextPiece.x + nextPiece.points[i].x + (TILEWIDTH + SPACING) * 7,
+            nextPiece.y + nextPiece.points[i].y + (TILEWIDTH + SPACING) * 2,
+            false
         )
     }
 }
 
-export const drawNextPiece = (p5: P5CanvasInstance, nextPiece: PieceProps) => {
-    // cover previous NextPiece
-    const color = APP_BACKGROUND_COLOR
-    p5.fill(color.r, color.g, color.b)
-    p5.noStroke()
-    p5.rect(BOARDWIDTH, 0, 320, 128)
+export const drawScore = (ctx: CanvasRenderingContext2D, score: number) => {
+    // Cover previous score area
+    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
+    ctx.fillRect(BOARDWIDTH, 196, 320, 128)
 
-    // "Next:" text
-    p5.fill(0,0,0)
-    p5.textSize(38)
-    p5.textFont('Helvetica')
-    p5.text('Next:', BOARDWIDTH + 32, 32)
+    ctx.fillStyle = 'black'
+    ctx.font = '38px Helvetica'
+    ctx.fillText('Score:', BOARDWIDTH + 32, 224)
+    ctx.fillText(String(score), BOARDWIDTH + 32, 288)
+}
 
-    p5.fill(nextPiece.color.r, nextPiece.color.g, nextPiece.color.b)
-    for (let i = 0; i < 4; i++) {
-        const newX = nextPiece.x + nextPiece.points[i].x + (TILEWIDTH + SPACING) * 7
-        const newY = nextPiece.y + nextPiece.points[i].y + (TILEWIDTH + SPACING) * 2
-        p5.rect(
-            newX,
-            newY,
-            TILEWIDTH,
-            TILEHEIGHT,
-            RADIUS
-        )
+export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTiles: TileProps[]) => {
+    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
+    ctx.strokeStyle = 'white'
+    ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
+    ctx.strokeRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
+
+    stack = createEmptyStack()
+    drawStack(ctx, stack)
+
+    // Draw bouncing cascade tiles
+    for (const t of cascadeTiles) {
+        if (t.y > BOARDHEIGHT - TILEHEIGHT + SPACING) {
+            t.dy = -t.dy
+        } else {
+            t.dy += t.gravity
+        }
+        ctx.fillStyle = rgba(t.color)
+        tile(ctx, t.x, t.y)
+        t.y += t.dy
+    }
+
+    ctx.fillStyle = 'black'
+    ctx.font = '55px Helvetica'
+    ctx.fillText('ATTA BOY!!!', 5, BOARDHEIGHT / 2)
+    ctx.font = '20px Helvetica'
+    ctx.fillText('(click to quit game)', 75, BOARDHEIGHT - 40)
+}
+
+export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
+    for (let col = 0; col < COLS; col++) {
+        for (let row = 0; row < ROWS; row++) {
+            if (stack[row * COLS + col].isFilled) {
+                const t: TileProps = {
+                    x: col * (TILEWIDTH + SPACING),
+                    y: row * (TILEHEIGHT + SPACING),
+                    dy: 1,
+                    gravity: 1,
+                    friction: 0.9,
+                    color: stack[row * COLS + col].color
+                }
+                cascadeTiles.push(t)
+            }
+        }
     }
 }
 
-export const drawScore = (p5: P5CanvasInstance, score: number) => {
-    // cover previous score
-    const color = APP_BACKGROUND_COLOR
-    p5.fill(color.r, color.g, color.b)
-    p5.noStroke()
-    p5.rect(BOARDWIDTH, 196, 320, 128)
+export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number): number => {
+    const colors = COLOR_PALETTE
+    ctx.fillStyle = rgba(colors[colorIndex])
+    ctx.strokeStyle = 'white'
+    ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
+    ctx.strokeRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
-    // "Score:" text
-    p5.fill(0,0,0)
-    p5.textSize(38)
-    p5.textFont('Helvetica')
-    p5.text('Score:', BOARDWIDTH + 32, 224)
+    ctx.fillStyle = 'black'
+    ctx.font = '55px Helvetica'
+    ctx.fillText('YOU SUCK', 15, BOARDHEIGHT / 2)
+    ctx.font = '20px Helvetica'
+    ctx.fillText('(click to quit game)', 75, BOARDHEIGHT - 40)
 
-    p5.text(score, BOARDWIDTH + 32, 288)
+    return (colorIndex + 1) % colors.length
 }
