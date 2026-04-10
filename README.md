@@ -47,7 +47,7 @@ server/          # Socket.IO server, game logic, stores
   stores/        # In-memory session, message, game stores
 shared/          # Code shared between client and server
   types.ts       # TypeScript types (PlayerState, PlayState, RoomPlayer, etc.)
-  config.ts      # Constants (MAX_PLAYERS=4, FRAMERATE=15, board dimensions)
+  config.ts      # Constants (MAX_PLAYERS=4, TICK_RATE=15, board dimensions)
   socket-events.ts # Typed Socket.IO event interfaces
   stack.ts       # Stack/piece factory functions
 hooks/           # React hooks

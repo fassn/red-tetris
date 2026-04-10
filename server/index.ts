@@ -7,7 +7,7 @@ import GameHandler from './game-handler'
 import InMemorySessionStore, { Session } from './stores/session-store'
 import InMemoryMessageStore from './stores/message-store'
 import InMemoryGameStore from './stores/game-store'
-import { FRAMERATE } from '../shared/config'
+import { TICK_RATE } from '../shared/config'
 import { PlayState } from '../shared/types'
 import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
 import type { SocketData } from './io-types'
@@ -119,7 +119,7 @@ app.prepare().then(() => {
             }
 
             loop()
-        }, 1000 / FRAMERATE)
+        }, 1000 / TICK_RATE)
     }
     loop()
 

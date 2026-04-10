@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Game from '../server/game'
 import Piece from '../server/piece'
 import { createEmptyStack } from '../shared/stack'
-import { COLS, FRAMERATE, ROWS, SPACING, TILEWIDTH, TILEHEIGHT } from '../shared/config'
+import { COLS, INITIAL_DROP_INTERVAL, ROWS, SPACING, TICK_RATE, TILEWIDTH, TILEHEIGHT } from '../shared/config'
 
 // Minimal mock for TypedServer (not used in pure logic tests)
 const mockIo = {} as any
@@ -225,7 +225,7 @@ describe('Game', () => {
             expect(game.tickCount).toBe(0)
             expect(game.level).toBe(0)
             expect(game.totalLinesCleared).toBe(0)
-            expect(game.dropInterval).toBe(FRAMERATE)
+            expect(game.dropInterval).toBe(INITIAL_DROP_INTERVAL)
         })
     })
 
@@ -238,11 +238,11 @@ describe('Game', () => {
 
         it('returns true when tickCount aligns with dropInterval', () => {
             const game = createTestGame()
-            // Tick FRAMERATE times to reach the drop interval
-            for (let i = 1; i < FRAMERATE; i++) {
+            // Tick TICK_RATE times to reach the drop interval
+            for (let i = 1; i < TICK_RATE; i++) {
                 game.tick()
             }
-            // The FRAMERATE-th tick should trigger a drop
+            // The TICK_RATE-th tick should trigger a drop
             expect(game.tick()).toBe(true)
         })
 

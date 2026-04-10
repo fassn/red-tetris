@@ -6,7 +6,7 @@ Multiplayer Tetris (up to 4 players) built with Next.js 16, React 19, Socket.IO 
 
 ## Architecture
 
-- **Custom server pattern**: `server/index.ts` creates an HTTP server, attaches the Next.js request handler and Socket.IO. The game loop runs via `setTimeout` recursion at `1000/FRAMERATE`.
+- **Custom server pattern**: `server/index.ts` creates an HTTP server, attaches the Next.js request handler and Socket.IO. The game loop runs via `setTimeout` recursion at `1000/TICK_RATE`.
 - **Directory convention**: `server/` (server-only), `shared/` (both client+server), `hooks/` (React hooks), `utils/` (client-only), `components/`, `context/`, `pages/`.
 - **State is in-memory**: `server/stores/` uses Maps. No database — state is ephemeral and lost on restart.
 - **Socket.IO is fully typed**: Event interfaces in `shared/socket-events.ts` (client+server) and `server/io-types.ts` (server-only). Client socket created in `context/socket.ts` with `autoConnect: false`.

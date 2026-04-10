@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
-import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../shared/config"
+import { CANVASHEIGHT, CANVASWIDTH, TICK_RATE } from "../shared/config"
 import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
@@ -32,7 +32,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
 
     useListeners({ stack, currentPiece, nextPiece, score, level, gameWon, cascadeTiles, getCascadeTilesCalled })
 
-    // Render loop — throttled to FRAMERATE to match server tick rate
+    // Render loop — throttled to TICK_RATE to match server tick rate
     useEffect(() => {
         const canvas = canvasRef.current
         if (!canvas) return
@@ -41,7 +41,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
 
         let animId: number
         let lastFrame = 0
-        const interval = 1000 / FRAMERATE
+        const interval = 1000 / TICK_RATE
 
         const render = (timestamp: number) => {
             animId = requestAnimationFrame(render)

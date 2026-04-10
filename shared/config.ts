@@ -1,6 +1,7 @@
 import { RGBA } from "./types"
 
-export const FRAMERATE = 15
+export const TICK_RATE = 15 // Server ticks per second (~67ms per tick)
+export const INITIAL_DROP_INTERVAL = TICK_RATE // Ticks between gravity drops at level 0
 export const MAX_PLAYERS = 4
 export const ROWS = 20
 export const COLS = 10

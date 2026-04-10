@@ -1,5 +1,5 @@
 import type { TypedServer } from "./io-types"
-import { ALPHA_MIN, COLOR_PALETTE, COLS, FRAMERATE, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { ALPHA_MIN, COLOR_PALETTE, COLS, INITIAL_DROP_INTERVAL, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
 import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
@@ -7,11 +7,11 @@ import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
 /**
  * NES-style speed curve scaled to our tick rate.
  * Every 10 lines cleared = 1 level up.
- * Drop interval decreases with level: starts at FRAMERATE ticks (1s),
+ * Drop interval decreases with level: starts at INITIAL_DROP_INTERVAL ticks (1s),
  * reaches 1 tick (~67ms) at level 15+.
  */
 function dropIntervalForLevel(level: number): number {
-    if (level <= 0) return FRAMERATE       // 15 ticks = 1.00s
+    if (level <= 0) return INITIAL_DROP_INTERVAL // 15 ticks = 1.00s
     if (level === 1) return 13             //           = 0.87s
     if (level === 2) return 11             //           = 0.73s
     if (level === 3) return 9              //           = 0.60s
@@ -39,7 +39,7 @@ class Game {
 
         this.isStarted = false
         this.tickCount = 0
-        this.dropInterval = FRAMERATE // 15 ticks = 1 second at level 0
+        this.dropInterval = INITIAL_DROP_INTERVAL // 15 ticks = 1 second at level 0
         this.level = 0
         this.totalLinesCleared = 0
     }
@@ -48,7 +48,7 @@ class Game {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.isStarted = false
         this.tickCount = 0
-        this.dropInterval = FRAMERATE
+        this.dropInterval = INITIAL_DROP_INTERVAL
         this.level = 0
         this.totalLinesCleared = 0
         this.players = []
@@ -62,7 +62,7 @@ class Game {
 
     /**
      * Recalculate level from total lines cleared and adjust drop speed.
-     * Uses NES-style curve scaled to our tick rate (FRAMERATE ticks/sec).
+     * Uses NES-style curve scaled to our tick rate (TICK_RATE ticks/sec).
      * Returns the new level if it changed, or null.
      */
     updateLevel(): number | null {
