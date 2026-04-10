@@ -1,4 +1,4 @@
-import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, CANVASHEIGHT, CANVASWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import { createEmptyStack } from "../shared/stack"
 import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
 
@@ -15,7 +15,7 @@ function tile(ctx: CanvasRenderingContext2D, x: number, y: number, stroke = true
 
 export const clearCanvas = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
-    ctx.fillRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 }
 
 export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
@@ -43,47 +43,41 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, currentPiece: PieceProp
     }
 }
 
-export const drawNextPiece = (ctx: CanvasRenderingContext2D, nextPiece: PieceProps) => {
-    // Cover previous next-piece area
+const PREVIEW_TILE = 18
+const PREVIEW_GAP = 2
+
+export const drawPreviewPiece = (ctx: CanvasRenderingContext2D, piece: PieceProps) => {
+    const gridUnit = TILEWIDTH + SPACING
+
     ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
-    ctx.fillRect(BOARDWIDTH, 0, 320, 128)
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
-    // "Next:" label
-    ctx.fillStyle = 'black'
-    ctx.font = '38px Helvetica'
-    ctx.fillText('Next:', BOARDWIDTH + 32, 32)
+    // Convert pixel-based points to grid coordinates
+    const gridPoints = piece.points.map(p => ({
+        col: Math.round(p.x / gridUnit),
+        row: Math.round(p.y / gridUnit),
+    }))
 
-    // Draw preview piece (no stroke border)
-    ctx.fillStyle = rgba(nextPiece.color)
-    for (let i = 0; i < 4; i++) {
-        tile(
-            ctx,
-            nextPiece.x + nextPiece.points[i].x + (TILEWIDTH + SPACING) * 7,
-            nextPiece.y + nextPiece.points[i].y + (TILEWIDTH + SPACING) * 2,
-            false
-        )
+    const minCol = Math.min(...gridPoints.map(p => p.col))
+    const maxCol = Math.max(...gridPoints.map(p => p.col))
+    const minRow = Math.min(...gridPoints.map(p => p.row))
+    const maxRow = Math.max(...gridPoints.map(p => p.row))
+
+    const pieceW = maxCol - minCol + 1
+    const pieceH = maxRow - minRow + 1
+    const totalW = pieceW * PREVIEW_TILE + (pieceW - 1) * PREVIEW_GAP
+    const totalH = pieceH * PREVIEW_TILE + (pieceH - 1) * PREVIEW_GAP
+    const offsetX = (ctx.canvas.width - totalW) / 2
+    const offsetY = (ctx.canvas.height - totalH) / 2
+
+    ctx.fillStyle = rgba(piece.color)
+    for (const gp of gridPoints) {
+        const x = offsetX + (gp.col - minCol) * (PREVIEW_TILE + PREVIEW_GAP)
+        const y = offsetY + (gp.row - minRow) * (PREVIEW_TILE + PREVIEW_GAP)
+        ctx.beginPath()
+        ctx.roundRect(x, y, PREVIEW_TILE, PREVIEW_TILE, 4)
+        ctx.fill()
     }
-}
-
-export const drawScore = (ctx: CanvasRenderingContext2D, score: number) => {
-    // Cover previous score area
-    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
-    ctx.fillRect(BOARDWIDTH, 196, 320, 128)
-
-    ctx.fillStyle = 'black'
-    ctx.font = '38px Helvetica'
-    ctx.fillText('Score:', BOARDWIDTH + 32, 224)
-    ctx.fillText(String(score), BOARDWIDTH + 32, 288)
-}
-
-export const drawLevel = (ctx: CanvasRenderingContext2D, level: number) => {
-    ctx.fillStyle = rgba(APP_BACKGROUND_COLOR)
-    ctx.fillRect(BOARDWIDTH, 324, 320, 96)
-
-    ctx.fillStyle = 'black'
-    ctx.font = '38px Helvetica'
-    ctx.fillText('Level:', BOARDWIDTH + 32, 356)
-    ctx.fillText(String(level), BOARDWIDTH + 32, 416)
 }
 
 export const advanceWinAnimation = (cascadeTiles: TileProps[]) => {

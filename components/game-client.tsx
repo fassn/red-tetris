@@ -1,8 +1,8 @@
-import { useContext, useEffect, useRef } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import { SocketContext } from "../context/socket"
 
-import { CANVASHEIGHT, CANVASWIDTH, COLOR_PALETTE, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
-import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, drawLevel, getCascadeTiles, advanceWinAnimation, clearCanvas } from "../utils/draw"
+import { BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
+import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
@@ -18,19 +18,29 @@ type GameClientProps = {
 const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const previewRef = useRef<HTMLCanvasElement>(null)
     const keysDown = useRef(new Set<string>())
 
     const stack = useRef<Stack[]>(createEmptyStack())
     const currentPiece = useRef<PieceProps>(createEmptyPiece())
-    const nextPiece = useRef<PieceProps>(createEmptyPiece())
+    const [nextPiece, setNextPiece] = useState<PieceProps>(createEmptyPiece())
     const getCascadeTilesCalled = useRef<boolean>(false)
     const cascadeTiles = useRef<TileProps[]>([])
-    const score = useRef<number>(0)
-    const level = useRef<number>(0)
+    const [score, setScore] = useState(0)
+    const [level, setLevel] = useState(0)
     const gameWon = useRef<boolean>(false)
     const loseColorIndex = useRef<number>(0)
 
-    useListeners({ stack, currentPiece, nextPiece, score, level, gameWon, cascadeTiles, getCascadeTilesCalled })
+    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled })
+
+    // Draw next piece preview when it changes
+    useEffect(() => {
+        const canvas = previewRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        drawPreviewPiece(ctx, nextPiece)
+    }, [nextPiece])
 
     // Render loop — throttled to TICK_RATE to match server tick rate
     useEffect(() => {
@@ -60,9 +70,6 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                     lastSoftDrop = timestamp
                 }
                 drawPiece(ctx, currentPiece.current)
-                drawNextPiece(ctx, nextPiece.current)
-                drawScore(ctx, score.current)
-                drawLevel(ctx, level.current)
             }
 
             if (playerState.playState === PlayState.ENDGAME) {
@@ -127,28 +134,51 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
         <div className='flex flex-col items-center gap-4 lg:flex-row lg:items-start'>
             <canvas
                 ref={canvasRef}
-                width={CANVASWIDTH}
-                height={CANVASHEIGHT}
+                width={BOARDWIDTH}
+                height={BOARDHEIGHT}
                 className='max-w-full h-auto'
                 onClick={handleClick}
                 role='img'
                 aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
                 tabIndex={0}
             />
-            {isPlaying && otherPlayers.length > 0 && (
-                <aside className='flex flex-row lg:flex-col gap-3' aria-label='Opponent boards'>
-                    {otherPlayers.map((p) => {
-                        const board = opponentBoards.get(p.playerId)
-                        return (
-                            <MiniBoard
-                                key={p.playerId}
-                                playerName={p.playerName}
-                                playState={p.state.playState}
-                                stack={board?.stack ?? createEmptyStack()}
+            {isPlaying && (
+                <div className='flex flex-col gap-6'>
+                    <div className='flex flex-col gap-4'>
+                        <div className='flex flex-col gap-1'>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Next</span>
+                            <canvas
+                                ref={previewRef}
+                                width={90}
+                                height={50}
+                                className='rounded'
                             />
-                        )
-                    })}
-                </aside>
+                        </div>
+                        <div className='flex flex-col'>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Score</span>
+                            <span className='text-2xl font-bold tabular-nums'>{score}</span>
+                        </div>
+                        <div className='flex flex-col'>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Level</span>
+                            <span className='text-2xl font-bold'>{level}</span>
+                        </div>
+                    </div>
+                    {otherPlayers.length > 0 && (
+                        <aside className='flex flex-row lg:flex-col gap-3' aria-label='Opponent boards'>
+                            {otherPlayers.map((p) => {
+                                const board = opponentBoards.get(p.playerId)
+                                return (
+                                    <MiniBoard
+                                        key={p.playerId}
+                                        playerName={p.playerName}
+                                        playState={p.state.playState}
+                                        stack={board?.stack ?? createEmptyStack()}
+                                    />
+                                )
+                            })}
+                        </aside>
+                    )}
+                </div>
             )}
         </div>
     )

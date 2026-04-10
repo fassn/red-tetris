@@ -6,26 +6,26 @@ import { PieceProps, Stack, TileProps } from "../shared/types"
 type useListenersProps = {
     stack: MutableRefObject<Stack[]>,
     currentPiece: MutableRefObject<PieceProps>,
-    nextPiece: MutableRefObject<PieceProps>,
-    score: MutableRefObject<number>,
-    level: MutableRefObject<number>,
+    setNextPiece: (piece: PieceProps) => void,
+    setScore: (score: number) => void,
+    setLevel: (level: number) => void,
     gameWon: MutableRefObject<boolean>,
     cascadeTiles: MutableRefObject<TileProps[]>,
     getCascadeTilesCalled: MutableRefObject<boolean>,
 }
 
-const useListeners = ({ stack, currentPiece, nextPiece, score, level, gameWon, cascadeTiles, getCascadeTilesCalled }: useListenersProps) => {
+const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled }: useListenersProps) => {
     const socket = useContext(SocketContext)
     useEffect(() => {
         const handleNewGame = ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
             stack.current = newStack
             currentPiece.current = firstPiece
-            nextPiece.current = secondPiece
+            setNextPiece(secondPiece)
         }
 
         const handleNewStack = ({ newStack, newScore }: { newStack: Stack[], newScore: number }) => {
             stack.current = newStack
-            score.current = newScore
+            setScore(newScore)
         }
 
         const handleNewPosition = (newY: number) => {
@@ -34,7 +34,7 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, level, gameWon, c
 
         const handleNewPiece = ({ newCurrentPiece, newNextPiece }: { newCurrentPiece: PieceProps, newNextPiece: PieceProps }) => {
             currentPiece.current = newCurrentPiece
-            nextPiece.current = newNextPiece
+            setNextPiece(newNextPiece)
         }
 
         const handleMoveDown = (newY: number) => {
@@ -58,17 +58,17 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, level, gameWon, c
         }
 
         const handleLevelUp = ({ level: newLevel }: { level: number }) => {
-            level.current = newLevel
+            setLevel(newLevel)
         }
 
         const handleResetGame = () => {
             currentPiece.current = createEmptyPiece()
-            nextPiece.current = createEmptyPiece()
+            setNextPiece(createEmptyPiece())
             stack.current = createEmptyStack()
             getCascadeTilesCalled.current = false
             cascadeTiles.current = []
-            score.current = 0
-            level.current = 0
+            setScore(0)
+            setLevel(0)
             gameWon.current = false
         }
 
