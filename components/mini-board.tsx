@@ -53,7 +53,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
 
     return (
         <div className='flex flex-col items-center gap-1.5'>
-            <span className='text-sm font-semibold truncate max-w-full'>{playerName}</span>
+            <span className='hidden sm:block text-sm font-semibold truncate max-w-full'>{playerName}</span>
             <canvas
                 ref={canvasRef}
                 width={MINI_WIDTH}
@@ -62,7 +62,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
                 role='img'
                 aria-label={`${playerName}'s board — ${stateLabel}`}
             />
-            <span className='text-xs text-neutral-500'>{stateLabel}</span>
+            <span className='hidden sm:block text-xs text-neutral-500'>{stateLabel}</span>
         </div>
     )
 }
