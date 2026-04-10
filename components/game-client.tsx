@@ -86,8 +86,11 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault()
             }
+            // Rotation: one per press, no auto-repeat
+            if (e.key === 'ArrowUp' && !keysDown.current.has('ArrowUp')) {
+                socket.emit('rotate')
+            }
             keysDown.current.add(e.key)
-            if (e.key === 'ArrowUp') socket.emit('rotate')
             if (e.key === 'ArrowLeft') socket.emit('moveLeft')
             if (e.key === 'ArrowRight') socket.emit('moveRight')
         }
