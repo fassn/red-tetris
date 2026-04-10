@@ -131,20 +131,20 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     return (
-        <div className='flex flex-row gap-3'>
+        <div className='flex flex-col lg:flex-row gap-3'>
             <canvas
                 ref={canvasRef}
                 width={BOARDWIDTH}
                 height={BOARDHEIGHT}
-                className='max-w-full h-auto'
+                className='w-full lg:w-auto h-auto'
                 onClick={handleClick}
                 role='img'
                 aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
                 tabIndex={0}
             />
             {isPlaying && (
-                <div className='flex flex-col justify-between flex-shrink-0' style={{ height: BOARDHEIGHT }}>
-                    <div className='flex flex-col gap-4'>
+                <div className='flex flex-row lg:flex-col items-center lg:items-start justify-around lg:justify-between flex-shrink-0 lg:h-[638px]'>
+                    <div className='flex flex-row lg:flex-col items-center lg:items-start gap-4'>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Next</span>
                             <canvas
