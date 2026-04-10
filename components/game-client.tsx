@@ -131,24 +131,22 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     return (
-        <div className='relative sm:flex sm:flex-row sm:gap-3'>
+        <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start'>
             <canvas
                 ref={canvasRef}
                 width={BOARDWIDTH}
                 height={BOARDHEIGHT}
-                className='block max-w-full max-h-[calc(100dvh-2rem)] w-auto h-auto mx-auto sm:mx-0 sm:max-h-none'
+                className='block max-w-full max-h-[calc(100dvh-6rem)] w-auto h-auto sm:max-h-none'
                 onClick={handleClick}
                 role='img'
                 aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
                 tabIndex={0}
             />
             {isPlaying && (
-                <div className='absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent
-                                sm:static sm:bg-none sm:p-0 sm:flex-col sm:justify-between sm:flex-shrink-0 sm:h-[638px]
-                                flex flex-row items-end sm:items-start justify-around sm:justify-between'>
+                <div className='flex flex-row sm:flex-col items-center sm:items-start justify-around sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
                     <div className='flex flex-row sm:flex-col items-center sm:items-start gap-4'>
                         <div className='flex flex-col gap-1'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-white/70 sm:text-neutral-500'>Next</span>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Next</span>
                             <canvas
                                 ref={previewRef}
                                 width={90}
@@ -157,12 +155,12 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                             />
                         </div>
                         <div className='flex flex-col'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-white/70 sm:text-neutral-500'>Score</span>
-                            <span className='text-2xl font-bold tabular-nums text-white sm:text-inherit'>{score}</span>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Score</span>
+                            <span className='text-2xl font-bold tabular-nums'>{score}</span>
                         </div>
                         <div className='flex flex-col'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-white/70 sm:text-neutral-500'>Level</span>
-                            <span className='text-2xl font-bold text-white sm:text-inherit'>{level}</span>
+                            <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Level</span>
+                            <span className='text-2xl font-bold'>{level}</span>
                         </div>
                     </div>
                     {otherPlayers.length > 0 && (
