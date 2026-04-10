@@ -1,10 +1,10 @@
 import { ChangeEvent, useContext } from "react"
 import { SocketContext } from "../context/socket"
-import { PlayerState, PlayState } from "../shared/types"
+import { PlayerState, PlayState, RoomPlayer } from "../shared/types"
 
 type LobbyProps = {
     playerState: PlayerState,
-    otherPlayerState: PlayerState
+    otherPlayers: RoomPlayer[]
 }
 
 const Logo = () => (
@@ -13,22 +13,60 @@ const Logo = () => (
     </div>
 )
 
-const HostMenu = ({ otherPlayerState, onStartGame }: { otherPlayerState: PlayerState, onStartGame: () => void }) => (
-    <>
-        <Logo />
-        <div className='flex flex-col justify-center'>
-            <div className='text-center text-lg mb-4'>{otherPlayerState.playState === PlayState.READY ? 'Your opponent is ready !' : 'Wait for your opponent to be ready or start a game alone.'}</div>
-            <div className='border-t border-2 border-red-500'></div>
-            <button onClick={onStartGame} className='py-4 w-72 self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
-        </div>
-    </>
+const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
+    <div className='mx-5 mt-4'>
+        <h2 className='text-lg font-semibold mb-2'>Players</h2>
+        {otherPlayers.length === 0 ? (
+            <p className='text-gray-400 text-sm'>Waiting for players to join…</p>
+        ) : (
+            <ul className='space-y-1'>
+                {otherPlayers.map((p) => (
+                    <li key={p.playerId} className='flex items-center justify-between text-sm'>
+                        <span>
+                            {p.playerName}
+                            {p.state.host && <span className='ml-1 text-red-400'>★</span>}
+                        </span>
+                        <span className={
+                            p.state.playState === PlayState.READY ? 'text-green-500' :
+                            p.state.playState === PlayState.PLAYING ? 'text-blue-500' :
+                            p.state.playState === PlayState.ENDGAME ? 'text-gray-400' :
+                            'text-gray-300'
+                        }>
+                            {PlayState[p.state.playState]}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        )}
+    </div>
 )
 
-const GuestMenu = ({ playerState, onSetReady }: { playerState: PlayerState, onSetReady: (e: ChangeEvent<HTMLInputElement>) => void }) => (
+const HostMenu = ({ otherPlayers, onStartGame }: { otherPlayers: RoomPlayer[], onStartGame: () => void }) => {
+    const readyCount = otherPlayers.filter((p) => p.state.playState === PlayState.READY).length
+
+    return (
+        <>
+            <Logo />
+            <PlayerList otherPlayers={otherPlayers} />
+            <div className='flex flex-col justify-center'>
+                <div className='text-center text-lg mb-4'>
+                    {readyCount > 0
+                        ? `${readyCount} player${readyCount > 1 ? 's' : ''} ready!`
+                        : 'Wait for players to be ready or start alone.'}
+                </div>
+                <div className='border-t border-2 border-red-500'></div>
+                <button onClick={onStartGame} className='py-4 w-72 self-center text-xl uppercase mt-10 bg-red-400 rounded hover:text-white transition-all'>Start Game</button>
+            </div>
+        </>
+    )
+}
+
+const GuestMenu = ({ playerState, otherPlayers, onSetReady }: { playerState: PlayerState, otherPlayers: RoomPlayer[], onSetReady: (e: ChangeEvent<HTMLInputElement>) => void }) => (
     <>
         <Logo />
+        <PlayerList otherPlayers={otherPlayers} />
         <div className='flex flex-col text-lg justify-center'>
-            <div className='text-center mb-4'>Wait for the game leader to start the game !</div>
+            <div className='text-center mb-4'>Wait for the game leader to start the game!</div>
             <div className='border-t border-2 border-red-500'></div>
             <div className='flex justify-center mt-10 mb-4'>
                 <label htmlFor='ready'>Ready?</label>
@@ -38,7 +76,7 @@ const GuestMenu = ({ playerState, onSetReady }: { playerState: PlayerState, onSe
     </>
 )
 
-const Lobby = ({ playerState, otherPlayerState }: LobbyProps) => {
+const Lobby = ({ playerState, otherPlayers }: LobbyProps) => {
     const socket = useContext(SocketContext)
 
     const setReady = (event: ChangeEvent<HTMLInputElement>) => {
@@ -49,26 +87,26 @@ const Lobby = ({ playerState, otherPlayerState }: LobbyProps) => {
         socket.emit('startGame')
     }
 
+    const anyPlaying = otherPlayers.some((p) => p.state.playState === PlayState.PLAYING)
+
     if (playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME) {
         return <Logo />
     }
-    if (playerState.host === true) {
-        return <HostMenu otherPlayerState={otherPlayerState} onStartGame={startGame} />
+    if (playerState.host) {
+        return <HostMenu otherPlayers={otherPlayers} onStartGame={startGame} />
     }
-    if (playerState.host === false && otherPlayerState?.playState !== PlayState.PLAYING) {
-        return <GuestMenu playerState={playerState} onSetReady={setReady} />
+    if (!anyPlaying) {
+        return <GuestMenu playerState={playerState} otherPlayers={otherPlayers} onSetReady={setReady} />
     }
-    if (playerState.host === false && otherPlayerState?.playState === PlayState.PLAYING) {
-        return (
-            <>
-                <Logo />
-                <div className='flex flex-col text-lg justify-center'>
-                    <div className="text-center mx-4">A game is on-going. Please wait for it to finish !</div>
-                </div>
-            </>
-        )
-    }
-    return <></>
+    return (
+        <>
+            <Logo />
+            <PlayerList otherPlayers={otherPlayers} />
+            <div className='flex flex-col text-lg justify-center'>
+                <div className="text-center mx-4">A game is on-going. Please wait for it to finish!</div>
+            </div>
+        </>
+    )
 }
 
 export default Lobby

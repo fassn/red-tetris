@@ -39,16 +39,45 @@ export function movePieceDown(io: TypedServer, currentPiece: Piece, player: Play
     currentPiece.setY(newY, playerStack)
 }
 
-export function emitEndGameToPlayers(io: TypedServer, player: Player, otherPlayer: Player | undefined) {
-    player.socket.data.playerState.playState = PlayState.ENDGAME
+/**
+ * Handle end-game when a player tops out.
+ * Marks the loser, checks remaining active players, and
+ * declares a winner if only one is left standing.
+ */
+export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game) {
+    // Mark loser
+    loser.socket.data.playerState.playState = PlayState.ENDGAME
+    io.to(loser.socket.id).emit('gameOver', { won: false })
 
-    /* Send the good news to the other player */
-    if (otherPlayer) {
-        io.to(otherPlayer.socket.id).emit('gameWon')
-        otherPlayer.socket.data.playerState.playState = PlayState.ENDGAME
-        io.to(otherPlayer.socket.id).emit('newState', { playerState: otherPlayer.socket.data.playerState, otherPlayerState: player.socket.data.playerState })
+    // Count remaining active players
+    const activePlayers = game.players.filter(
+        (p) => p.socket.data.playerState.playState === PlayState.PLAYING
+    )
+
+    if (activePlayers.length === 1) {
+        // Last player standing wins
+        const winner = activePlayers[0]
+        winner.socket.data.playerState.playState = PlayState.ENDGAME
+        io.to(winner.socket.id).emit('gameOver', { won: true })
     }
 
-    /* Send the bad news to the current player */
-    io.to(player.socket.id).emit('newState', { playerState: player.socket.data.playerState, otherPlayerState: otherPlayer?.socket.data.playerState })
+    // Broadcast updated states to everyone
+    for (const player of game.players) {
+        const otherPlayers = game.players
+            .filter((p) => p.id !== player.id)
+            .map((p) => ({
+                playerId: p.id,
+                playerName: p.name,
+                state: p.socket.data.playerState,
+            }))
+        io.to(player.socket.id).emit('newState', {
+            playerState: player.socket.data.playerState,
+            otherPlayers,
+        })
+    }
+
+    // If no active players remain, reset the game
+    if (activePlayers.length <= 1) {
+        game.reset()
+    }
 }

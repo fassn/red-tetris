@@ -45,6 +45,12 @@ export type PlayerState = {
     playState: PlayState
 }
 
+export type RoomPlayer = {
+    playerId: string
+    playerName: string
+    state: PlayerState
+}
+
 export type Message = {
     author: string,
     message: string

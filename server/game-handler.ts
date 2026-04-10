@@ -1,8 +1,8 @@
-import { SPACING, TILEWIDTH } from "../shared/config"
+import { MAX_PLAYERS, SPACING, TILEWIDTH } from "../shared/config"
 import InMemoryMessageStore from "./stores/message-store"
 import InMemorySessionStore from "./stores/session-store"
 import Player from "./player"
-import { PlayerState, PlayState, Message } from "../shared/types"
+import { PlayerState, PlayState, RoomPlayer, Message } from "../shared/types"
 import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
 
 export type GameDeps = {
@@ -11,49 +11,67 @@ export type GameDeps = {
     cleanStores: (roomName: string) => void
 }
 
+/** Build a RoomPlayer summary from a remote socket */
+function toRoomPlayer(sock: TypedSocket | TypedRemoteSocket): RoomPlayer {
+    return {
+        playerId: sock.data.playerId,
+        playerName: sock.data.playerName,
+        state: sock.data.playerState,
+    }
+}
+
 const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps) => {
     const sd = socket.data
 
     // Join room upon connection
     const allSockets = await io.in(sd.roomName).fetchSockets()
 
-    if (allSockets.length === 2) {
+    if (allSockets.length >= MAX_PLAYERS) {
         io.to(socket.id).emit('roomIsFull')
         socket.disconnect()
+        return
     }
 
     socket.join(sd.roomName)
     socket.emit('session', { sessionId: sd.sessionId, playerId: sd.playerId })
     socket.emit('messages', sd.messages)
 
-    const setGameHostToSocket = async (sock: TypedSocket | TypedRemoteSocket) => {
-        const sockets = await io.in(sock.data.roomName).fetchSockets()
-        if (sockets.length === 1) {
-            sock.data.playerState.host = true
-        } else {
-            sock.data.playerState.host = false
-        }
-        io.to(sock.id).emit('newState', { playerState: sock.data.playerState })
-
-        const otherSocket = await getOtherSocket()
-        if (otherSocket) {
-            io.to(otherSocket.id).emit('newState', { otherPlayerState: sock.data.playerState })
+    /** Broadcast playerState + otherPlayers to every socket in the room */
+    const broadcastRoomState = async () => {
+        const sockets = await io.in(sd.roomName).fetchSockets()
+        for (const sock of sockets) {
+            const otherPlayers = sockets
+                .filter((s) => s.id !== sock.id)
+                .map(toRoomPlayer)
+            io.to(sock.id).emit('newState', {
+                playerState: sock.data.playerState,
+                otherPlayers,
+            })
         }
     }
 
-    setGameHostToSocket(socket)
+    const assignHost = async () => {
+        const sockets = await io.in(sd.roomName).fetchSockets()
+        if (sockets.length === 0) return
+
+        // First socket in the room becomes host
+        for (const sock of sockets) {
+            sock.data.playerState.host = sock.id === sockets[0].id
+        }
+        await broadcastRoomState()
+    }
+
+    await assignHost()
 
     const startGame = async () => {
         sd.game.isStarted = true
         addPlayer()
 
-        // emit to self the new PLAYING state
-        const playerSocketIds = []
+        // Transition all eligible players to PLAYING
         for (const player of sd.game.players) {
-            playerSocketIds.push(player.socket.id)
-            if (player.socket.data.playerState.host === true || (player.socket.data.playerState.playState === PlayState.READY)) {
-                player.socket.data.playerState.playState = PlayState.PLAYING
-                io.to(player.socket.id).emit('newState', { playerState: player.socket.data.playerState })
+            const ps = player.socket.data.playerState
+            if (ps.host || ps.playState === PlayState.READY) {
+                ps.playState = PlayState.PLAYING
             }
             io.to(player.socket.id).emit('newGame', {
                 newStack: player.stack,
@@ -62,23 +80,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
             })
         }
 
-        // emit otherPlayerState to each other players
-        let otherPlayerState: PlayerState
-        for (const player of sd.game.players) {
-            if (player.socket.id !== socket.id) {
-                otherPlayerState = player.socket.data.playerState
-                io.to(socket.id).emit('newState', { otherPlayerState: otherPlayerState })
-                io.to(player.socket.id).emit('newState', { otherPlayerState: sd.playerState })
-            }
-        }
-
-        // finally also emit if the 2nd person is NOT a player
-        const otherSocket = await getOtherSocket()
-        if (otherSocket) {
-            if (!playerSocketIds.includes(otherSocket.id)) {
-                io.to(otherSocket.id).emit('newState', { otherPlayerState: sd.playerState })
-            }
-        }
+        await broadcastRoomState()
     }
 
     const setReady = async (isReady: boolean) => {
@@ -89,14 +91,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
             sd.game.removePlayer(sd.playerId)
             sd.playerState.playState = PlayState.WAITING
         }
-        const sockets = await io.in(sd.roomName).fetchSockets()
-        for (const sock of sockets) {
-            if (sock.id === socket.id) {
-                io.to(sock.id).emit('newState', { playerState: sd.playerState })
-            } else {
-                io.to(sock.id).emit('newState', { otherPlayerState: sd.playerState })
-            }
-        }
+        await broadcastRoomState()
     }
 
     const addPlayer = () => {
@@ -158,11 +153,6 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const onDisconnect = async () => {
-        const otherSocket = await getOtherSocket()
-        if (otherSocket) {
-            setGameHostToSocket(otherSocket)
-        }
-
         sd.game.removePlayer(sd.playerId)
 
         deps.sessionStore.saveSession(sd.sessionId, {
@@ -170,35 +160,20 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
             playerName: sd.playerName,
             roomName: sd.roomName,
             playerState: sd.playerState
-        });
+        })
 
         const sockets = await io.in(sd.roomName).fetchSockets()
         if (sockets.length === 0) {
             deps.cleanStores(sd.roomName)
+        } else {
+            await assignHost()
         }
     }
 
     const quitGame = async () => {
         io.to(socket.id).emit('resetGame')
         sd.playerState.playState = PlayState.WAITING
-
-        const sockets = await io.in(sd.roomName).fetchSockets()
-        for (const sock of sockets) {
-            if (sock.id === socket.id) {
-                io.to(sock.id).emit('newState', { playerState: sd.playerState })
-            } else {
-                io.to(sock.id).emit('newState', { otherPlayerState: sd.playerState })
-            }
-        }
-    }
-
-    const getOtherSocket = async () => {
-        const sockets = await io.in(sd.roomName).fetchSockets()
-        for (const sock of sockets) {
-            if (sock.id !== socket.id) {
-                return sock
-            }
-        }
+        await broadcastRoomState()
     }
 
     const safe = (handler: (...args: any[]) => any) => {

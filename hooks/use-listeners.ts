@@ -52,8 +52,8 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
             currentPiece.current.points = newPoints
         }
 
-        const handleGameWon = () => {
-            gameWon.current = true
+        const handleGameOver = ({ won }: { won: boolean }) => {
+            gameWon.current = won
         }
 
         const handleResetGame = () => {
@@ -74,7 +74,7 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
         socket.on('newMoveLeft', handleMoveLeft)
         socket.on('newMoveRight', handleMoveRight)
         socket.on('newPoints', handleNewPoints)
-        socket.on('gameWon', handleGameWon)
+        socket.on('gameOver', handleGameOver)
         socket.on('resetGame', handleResetGame)
 
         return () => {
@@ -86,7 +86,7 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
             socket.off('newMoveLeft', handleMoveLeft)
             socket.off('newMoveRight', handleMoveRight)
             socket.off('newPoints', handleNewPoints)
-            socket.off('gameWon', handleGameWon)
+            socket.off('gameOver', handleGameOver)
             socket.off('resetGame', handleResetGame)
         }
     }, [])

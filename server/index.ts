@@ -8,7 +8,6 @@ import InMemorySessionStore, { Session } from './stores/session-store'
 import InMemoryMessageStore from './stores/message-store'
 import InMemoryGameStore from './stores/game-store'
 import { FRAMERATE } from '../shared/config'
-import Player from './player'
 import { PlayState } from '../shared/types'
 import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
 import type { SocketData } from './io-types'
@@ -38,11 +37,6 @@ const cleanStores = (roomName: string) => {
     sessionStore.removeSessionsFromRoom(roomName)
     messageStore.removeMessagesFromRoom(roomName)
     gameStore.removeGameFromRoom(roomName)
-}
-
-const getOtherPlayer = (player: Player, players: Player[]): Player | undefined => {
-    if (players.length === 1) return undefined
-    return players.find((p) => p.id !== player.id)
 }
 
 app.prepare().then(() => {
@@ -100,7 +94,7 @@ app.prepare().then(() => {
                     if (!game?.isStarted) continue
 
                     for (const player of game.players) {
-                        const otherPlayer = getOtherPlayer(player, game.players)
+                        if (player.socket.data.playerState.playState !== PlayState.PLAYING) continue
                         const playerStack = player.stack
                         const playerPieces = player.pieces
 
@@ -111,8 +105,7 @@ app.prepare().then(() => {
 
                             if (checkIfPieceHasHit(currentPiece)) {
                                 if (currentPiece.getY() === 0) {
-                                    emitEndGameToPlayers(io, player, otherPlayer)
-                                    game.reset()
+                                    emitEndGameToPlayers(io, player, game)
                                     break
                                 }
 

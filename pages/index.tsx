@@ -10,7 +10,7 @@ import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
-import { PlayerState, PlayState } from '../shared/types'
+import { PlayerState, PlayState, RoomPlayer } from '../shared/types'
 
 function parseHash(url: string) {
     const hash = url.split('#')[1] || ''
@@ -36,7 +36,7 @@ const Home: NextPage = () => {
     const [playerName, setPlayerName] = useState('')
     const [isLobby, setIsLobby] = useState(false)
     const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
-    const [otherPlayerState, setOtherPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
+    const [otherPlayers, setOtherPlayers] = useState<RoomPlayer[]>([])
 
     useEffect(() => {
         // URL hash is unavailable during SSR, so initial state must be set in an effect
@@ -67,12 +67,12 @@ const Home: NextPage = () => {
             socket.playerId = playerId
         }
 
-        const handleNewState = ({ playerState, otherPlayerState }: { playerState?: PlayerState, otherPlayerState?: PlayerState }) => {
+        const handleNewState = ({ playerState, otherPlayers }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[] }) => {
             if (playerState) {
                 setPlayerState(playerState)
             }
-            if (otherPlayerState) {
-                setOtherPlayerState(otherPlayerState)
+            if (otherPlayers) {
+                setOtherPlayers(otherPlayers)
             }
         }
 
@@ -102,7 +102,7 @@ const Home: NextPage = () => {
                 <main className='h-screen px-8'>
                     <div className='flex py-20'>
                         <div className='flex flex-shrink-0 flex-col w-96 place-content-between'>
-                            <Lobby playerState={playerState} otherPlayerState={otherPlayerState} />
+                            <Lobby playerState={playerState} otherPlayers={otherPlayers} />
                         </div>
                         <GameClient playerState={playerState}
                         />

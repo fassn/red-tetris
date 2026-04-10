@@ -1,6 +1,7 @@
 import { RGBA } from "./types"
 
 export const FRAMERATE = 15
+export const MAX_PLAYERS = 4
 export const ROWS = 20
 export const COLS = 10
 export const TILEWIDTH = 30
