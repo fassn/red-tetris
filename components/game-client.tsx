@@ -180,21 +180,23 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                     )}
                 </div>
             )}
-            <canvas
-                ref={canvasRef}
-                width={BOARDWIDTH}
-                height={BOARDHEIGHT}
-                className='order-2 sm:order-1 block min-h-0 max-w-full w-auto sm:min-h-[auto]'
-                onClick={handleClick}
-                role='img'
-                aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
-                tabIndex={0}
-            />
-            {isPlaying && playerState.playState === PlayState.PLAYING && (
-                <div className='order-3 lg:hidden w-full'>
-                    <DPad />
-                </div>
-            )}
+            <div className='order-2 sm:order-1 flex flex-col items-center'>
+                <canvas
+                    ref={canvasRef}
+                    width={BOARDWIDTH}
+                    height={BOARDHEIGHT}
+                    className='block min-h-0 max-w-full w-auto sm:min-h-[auto]'
+                    onClick={handleClick}
+                    role='img'
+                    aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
+                    tabIndex={0}
+                />
+                {isPlaying && playerState.playState === PlayState.PLAYING && (
+                    <div className='lg:hidden w-full'>
+                        <DPad />
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
