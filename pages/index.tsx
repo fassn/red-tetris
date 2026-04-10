@@ -21,43 +21,45 @@ const Home: NextPage = () => {
     const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
     const [otherPlayerState, setOtherPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
 
-    let sessionId: string | null
     useEffect(() => {
-        socketInit()
-        sessionId = localStorage.getItem('sessionId')
-
         // direct URL connection
         handleParams(router.asPath)
 
         // after form submit
-        const handleHashChange = (url: any) => {
+        const handleHashChange = (url: string) => {
             handleParams(url)
         }
 
-        router.events.on('hashChangeComplete', handleHashChange)
-
-        socket.on('roomIsFull', () => {
+        const handleRoomFull = () => {
             router.push('/?error=roomIsFull')
             setIsLobby(false)
-        })
+        }
 
-        socket.on('session', ({ sessionId, playerId }) => {
+        const handleSession = ({ sessionId, playerId }: { sessionId: string, playerId: string }) => {
             socket.auth = { sessionId }
             localStorage.setItem('sessionId', sessionId)
             socket.playerId = playerId
-        })
+        }
 
-        socket.on('newState', ({ playerState, otherPlayerState }: { playerState: PlayerState, otherPlayerState: PlayerState }) => {
+        const handleNewState = ({ playerState, otherPlayerState }: { playerState: PlayerState, otherPlayerState: PlayerState }) => {
             if (playerState) {
                 setPlayerState(playerState)
             }
             if (otherPlayerState) {
                 setOtherPlayerState(otherPlayerState)
             }
-        })
+        }
+
+        router.events.on('hashChangeComplete', handleHashChange)
+        socket.on('roomIsFull', handleRoomFull)
+        socket.on('session', handleSession)
+        socket.on('newState', handleNewState)
 
         return () => {
             router.events.off('hashChangeComplete', handleHashChange)
+            socket.off('roomIsFull', handleRoomFull)
+            socket.off('session', handleSession)
+            socket.off('newState', handleNewState)
         }
     }, [])
 
@@ -77,11 +79,8 @@ const Home: NextPage = () => {
         }
     }
 
-    const socketInit = async () => {
-        await fetch('/api/socket-handler')
-    }
-
     const connectSocketClient = (roomName: string, playerName: string) => {
+        const sessionId = localStorage.getItem('sessionId')
         socket.auth = { playerName, roomName }
         if (sessionId) {
             socket.auth = { sessionId, playerName, roomName }

@@ -16,47 +16,47 @@ type useListenersProps = {
 const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeTiles, getCascadeTilesCalled }: useListenersProps) => {
     const socket = useContext(SocketContext)
     useEffect(() => {
-        socket.on('newGame', ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
+        const handleNewGame = ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
             stack.current = newStack
             currentPiece.current = firstPiece
             nextPiece.current = secondPiece
-        })
+        }
 
-        socket.on('newStack', ({ newStack, newScore }: { newStack: Stack[], newScore: number }) => {
+        const handleNewStack = ({ newStack, newScore }: { newStack: Stack[], newScore: number }) => {
             stack.current = newStack
             score.current = newScore
-        })
+        }
 
-        socket.on('newPosition', (newY) => {
+        const handleNewPosition = (newY: number) => {
             currentPiece.current.y = newY
-        })
+        }
 
-        socket.on('newPiece', ({ newCurrentPiece, newNextPiece }: { newCurrentPiece: PieceProps, newNextPiece: PieceProps }) => {
+        const handleNewPiece = ({ newCurrentPiece, newNextPiece }: { newCurrentPiece: PieceProps, newNextPiece: PieceProps }) => {
             currentPiece.current = newCurrentPiece
             nextPiece.current = newNextPiece
-        })
+        }
 
-        socket.on('newMoveDown', (newY) => {
+        const handleMoveDown = (newY: number) => {
             currentPiece.current.y = newY
-        })
+        }
 
-        socket.on('newMoveLeft', (newX) => {
+        const handleMoveLeft = (newX: number) => {
             currentPiece.current.x = newX
-        })
+        }
 
-        socket.on('newMoveRight', (newX) => {
+        const handleMoveRight = (newX: number) => {
             currentPiece.current.x = newX
-        })
+        }
 
-        socket.on('newPoints', (newPoints) => {
+        const handleNewPoints = (newPoints: PieceProps['points']) => {
             currentPiece.current.points = newPoints
-        })
+        }
 
-        socket.on('gameWon', () => {
+        const handleGameWon = () => {
             gameWon.current = true
-        })
+        }
 
-        socket.on('resetGame', () => {
+        const handleResetGame = () => {
             currentPiece.current = initPiece()
             nextPiece.current = initPiece()
             stack.current = initStack()
@@ -64,7 +64,31 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
             cascadeTiles.current = []
             score.current = 0
             gameWon.current = false
-        })
+        }
+
+        socket.on('newGame', handleNewGame)
+        socket.on('newStack', handleNewStack)
+        socket.on('newPosition', handleNewPosition)
+        socket.on('newPiece', handleNewPiece)
+        socket.on('newMoveDown', handleMoveDown)
+        socket.on('newMoveLeft', handleMoveLeft)
+        socket.on('newMoveRight', handleMoveRight)
+        socket.on('newPoints', handleNewPoints)
+        socket.on('gameWon', handleGameWon)
+        socket.on('resetGame', handleResetGame)
+
+        return () => {
+            socket.off('newGame', handleNewGame)
+            socket.off('newStack', handleNewStack)
+            socket.off('newPosition', handleNewPosition)
+            socket.off('newPiece', handleNewPiece)
+            socket.off('newMoveDown', handleMoveDown)
+            socket.off('newMoveLeft', handleMoveLeft)
+            socket.off('newMoveRight', handleMoveRight)
+            socket.off('newPoints', handleNewPoints)
+            socket.off('gameWon', handleGameWon)
+            socket.off('resetGame', handleResetGame)
+        }
     }, [])
 }
 

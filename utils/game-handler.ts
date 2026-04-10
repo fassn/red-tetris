@@ -1,8 +1,8 @@
 import { RemoteSocket, Server, Socket } from "socket.io"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
-import { cleanStores, messageStore, sessionStore } from "../pages/api/socket-handler"
 import { SPACING, TILEWIDTH } from "./config"
-import { Message } from "./stores/message-store"
+import InMemoryMessageStore, { Message } from "./stores/message-store"
+import InMemorySessionStore from "./stores/session-store"
 import Player from "./player"
 import { PlayerState, PlayState } from "./types"
 
@@ -11,7 +11,13 @@ export interface RemoteSocketWithProps extends RemoteSocket<DefaultEventsMap, an
     playerId: string
 }
 
-const GameHandler = async (io: Server, socket: Socket) => {
+export type GameDeps = {
+    sessionStore: InMemorySessionStore
+    messageStore: InMemoryMessageStore
+    cleanStores: (roomName: string) => void
+}
+
+const GameHandler = async (io: Server, socket: Socket, deps: GameDeps) => {
     // Join room upon connection
     const allSockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
 
@@ -96,13 +102,12 @@ const GameHandler = async (io: Server, socket: Socket) => {
     }
 
     const addPlayer = () => {
-        let hasPlayer = false
-        for (const player of socket.data.game.players) {
-            if (player.id === socket.data.playerId) {
-                hasPlayer = true
-            }
-        }
-        if (!hasPlayer) {
+        const existing = socket.data.game.players.find(
+            (p: Player) => p.id === socket.data.playerId
+        )
+        if (existing) {
+            existing.socket = socket
+        } else {
             socket.data.game.addPlayer(new Player(socket.data.playerId, socket, socket.data.playerName))
         }
     }
@@ -142,7 +147,7 @@ const GameHandler = async (io: Server, socket: Socket) => {
 
     const createdMessage = (msg: Message) => {
         socket.to(socket.data.roomName).emit('newIncomingMsg', msg)
-        messageStore.saveMessage(socket.data.roomName, msg)
+        deps.messageStore.saveMessage(socket.data.roomName, msg)
     }
 
     const onDisconnect = async () => {
@@ -153,7 +158,7 @@ const GameHandler = async (io: Server, socket: Socket) => {
 
         socket.data.game.removePlayer(socket.data.playerId)
 
-        sessionStore.saveSession(socket.data.sessionId, {
+        deps.sessionStore.saveSession(socket.data.sessionId, {
             playerId: socket.data.playerId,
             playerName: socket.data.playerName,
             roomName: socket.data.roomName,
@@ -162,7 +167,7 @@ const GameHandler = async (io: Server, socket: Socket) => {
 
         const sockets = (await io.in(socket.data.roomName).fetchSockets() as unknown) as RemoteSocketWithProps[]
         if (sockets.length === 0) {
-            cleanStores(socket.data.roomName)
+            deps.cleanStores(socket.data.roomName)
         }
     }
 

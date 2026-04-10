@@ -17,16 +17,24 @@ const Chat = ({ playerName }: ChatProps) => {
     const [messages, setMessages] = useState<Array<Message>>([])
 
     useEffect(() => {
-        socket.on('messages', (messages) => {
+        const handleMessages = (messages: Message[]) => {
             setMessages(messages)
-        })
+        }
 
-        socket.on('newIncomingMsg', (msg: Message) => {
+        const handleNewMsg = (msg: Message) => {
             setMessages((currentMsg) => [
                 ...currentMsg,
                 { author: msg.author, message: msg.message }
             ])
-        })
+        }
+
+        socket.on('messages', handleMessages)
+        socket.on('newIncomingMsg', handleNewMsg)
+
+        return () => {
+            socket.off('messages', handleMessages)
+            socket.off('newIncomingMsg', handleNewMsg)
+        }
     }, [])
 
     const sendMessage = async () => {
