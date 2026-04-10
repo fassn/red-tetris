@@ -5,6 +5,7 @@ import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
 // Cached canvas colors — synced from CSS custom properties via syncCanvasTheme()
 let _appBg = '#0f172a'
 let _tileBg = '#1e293b'   // Empty tile fill
+let _textColor = '#f1f5f9' // Text on canvas (matches --content)
 
 /** Read CSS custom properties and cache them for canvas rendering. Call on mount + theme toggle. */
 export function syncCanvasTheme() {
@@ -12,6 +13,7 @@ export function syncCanvasTheme() {
     const s = getComputedStyle(document.documentElement)
     _appBg = s.getPropertyValue('--surface-app').trim() || _appBg
     _tileBg = s.getPropertyValue('--surface-tile').trim() || _tileBg
+    _textColor = s.getPropertyValue('--content').trim() || _textColor
 }
 
 export function getTileBg(): string {
@@ -115,7 +117,7 @@ export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTi
         tile(ctx, t.x, t.y)
     }
 
-    ctx.fillStyle = 'black'
+    ctx.fillStyle = _textColor
     ctx.font = '55px Helvetica'
     ctx.fillText('ATTA BOY!!!', 5, BOARDHEIGHT / 2)
     ctx.font = '20px Helvetica'
@@ -145,7 +147,7 @@ export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number) => {
     ctx.fillStyle = rgba(colors[colorIndex])
     ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
-    ctx.fillStyle = 'black'
+    ctx.fillStyle = _textColor
     ctx.font = '55px Helvetica'
     ctx.fillText('YOU SUCK', 15, BOARDHEIGHT / 2)
     ctx.font = '20px Helvetica'
