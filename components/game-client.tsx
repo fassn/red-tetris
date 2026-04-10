@@ -140,7 +140,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     return (
         <div className='flex flex-col sm:flex-row gap-3 items-center sm:items-start h-[calc(100dvh-5.5rem)] sm:h-auto'>
             {isPlaying && (
-                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 sm:justify-between flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
+                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-3 sm:gap-0 flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
                     <div className='flex flex-col items-center sm:items-start gap-3 sm:gap-4'>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
