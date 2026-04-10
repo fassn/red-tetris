@@ -1,5 +1,5 @@
 import type { TypedServer } from "./io-types"
-import { ALPHA_MIN, COLOR_PALETTE, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { PIECE_COLORS, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
 import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
@@ -132,10 +132,7 @@ class Game {
     getRandomPieceProps = (): { type: PieceType, color: RGBA} => {
         const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
         const type: PieceType = types[Math.floor(Math.random() * types.length)]
-
-        const colors: RGBA[] = COLOR_PALETTE
-        const alpha = Math.floor(Math.random() * (255 - ALPHA_MIN)) + ALPHA_MIN
-        const color: RGBA = { ...colors[Math.floor(Math.random() * colors.length)], a: alpha}
+        const color: RGBA = PIECE_COLORS[type]
 
         return { type, color }
     }

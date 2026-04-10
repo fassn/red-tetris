@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react"
 import { SocketContext } from "../context/socket"
 import { useTheme } from "../context/theme"
 
-import { BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
+import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
 import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
@@ -92,7 +92,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                     drawWin(ctx, stack.current, cascadeTiles.current)
                 } else {
                     if (shouldAdvance) {
-                        loseColorIndex.current = (loseColorIndex.current + 1) % COLOR_PALETTE.length
+                        loseColorIndex.current = (loseColorIndex.current + 1) % PIECE_COLOR_LIST.length
                     }
                     drawLose(ctx, loseColorIndex.current)
                 }

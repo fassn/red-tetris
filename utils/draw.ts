@@ -1,4 +1,4 @@
-import { BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
 import { createEmptyStack } from "../shared/stack"
 import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
 
@@ -143,7 +143,7 @@ export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
 }
 
 export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number) => {
-    const colors = COLOR_PALETTE
+    const colors = PIECE_COLOR_LIST
     ctx.fillStyle = rgba(colors[colorIndex])
     ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
