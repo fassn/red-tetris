@@ -131,7 +131,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     return (
-        <div className='flex flex-col items-center gap-4 sm:flex-row sm:items-start'>
+        <div className='flex flex-row gap-3'>
             <canvas
                 ref={canvasRef}
                 width={BOARDWIDTH}
@@ -143,7 +143,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                 tabIndex={0}
             />
             {isPlaying && (
-                <div className='flex flex-col gap-6'>
+                <div className='flex flex-col justify-between flex-shrink-0' style={{ height: BOARDHEIGHT }}>
                     <div className='flex flex-col gap-4'>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-neutral-500'>Next</span>
@@ -164,7 +164,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                         </div>
                     </div>
                     {otherPlayers.length > 0 && (
-                        <aside className='flex flex-row lg:flex-col gap-3' aria-label='Opponent boards'>
+                        <aside className='flex flex-row gap-3' aria-label='Opponent boards'>
                             {otherPlayers.map((p) => {
                                 const board = opponentBoards.get(p.playerId)
                                 return (
