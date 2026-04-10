@@ -1,5 +1,4 @@
 import type { TypedServer } from './socket-types'
-import { socketData } from './socket-types'
 import { SPACING, TILEHEIGHT } from "./config"
 import Game from "./game"
 import Piece from "./piece"
@@ -41,17 +40,15 @@ export function movePieceDown(io: TypedServer, currentPiece: Piece, player: Play
 }
 
 export function emitEndGameToPlayers(io: TypedServer, player: Player, otherPlayer: Player | undefined) {
-    const psd = socketData(player.socket)
-    psd.playerState.playState = PlayState.ENDGAME
+    player.socket.data.playerState.playState = PlayState.ENDGAME
 
     /* Send the good news to the other player */
     if (otherPlayer) {
-        const opsd = socketData(otherPlayer.socket)
         io.to(otherPlayer.socket.id).emit('gameWon')
-        opsd.playerState.playState = PlayState.ENDGAME
-        io.to(otherPlayer.socket.id).emit('newState', { playerState: opsd.playerState, otherPlayerState: psd.playerState })
+        otherPlayer.socket.data.playerState.playState = PlayState.ENDGAME
+        io.to(otherPlayer.socket.id).emit('newState', { playerState: otherPlayer.socket.data.playerState, otherPlayerState: player.socket.data.playerState })
     }
 
     /* Send the bad news to the current player */
-    io.to(player.socket.id).emit('newState', { playerState: psd.playerState, otherPlayerState: otherPlayer ? socketData(otherPlayer.socket).playerState : undefined })
+    io.to(player.socket.id).emit('newState', { playerState: player.socket.data.playerState, otherPlayerState: otherPlayer?.socket.data.playerState })
 }

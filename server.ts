@@ -11,7 +11,6 @@ import { FRAMERATE } from './utils/config'
 import Player from './utils/player'
 import { PlayState } from './utils/types'
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from './utils/socket-types'
-import { socketData } from './utils/socket-types'
 import {
     checkIfPieceHasHit,
     emitEndGameToPlayers,
@@ -93,7 +92,7 @@ app.prepare().then(() => {
         setTimeout(async () => {
             try {
                 const sockets = await io.fetchSockets()
-                const rooms = new Set(sockets.map((s) => socketData(s).roomName))
+                const rooms = new Set(sockets.map((s) => s.data.roomName))
 
                 for (const room of rooms) {
                     const game = gameStore.findGame(room)

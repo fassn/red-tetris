@@ -45,8 +45,3 @@ export interface SocketData {
 export type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>
 export type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>
 export type TypedRemoteSocket = RemoteSocket<ServerToClientEvents, SocketData>
-
-/** Cast socket.data from Partial<SocketData> to SocketData. Safe after session middleware. */
-export function socketData(socket: { data: Partial<SocketData> }): SocketData {
-    return socket.data as SocketData
-}
