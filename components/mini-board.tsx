@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { COLS, ROWS } from '../shared/config'
+import { useTheme } from '../context/theme'
 import { getTileBg } from '../utils/draw'
 import { PlayState, RGBA, Stack } from '../shared/types'
 
@@ -21,6 +22,7 @@ type MiniBoardProps = {
 
 const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const { theme } = useTheme()
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -44,7 +46,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
             y = 0
             x += MINI_TILE + MINI_SPACING
         }
-    }, [stack])
+    }, [stack, theme])
 
     const stateLabel = playState === PlayState.PLAYING
         ? '🟢 Playing'
