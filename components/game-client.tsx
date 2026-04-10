@@ -8,6 +8,7 @@ import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
 import MiniBoard from "./mini-board"
+import DPad from "./d-pad"
 import type { OpponentBoard } from "../pages/index"
 
 type GameClientProps = {
@@ -189,6 +190,11 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                 aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
                 tabIndex={0}
             />
+            {isPlaying && playerState.playState === PlayState.PLAYING && (
+                <div className='order-3 sm:hidden w-full'>
+                    <DPad />
+                </div>
+            )}
         </div>
     )
 }
