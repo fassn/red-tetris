@@ -112,7 +112,13 @@ const GameHandler = async (io: Server, socket: Socket, deps: GameDeps) => {
         }
     }
 
+    const isPlayerActive = (): boolean => {
+        return socket.data.game?.isStarted === true &&
+            socket.data.playerState?.playState === PlayState.PLAYING
+    }
+
     const moveDown = () => {
+        if (!isPlayerActive()) return
         const playerStack = socket.data.game.getPlayerStack(socket.data.playerId)
         const playerCurrentPiece = socket.data.game.getPlayerPieces(socket.data.playerId)[0]
         playerCurrentPiece.down(playerStack)
@@ -121,6 +127,7 @@ const GameHandler = async (io: Server, socket: Socket, deps: GameDeps) => {
     }
 
     const moveLeft = () => {
+        if (!isPlayerActive()) return
         const playerStack = socket.data.game.getPlayerStack(socket.data.playerId)
         const playerCurrentPiece = socket.data.game.getPlayerPieces(socket.data.playerId)[0]
         playerCurrentPiece.setX(playerCurrentPiece.getX() - TILEWIDTH - SPACING, playerStack)
@@ -129,6 +136,7 @@ const GameHandler = async (io: Server, socket: Socket, deps: GameDeps) => {
     }
 
     const moveRight = () => {
+        if (!isPlayerActive()) return
         const playerStack = socket.data.game.getPlayerStack(socket.data.playerId)
         const playerCurrentPiece = socket.data.game.getPlayerPieces(socket.data.playerId)[0]
         playerCurrentPiece.setX(playerCurrentPiece.getX() + TILEWIDTH + SPACING, playerStack)
@@ -137,6 +145,7 @@ const GameHandler = async (io: Server, socket: Socket, deps: GameDeps) => {
     }
 
     const rotate = () => {
+        if (!isPlayerActive()) return
         const playerStack = socket.data.game.getPlayerStack(socket.data.playerId)
         const playerCurrentPiece = socket.data.game.getPlayerPieces(socket.data.playerId)[0]
         if (playerCurrentPiece.rotate(playerStack)) {
@@ -194,18 +203,34 @@ const GameHandler = async (io: Server, socket: Socket, deps: GameDeps) => {
         }
     }
 
-    socket.on('setReady', setReady)
-    socket.on('startGame', startGame)
+    const safe = (handler: (...args: any[]) => any) => {
+        return (...args: any[]) => {
+            try {
+                const result = handler(...args)
+                if (result && typeof result.catch === 'function') {
+                    return result.catch((err: unknown) => {
+                        console.error(`[${socket.data.roomName}] Socket handler error:`, err)
+                    })
+                }
+                return result
+            } catch (err) {
+                console.error(`[${socket.data.roomName}] Socket handler error:`, err)
+            }
+        }
+    }
 
-    socket.on('moveDown', moveDown)
-    socket.on('moveLeft', moveLeft)
-    socket.on('moveRight', moveRight)
-    socket.on('rotate', rotate)
+    socket.on('setReady', safe(setReady))
+    socket.on('startGame', safe(startGame))
 
-    socket.on('disconnect', onDisconnect)
-    socket.on('quitGame', quitGame)
+    socket.on('moveDown', safe(moveDown))
+    socket.on('moveLeft', safe(moveLeft))
+    socket.on('moveRight', safe(moveRight))
+    socket.on('rotate', safe(rotate))
 
-    socket.on('createdMessage', createdMessage)
+    socket.on('disconnect', safe(onDisconnect))
+    socket.on('quitGame', safe(quitGame))
+
+    socket.on('createdMessage', safe(createdMessage))
 }
 
 export default GameHandler

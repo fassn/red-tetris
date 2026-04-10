@@ -145,6 +145,8 @@ class Piece {
             case ROTATION.FOURTH:
                 newPoints = POINTS[this.type][0]
             break;
+            default:
+                return false
         }
 
         for (let i = 0; i < 4; i++) {

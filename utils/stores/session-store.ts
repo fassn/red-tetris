@@ -1,11 +1,12 @@
-import { PlayerState } from "..//types"
+import { PlayerState } from "../types"
 
-/* abstract */ class SessionStore {
-    findSession(id: string) {}
-    saveSession(id: string, session: Session) {}
-    findAllSessions() {}
-    removeSessionsFromRoom(roomName: string) {}
+export interface SessionStore {
+    findSession(id: string): Session | undefined
+    saveSession(id: string, session: Session): void
+    findAllSessions(): Session[]
+    removeSessionsFromRoom(roomName: string): void
 }
+
 export type Session = {
     playerId: string
     playerName: string
@@ -13,11 +14,10 @@ export type Session = {
     roomName: string
 }
 
-export default class InMemorySessionStore extends SessionStore {
+export default class InMemorySessionStore implements SessionStore {
     sessions: Map<string, Session>
 
     constructor() {
-        super();
         this.sessions = new Map()
     }
 
@@ -34,12 +34,10 @@ export default class InMemorySessionStore extends SessionStore {
     }
 
     removeSessionsFromRoom(roomName: string) {
-        for (let [key, value] of this.sessions) {
+        for (const [key, value] of this.sessions) {
             if (value.roomName === roomName) {
                 this.sessions.delete(key)
             }
         }
-        console.log('after sessions removed');
-        console.log(this.sessions);
     }
 }

@@ -1,5 +1,5 @@
 import { MutableRefObject, useContext, useEffect } from "react"
-import { initPiece, initStack } from "../components/game-client"
+import { createEmptyPiece, createEmptyStack } from "./stack"
 import { SocketContext } from "../context/socket"
 import { PieceProps, Stack, TileProps } from "./types"
 
@@ -57,9 +57,9 @@ const useListeners = ({ stack, currentPiece, nextPiece, score, gameWon, cascadeT
         }
 
         const handleResetGame = () => {
-            currentPiece.current = initPiece()
-            nextPiece.current = initPiece()
-            stack.current = initStack()
+            currentPiece.current = createEmptyPiece()
+            nextPiece.current = createEmptyPiece()
+            stack.current = createEmptyStack()
             getCascadeTilesCalled.current = false
             cascadeTiles.current = []
             score.current = 0

@@ -1,5 +1,6 @@
 import { P5CanvasInstance } from "react-p5-wrapper"
 import { APP_BACKGROUND_COLOR, BACKGROUND_COLOR, BOARDHEIGHT, BOARDWIDTH, COLOR_PALETTE, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "./config"
+import { createEmptyStack } from "./stack"
 import { PieceProps, RGBA, Stack, TileProps } from "./types"
 
 export const drawWin = (p5: P5CanvasInstance, stack: Stack[], cascadeTiles: TileProps[]) => {
@@ -10,13 +11,7 @@ export const drawWin = (p5: P5CanvasInstance, stack: Stack[], cascadeTiles: Tile
     p5.rect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
     // reset stack tiles
-    stack = function () {
-        let newStack = new Array<Stack>(ROWS*COLS)
-        for (let i = 0; i < ROWS*COLS; i++) {
-            newStack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
-        }
-        return newStack
-    }()
+    stack = createEmptyStack()
     drawStack(p5, stack)
 
     // draw cascade tiles
@@ -61,10 +56,9 @@ export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
     }
 }
 
-let i = 0;
-export const drawLose = (p5: P5CanvasInstance) => {
+export const drawLose = (p5: P5CanvasInstance, colorIndex: number): number => {
     const colors: RGBA[] = COLOR_PALETTE
-    p5.fill(colors[i].r, colors[i].g, colors[i].b)
+    p5.fill(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b)
     p5.stroke(255,255,255)
     p5.rect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
@@ -78,10 +72,7 @@ export const drawLose = (p5: P5CanvasInstance) => {
     p5.textFont('Helvetica')
     p5.text('(click to quit game)', 75, BOARDHEIGHT - 40)
 
-    i++
-    if (i % 3 === 0) {
-        i = 0
-    }
+    return (colorIndex + 1) % colors.length
 }
 
 export const drawStack = (p5: P5CanvasInstance, stack: Stack[]) => {

@@ -1,7 +1,7 @@
-/* abstract */ class MessageStore {
-    saveMessage(roomName:string, message: Message) {}
-    findMessagesForRoom(playerId: string) {}
-    removeMessagesFromRoom(roomName: string) {}
+export interface MessageStore {
+    saveMessage(roomName: string, message: Message): void
+    findMessagesForRoom(roomName: string): Message[]
+    removeMessagesFromRoom(roomName: string): void
 }
 
 export type Message = {
@@ -9,11 +9,10 @@ export type Message = {
     message: string
 }
 
-export default class InMemoryMessageStore extends MessageStore {
+export default class InMemoryMessageStore implements MessageStore {
     messages: Map<string, Message[]>
 
     constructor() {
-        super();
         this.messages = new Map()
     }
 
@@ -31,13 +30,7 @@ export default class InMemoryMessageStore extends MessageStore {
         return this.messages.get(roomName) || []
     }
 
-    removeMessagesFromRoom(roomName: string): void {
-        for (let [key, _] of this.messages) {
-            if (key === roomName) {
-                this.messages.delete(key)
-            }
-        }
-        console.log('after messages removed');
-        console.log(this.messages);
+    removeMessagesFromRoom(roomName: string) {
+        this.messages.delete(roomName)
     }
 }

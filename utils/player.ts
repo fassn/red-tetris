@@ -1,6 +1,6 @@
 import { Socket } from "socket.io"
-import { COLS, ROWS } from "./config"
 import Piece from "./piece"
+import { createEmptyStack } from "./stack"
 import { Stack } from "./types"
 
 class Player {
@@ -16,10 +16,7 @@ class Player {
         this.socket = socket
         this.name = name
         this.score = 0
-        this.stack = new Array<Stack>(ROWS*COLS)
-        for (let i = 0; i < ROWS*COLS; i++) {
-            this.stack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
-        }
+        this.stack = createEmptyStack()
         this.pieces = []
     }
 }

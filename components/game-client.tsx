@@ -7,8 +7,9 @@ const ReactP5Wrapper = dynamic(() => import('react-p5-wrapper')
 import { useContext, useRef } from "react"
 import { SocketContext } from "../context/socket"
 
-import { BACKGROUND_COLOR, CANVASHEIGHT, CANVASWIDTH, COLS, FRAMERATE, ROWS } from "../utils/config"
+import { CANVASHEIGHT, CANVASWIDTH, FRAMERATE } from "../utils/config"
 import { drawLose, drawNextPiece, drawPiece, drawScore, drawStack, drawWin, getCascadeTiles } from "../utils/draw"
+import { createEmptyPiece, createEmptyStack } from "../utils/stack"
 import useListeners from "../utils/use-listeners"
 import { PieceProps, PlayerState, PlayState, Stack, TileProps } from "../utils/types"
 
@@ -23,34 +24,17 @@ type GameClientProps = {
     playerState: PlayerState,
 }
 
-export function initStack() {
-    let newStack = new Array<Stack>(ROWS*COLS)
-    for (let i = 0; i < ROWS*COLS; i++) {
-        newStack[i] = { isFilled: false, color: { r: 0, g: 0, b: 0, a: 0 } }
-    }
-    return newStack
-}
-
-export function initPiece(): PieceProps {
-    let color = BACKGROUND_COLOR
-    return {
-        x: 0,
-        y: 0,
-        points: [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}],
-        color: { r: color.r, g: color.g, b: color.b }
-    }
-}
-
 const GameClient = ({ playerState }: GameClientProps) => {
     const socket = useContext(SocketContext)
 
-    const stack = useRef<Stack[]>(initStack())
-    const currentPiece = useRef<PieceProps>(initPiece())
-    const nextPiece = useRef<PieceProps>(initPiece())
+    const stack = useRef<Stack[]>(createEmptyStack())
+    const currentPiece = useRef<PieceProps>(createEmptyPiece())
+    const nextPiece = useRef<PieceProps>(createEmptyPiece())
     const getCascadeTilesCalled = useRef<boolean>(false)
     const cascadeTiles = useRef<TileProps[]>([])
     const score = useRef<number>(0)
     const gameWon = useRef<boolean>(false)
+    const loseColorIndex = useRef<number>(0)
 
     useListeners({ stack, currentPiece, nextPiece, score, gameWon, cascadeTiles, getCascadeTilesCalled })
 
@@ -77,7 +61,7 @@ const GameClient = ({ playerState }: GameClientProps) => {
                     drawWin(p5, stack.current, cascadeTiles.current)
                 }
                 else {
-                    drawLose(p5)
+                    loseColorIndex.current = drawLose(p5, loseColorIndex.current)
                 }
             }
         }

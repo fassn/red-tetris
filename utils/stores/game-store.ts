@@ -1,22 +1,19 @@
 import { Server } from "socket.io"
-import Game from "..//game"
+import Game from "../game"
 import Player from "../player"
 
-/* abstract */ class GameStore {
-    create(roomName: string, io: Server, players: Player[]) {}
-    findGame(roomName: string) {}
-    saveGame(roomName: string, game: Game) {}
-    removeGameFromRoom(roomName: string) {}
+export interface GameStore {
+    create(roomName: string, io: Server, players: Player[]): Game | undefined
+    findGame(roomName: string): Game | undefined
+    saveGame(roomName: string, game: Game): void
+    removeGameFromRoom(roomName: string): void
 }
 
-export default class InMemoryGameStore extends GameStore {
+export default class InMemoryGameStore implements GameStore {
     games: Map<string, Game>
-    players: Map<String, Player[]>
 
     constructor() {
-        super()
         this.games = new Map()
-        this.players = new Map()
     }
 
     create(roomName: string, io: Server, players: Player[]): Game | undefined {
@@ -27,7 +24,7 @@ export default class InMemoryGameStore extends GameStore {
         return this.findGame(roomName)
     }
 
-    findGame(roomName: string): Game| undefined {
+    findGame(roomName: string): Game | undefined {
         return this.games.get(roomName)
     }
 
@@ -35,13 +32,7 @@ export default class InMemoryGameStore extends GameStore {
         this.games.set(roomName, game)
     }
 
-    removeGameFromRoom(roomName: string): void {
-        for (let [key, _] of this.games) {
-            if (key === roomName) {
-                this.games.delete(key)
-            }
-        }
-        console.log('after game removed');
-        console.log(this.games);
+    removeGameFromRoom(roomName: string) {
+        this.games.delete(roomName)
     }
 }
