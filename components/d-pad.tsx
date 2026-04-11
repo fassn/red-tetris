@@ -38,6 +38,14 @@ const DPad = ({ disabled }: DPadProps) => {
             >←</button>
             <button
                 className={btn}
+                aria-label='Move right'
+                disabled={disabled}
+                onTouchStart={(e) => { e.preventDefault(); startRepeat(() => socket.emit('moveRight')) }}
+                onTouchEnd={stopRepeat}
+                onTouchCancel={stopRepeat}
+            >→</button>
+            <button
+                className={btn}
                 aria-label='Move down'
                 disabled={disabled}
                 onTouchStart={(e) => { e.preventDefault(); startRepeat(() => socket.emit('moveDown')) }}
@@ -50,14 +58,6 @@ const DPad = ({ disabled }: DPadProps) => {
                 disabled={disabled}
                 onTouchStart={(e) => { e.preventDefault(); socket.emit('rotate') }}
             >↻</button>
-            <button
-                className={btn}
-                aria-label='Move right'
-                disabled={disabled}
-                onTouchStart={(e) => { e.preventDefault(); startRepeat(() => socket.emit('moveRight')) }}
-                onTouchEnd={stopRepeat}
-                onTouchCancel={stopRepeat}
-            >→</button>
         </div>
     )
 }
