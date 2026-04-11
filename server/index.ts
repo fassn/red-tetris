@@ -1,20 +1,15 @@
 import { createServer } from 'http'
 import next from 'next'
-import { Server } from 'socket.io'
-import * as crypto from 'crypto'
 
-import GameHandler from './game-handler'
-import InMemorySessionStore, { Session } from './stores/session-store'
+import InMemorySessionStore from './stores/session-store'
 import InMemoryMessageStore from './stores/message-store'
 import InMemoryGameStore from './stores/game-store'
 import { TICK_RATE } from '../shared/config'
 import { PlayState } from '../shared/types'
-import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
-import type { SocketData } from './io-types'
-import { isValidName } from './validation'
 import { log } from './logger'
 import { destroyRateLimiter } from './rate-limiter'
 import { closeDb } from './stores/highscore-store'
+import { createSocketServer } from './create-socket-server'
 import {
     broadcastOpponentStack,
     checkIfPieceHasHit,
@@ -37,66 +32,13 @@ const sessionStore = new InMemorySessionStore()
 const messageStore = new InMemoryMessageStore()
 const gameStore = new InMemoryGameStore()
 
-const randomId = (): string => crypto.randomBytes(8).toString('hex')
-
-const cleanStores = (roomName: string) => {
-    sessionStore.removeSessionsFromRoom(roomName)
-    messageStore.removeMessagesFromRoom(roomName)
-    gameStore.removeGameFromRoom(roomName)
-}
-
 app.prepare().then(() => {
     const httpServer = createServer(handle)
-    // Socket.IO v4 blocks cross-origin requests by default (same-origin only).
-    // Set SOCKET_CORS_ORIGIN to allow a specific cross-origin for CDN/split deployments.
-    const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer, {
+
+    const { io } = createSocketServer(httpServer, { sessionStore, messageStore, gameStore }, {
         ...(process.env.SOCKET_CORS_ORIGIN && {
             cors: { origin: process.env.SOCKET_CORS_ORIGIN },
         }),
-    })
-
-    // Session recovery middleware
-    io.use((socket, next) => {
-        const sessionId = socket.handshake.auth.sessionId
-        if (sessionId) {
-            const session: Session | undefined = sessionStore.findSession(sessionId)
-            if (session) {
-                // Rotate sessionId on reconnect to prevent replay of stolen tokens
-                const newSessionId = randomId()
-                sessionStore.removeSession(sessionId)
-                socket.data.sessionId = newSessionId
-                socket.data.playerId = session.playerId
-                socket.data.roomName = session.roomName
-                socket.data.playerName = session.playerName
-                socket.data.playerState = session.playerState
-                socket.data.messages = messageStore.findMessagesForRoom(session.roomName)
-                socket.data.game = gameStore.findGame(session.roomName) ?? gameStore.create(session.roomName, io, [])
-                // Mark as reconnection so the handler can disconnect the old socket
-                socket.data.isReconnect = true
-                return next()
-            }
-        }
-
-        const playerName = socket.handshake.auth.playerName
-        const roomName = socket.handshake.auth.roomName
-        if (!isValidName(roomName)) return next(new Error('invalid room name'))
-        if (!isValidName(playerName)) return next(new Error('invalid player name'))
-
-        socket.data.sessionId = randomId()
-        socket.data.playerId = randomId()
-        socket.data.roomName = roomName
-        socket.data.playerName = playerName
-        socket.data.playerState = { host: false, playState: PlayState.WAITING }
-        socket.data.messages = messageStore.findMessagesForRoom(roomName)
-        const game = gameStore.findGame(roomName)
-        if (!game && gameStore.isFull()) return next(new Error('server is full'))
-        socket.data.game = game ?? gameStore.create(roomName, io, [])
-
-        next()
-    })
-
-    io.on('connection', (socket) => {
-        GameHandler(io, socket, { sessionStore, messageStore, cleanStores })
     })
 
     // Game loop — each game tracks its own tick count and drop interval
