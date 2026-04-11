@@ -60,6 +60,8 @@ app.prepare().then(() => {
                 socket.data.playerState = session.playerState
                 socket.data.messages = messageStore.findMessagesForRoom(session.roomName)
                 socket.data.game = gameStore.findGame(session.roomName) ?? gameStore.create(session.roomName, io, [])
+                // Mark as reconnection so the handler can disconnect the old socket
+                socket.data.isReconnect = true
                 return next()
             }
         }
