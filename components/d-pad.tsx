@@ -24,7 +24,7 @@ const DPad = ({ disabled }: DPadProps) => {
         }, REPEAT_DELAY)
     }, [stopRepeat])
 
-    const btn = 'flex items-center justify-center w-16 h-12 rounded-lg bg-surface-card border border-edge text-xl font-bold active:bg-brand active:text-content-inverse select-none transition-colors'
+    const btn = 'flex items-center justify-center w-16 h-12 rounded-lg bg-surface-card border border-edge text-xl font-bold active:bg-brand active:text-content-inverse select-none transition-colors touch-manipulation'
 
     return (
         <div className='flex lg:hidden items-center justify-center gap-6 py-2' role='group' aria-label='Game controls'>
