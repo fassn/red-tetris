@@ -26,9 +26,8 @@ function ensureDir(dir: string) {
 function createDb(): Database.Database {
     ensureDir(DATA_DIR)
     const dbPath = path.join(DATA_DIR, 'highscores.db')
+    const db = new Database(dbPath)
     try {
-        const db = new Database(dbPath)
-
         db.pragma('journal_mode = WAL')
         db.exec(`
             CREATE TABLE IF NOT EXISTS highscores (
@@ -47,6 +46,7 @@ function createDb(): Database.Database {
 
         return db
     } catch (err) {
+        db.close()
         storeLog.error('Failed to initialize database:', err)
         throw err
     }
