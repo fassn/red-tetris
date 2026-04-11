@@ -144,7 +144,7 @@ const Home: NextPage = () => {
                                 <Chat playerName={playerName} />
                             </section>
                         </div>
-                        <section className={`w-full sm:w-auto min-h-0${isInGame ? '' : ' hidden sm:block'}`} aria-label='Game'>
+                        <section className={`w-full sm:w-auto min-h-0 flex-1 sm:flex-initial${isInGame ? '' : ' hidden sm:block'}`} aria-label='Game'>
                             <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} />
                         </section>
                     </div>
