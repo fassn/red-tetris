@@ -83,7 +83,7 @@ const Home: NextPage = () => {
             socket.playerId = playerId
         }
 
-        const handleNewState = ({ playerState, otherPlayers }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[] }) => {
+        const handleNewState = ({ playerState, otherPlayers, gameMode: mode }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[], gameMode?: GameMode }) => {
             if (playerState) {
                 setPlayerState(playerState)
                 // Clear opponent boards and timer when returning to lobby
@@ -94,6 +94,9 @@ const Home: NextPage = () => {
             }
             if (otherPlayers) {
                 setOtherPlayers(otherPlayers)
+            }
+            if (mode) {
+                setGameMode(mode)
             }
         }
 

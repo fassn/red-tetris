@@ -4,7 +4,7 @@ export interface ServerToClientEvents {
     session: (data: { sessionId: string; playerId: string }) => void
     messages: (messages: Message[]) => void
     roomIsFull: () => void
-    newState: (data: { playerState?: PlayerState; otherPlayers?: RoomPlayer[] }) => void
+    newState: (data: { playerState?: PlayerState; otherPlayers?: RoomPlayer[]; gameMode?: GameMode }) => void
     newGame: (data: { newStack: Stack[]; firstPiece: PieceProps; secondPiece: PieceProps }) => void
     newStack: (data: { newStack: Stack[]; newScore: number }) => void
     newPosition: (newY: number) => void

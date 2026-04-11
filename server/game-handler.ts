@@ -35,9 +35,8 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     socket.join(sd.roomName)
     socket.emit('session', { sessionId: sd.sessionId, playerId: sd.playerId })
     socket.emit('messages', sd.messages)
-    socket.emit('gameModeChanged', { gameMode: sd.game.gameMode })
 
-    /** Broadcast playerState + otherPlayers to every socket in the room */
+    /** Broadcast playerState + otherPlayers + gameMode to every socket in the room */
     const broadcastRoomState = async () => {
         const sockets = await io.in(sd.roomName).fetchSockets()
         for (const sock of sockets) {
@@ -47,6 +46,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
             io.to(sock.id).emit('newState', {
                 playerState: sock.data.playerState,
                 otherPlayers,
+                gameMode: sd.game.gameMode,
             })
         }
     }
