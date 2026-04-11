@@ -1,6 +1,6 @@
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { FormEvent } from "react"
+import { FormEvent, useEffect, useRef } from "react"
 
 interface FormData {
     room_name: { value: string },
@@ -10,6 +10,11 @@ interface FormData {
 const Welcome = () => {
     const router = useRouter()
     const error = router.query.error as string | undefined
+    const roomInputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        roomInputRef.current?.focus()
+    }, [])
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -48,7 +53,7 @@ const Welcome = () => {
             )}
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='room_name'>Room name</label>
-                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='room_name' name='room_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only'></input>
+                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='room_name' name='room_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only' ref={roomInputRef}></input>
             </div>
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='player_name'>Player name</label>

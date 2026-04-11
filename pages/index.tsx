@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import Chat from '../components/chat'
 import ConnectionOverlay from '../components/connection-overlay'
@@ -39,6 +39,18 @@ const Home: NextPage = () => {
     } = useGameState()
 
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
+
+    const closeForfeitDialog = useCallback(() => setShowForfeitDialog(false), [])
+
+    // Close forfeit dialog on Escape
+    useEffect(() => {
+        if (!showForfeitDialog) return
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') closeForfeitDialog()
+        }
+        window.addEventListener('keydown', handleKey)
+        return () => window.removeEventListener('keydown', handleKey)
+    }, [showForfeitDialog, closeForfeitDialog])
 
     const handleHeaderAction = () => {
         if (isInGame) {
@@ -102,15 +114,15 @@ const Home: NextPage = () => {
             <Footer />
 
             {showForfeitDialog && (
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50' role='dialog' aria-modal='true' aria-label='Forfeit confirmation'>
-                    <div className='bg-surface-card rounded-lg shadow-lg p-6 max-w-sm mx-4'>
+                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50' role='dialog' aria-modal='true' aria-label='Forfeit confirmation' onClick={closeForfeitDialog}>
+                    <div className='bg-surface-card rounded-lg shadow-lg p-6 max-w-sm mx-4' onClick={(e) => e.stopPropagation()}>
                         <h2 className='text-lg font-semibold mb-2'>Forfeit Game?</h2>
                         <p className='text-content-secondary text-sm mb-6'>
                             Are you sure you want to forfeit? This will count as a loss and you won&apos;t be eligible for the leaderboard.
                         </p>
                         <div className='flex gap-3 justify-end'>
                             <button
-                                onClick={() => setShowForfeitDialog(false)}
+                                onClick={closeForfeitDialog}
                                 className='px-4 py-2 text-sm font-medium rounded border border-edge hover:bg-surface-input transition-colors'
                             >
                                 Cancel
