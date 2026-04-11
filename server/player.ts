@@ -10,6 +10,7 @@ class Player {
     score: number
     stack: Stack[]
     pieces: Piece[]
+    forfeited: boolean
 
     constructor(id: string, socket: TypedSocket, name: string) {
         this.id = id
@@ -18,6 +19,7 @@ class Player {
         this.score = 0
         this.stack = createEmptyStack()
         this.pieces = []
+        this.forfeited = false
     }
 }
 

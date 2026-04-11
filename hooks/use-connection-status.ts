@@ -20,9 +20,10 @@ export function useConnectionStatus() {
         }
 
         const onDisconnect = (reason: string) => {
-            // "io server disconnect" means the server forced disconnection (e.g. room full)
-            // Other reasons trigger automatic reconnection
-            if (reason === 'io server disconnect') {
+            if (reason === 'io client disconnect') {
+                // Intentional disconnect (e.g. leaving room) — no overlay
+                setStatus('idle')
+            } else if (reason === 'io server disconnect') {
                 setStatus('error')
                 setError('Disconnected by server')
             } else {

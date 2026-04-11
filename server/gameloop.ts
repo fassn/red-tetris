@@ -4,6 +4,7 @@ import Game from "./game"
 import Piece from "./piece"
 import Player from "./player"
 import { PlayState, Stack } from "../shared/types"
+import { saveScore } from "./stores/highscore-store"
 
 export function emitNextPiece(io: TypedServer, game: Game, player: Player, playerPieces: Piece[]) {
     const newCurrentPiece = game.getPieceProps(playerPieces[0])
@@ -97,6 +98,12 @@ export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game)
 
     // If no active players remain, reset the game
     if (activePlayers.length <= 1) {
+        const roomName = game.players[0]?.socket.data.roomName ?? ''
+        for (const player of game.players) {
+            if (player.score > 0 && !player.forfeited) {
+                saveScore(player.name, player.score, game.gameMode, roomName)
+            }
+        }
         game.reset()
     }
 }
@@ -132,6 +139,14 @@ export function emitTimeAttackEnd(io: TypedServer, game: Game) {
             playerState: player.socket.data.playerState,
             otherPlayers,
         })
+    }
+
+    // Save highscores for all players with score > 0 (excluding forfeited)
+    const roomName = game.players[0]?.socket.data.roomName ?? ''
+    for (const player of game.players) {
+        if (player.score > 0 && !player.forfeited) {
+            saveScore(player.name, player.score, game.gameMode, roomName)
+        }
     }
 
     game.reset()

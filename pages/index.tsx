@@ -151,6 +151,25 @@ const Home: NextPage = () => {
             )}
             {
                 isLobby ?
+                <>
+                <header className='flex items-center justify-between bg-brand px-4 h-10 shrink-0'>
+                    <button
+                        onClick={() => {
+                            if (isInGame) {
+                                socket.emit('quitGame')
+                            } else {
+                                socket.disconnect()
+                                setIsLobby(false)
+                                router.push('/')
+                            }
+                        }}
+                        className='text-sm font-medium hover:underline'
+                    >
+                        {isInGame ? '← Forfeit' : '← Home'}
+                    </button>
+                    <h1 className='text-lg font-bold uppercase tracking-wider'>Red Tetris</h1>
+                    <div className='w-16' />
+                </header>
                 <main id='main-content' className='flex-1 min-h-0 flex flex-col px-4 sm:px-8' aria-label='Game room'>
                     <div className='flex flex-col items-center justify-center sm:flex-row sm:items-start gap-4 sm:gap-6 py-2 sm:py-12 flex-1 min-h-0'>
                         <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96${isInGame ? ' hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
@@ -166,6 +185,7 @@ const Home: NextPage = () => {
                         </section>
                     </div>
                 </main>
+                </>
                 :
                 <Welcome />
             }
