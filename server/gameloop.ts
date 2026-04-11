@@ -3,8 +3,25 @@ import { SPACING, TILEHEIGHT } from "../shared/config"
 import Game from "./game"
 import Piece from "./piece"
 import Player from "./player"
-import { PlayState, Stack } from "../shared/types"
+import { PlayState, RoomPlayer, Stack } from "../shared/types"
 import { saveScore } from "./stores/highscore-store"
+
+/** Pre-build per-player otherPlayers lists and broadcast state to all players in a game. */
+function broadcastPlayerStates(io: TypedServer, game: Game) {
+    const allPlayers: RoomPlayer[] = game.players.map((p) => ({
+        playerId: p.id,
+        playerName: p.name,
+        state: p.socket.data.playerState,
+    }))
+    for (let i = 0; i < game.players.length; i++) {
+        const player = game.players[i]
+        const otherPlayers = allPlayers.filter((_, j) => j !== i)
+        io.to(player.socket.id).emit('newState', {
+            playerState: player.socket.data.playerState,
+            otherPlayers,
+        })
+    }
+}
 
 export function emitNextPiece(io: TypedServer, game: Game, player: Player, playerPieces: Piece[]) {
     const newCurrentPiece = game.getPieceProps(playerPieces[0])
@@ -82,19 +99,7 @@ export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game)
     }
 
     // Broadcast updated states to everyone
-    for (const player of game.players) {
-        const otherPlayers = game.players
-            .filter((p) => p.id !== player.id)
-            .map((p) => ({
-                playerId: p.id,
-                playerName: p.name,
-                state: p.socket.data.playerState,
-            }))
-        io.to(player.socket.id).emit('newState', {
-            playerState: player.socket.data.playerState,
-            otherPlayers,
-        })
-    }
+    broadcastPlayerStates(io, game)
 
     // If no active players remain, reset the game
     if (activePlayers.length <= 1) {
@@ -127,19 +132,7 @@ export function emitTimeAttackEnd(io: TypedServer, game: Game) {
     }
 
     // Broadcast updated states to everyone
-    for (const player of game.players) {
-        const otherPlayers = game.players
-            .filter((p) => p.id !== player.id)
-            .map((p) => ({
-                playerId: p.id,
-                playerName: p.name,
-                state: p.socket.data.playerState,
-            }))
-        io.to(player.socket.id).emit('newState', {
-            playerState: player.socket.data.playerState,
-            otherPlayers,
-        })
-    }
+    broadcastPlayerStates(io, game)
 
     // Save highscores for all players with score > 0 (excluding forfeited)
     const roomName = game.players[0]?.socket.data.roomName ?? ''

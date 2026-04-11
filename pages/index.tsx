@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
+import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useState } from 'react'
 
 import Chat from '../components/chat'
@@ -8,10 +9,11 @@ import ConnectionOverlay from '../components/connection-overlay'
 import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
 import Footer from "../components/footer"
-import GameClient from "../components/game-client"
 import { useGameState } from '../hooks/use-game-state'
 import { Stack } from '../shared/types'
 import { BOARDHEIGHT } from '../shared/config'
+
+const GameClient = dynamic(() => import('../components/game-client'), { ssr: false })
 
 export type OpponentBoard = {
     playerId: string

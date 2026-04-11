@@ -6,10 +6,14 @@ import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
 let _appBg = '#0f172a'
 let _tileBg = '#1e293b'   // Empty tile fill
 let _textColor = '#f1f5f9' // Text on canvas (matches --content)
+let _lastTheme = ''
 
-/** Read CSS custom properties and cache them for canvas rendering. Call on mount + theme toggle. */
+/** Read CSS custom properties and cache them for canvas rendering. Skips if theme hasn't changed. */
 export function syncCanvasTheme() {
     if (typeof window === 'undefined') return
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    if (currentTheme === _lastTheme) return
+    _lastTheme = currentTheme
     const s = getComputedStyle(document.documentElement)
     _appBg = s.getPropertyValue('--surface-app').trim() || _appBg
     _tileBg = s.getPropertyValue('--surface-tile').trim() || _tileBg
