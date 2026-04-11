@@ -152,7 +152,7 @@ const Home: NextPage = () => {
             {
                 isLobby ?
                 <>
-                <header className='flex items-center justify-between bg-brand px-4 h-14 shrink-0'>
+                <header className='flex items-center justify-between bg-brand px-4 h-10 shrink-0'>
                     <button
                         onClick={() => { socket.disconnect(); router.push('/') }}
                         className='text-sm font-medium hover:underline'
