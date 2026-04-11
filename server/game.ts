@@ -177,8 +177,10 @@ class Game {
         for (let i = 0; i < 4; i++) {
             const idxX = (points[i].x + x) / (TILEWIDTH + SPACING)
             const idxY = (points[i].y + y) / (TILEHEIGHT + SPACING)
-            stack[idxY * COLS + idxX].isFilled = true
-            stack[idxY * COLS + idxX].color = piece.getColor()
+            const idx = idxY * COLS + idxX
+            if (idx < 0 || idx >= stack.length) continue
+            stack[idx].isFilled = true
+            stack[idx].color = piece.getColor()
         }
     }
 

@@ -5,7 +5,7 @@ const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');if(t==
 
 export default function Document() {
     return (
-        <Html className='dark'>
+        <Html lang="en" className='dark'>
             <Head>
                 <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
             </Head>
