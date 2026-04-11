@@ -71,7 +71,7 @@ const Chat = ({ playerName }: ChatProps) => {
     }
 
     return (
-        <div className='flex flex-col bg-surface-card w-full rounded-lg shadow-sm shadow-brand overflow-hidden flex-1' role='region' aria-label='Chat'>
+        <div className='flex flex-col bg-surface-card w-full rounded-lg shadow-xs shadow-brand overflow-hidden flex-1' role='region' aria-label='Chat'>
             <div className='flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-brand' aria-live='polite' aria-relevant='additions'>
             {messages.map((msg) => {
                 return (
@@ -95,12 +95,12 @@ const Chat = ({ playerName }: ChatProps) => {
                 value={message}
                 aria-label='Chat message'
                 maxLength={500}
-                className="py-2.5 px-3 flex-1 text-sm bg-surface-input placeholder:text-content-muted outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
+                className="py-2.5 px-3 flex-1 text-sm bg-surface-input placeholder:text-content-muted outline-hidden focus:ring-2 focus:ring-inset focus:ring-brand"
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeypress}
             />
             <button
-                className="uppercase px-4 text-sm font-semibold bg-brand hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
+                className="uppercase px-4 text-sm font-semibold bg-brand hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-brand"
                 aria-label='Send message'
                 onClick={() => {
                     sendMessage();

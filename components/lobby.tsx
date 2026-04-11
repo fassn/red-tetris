@@ -61,7 +61,7 @@ const HostMenu = ({ otherPlayers, gameMode, onStartGame, onToggleMode }: { other
                     <span className={`text-sm font-medium ${gameMode === GameMode.CLASSIC ? 'text-content' : 'text-content-muted'}`}>Classic</span>
                     <button
                         onClick={onToggleMode}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ${gameMode === GameMode.TIME_ATTACK ? 'bg-brand' : 'bg-edge'}`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand focus:ring-offset-2 ${gameMode === GameMode.TIME_ATTACK ? 'bg-brand' : 'bg-edge'}`}
                         role='switch'
                         aria-checked={gameMode === GameMode.TIME_ATTACK}
                         aria-label='Toggle game mode'
@@ -70,7 +70,7 @@ const HostMenu = ({ otherPlayers, gameMode, onStartGame, onToggleMode }: { other
                     </button>
                     <span className={`text-sm font-medium ${gameMode === GameMode.TIME_ATTACK ? 'text-content' : 'text-content-muted'}`}>Time Attack</span>
                 </div>
-                <button onClick={onStartGame} className='py-3 w-full max-w-xs self-center text-lg uppercase font-semibold mt-4 bg-brand rounded hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2'>Start Game</button>
+                <button onClick={onStartGame} className='py-3 w-full max-w-xs self-center text-lg uppercase font-semibold mt-4 bg-brand rounded-sm hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand focus:ring-offset-2'>Start Game</button>
             </div>
         </>
     )
@@ -112,7 +112,7 @@ const Lobby = ({ playerState, otherPlayers, gameMode, onToggleMode }: LobbyProps
     }
 
     const anyPlaying = otherPlayers.some((p) => p.state.playState === PlayState.PLAYING)
-    const card = 'bg-surface-card rounded-lg shadow-sm shadow-brand overflow-hidden'
+    const card = 'bg-surface-card rounded-lg shadow-xs shadow-brand overflow-hidden'
 
     if (playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME) {
         return <div className={card}><Logo /></div>

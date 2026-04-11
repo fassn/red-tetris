@@ -113,7 +113,7 @@ const Home: NextPage = () => {
                 <meta name="description" content="A Typescript Implementation of Tetris" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <a href='#main-content' className='sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface-card focus:px-4 focus:py-2 focus:rounded focus:shadow'>
+            <a href='#main-content' className='sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface-card focus:px-4 focus:py-2 focus:rounded-sm focus:shadow-sm'>
                 Skip to content
             </a>
             {isLobby && (
@@ -173,13 +173,13 @@ const Home: NextPage = () => {
                     <div className='flex gap-3 justify-end'>
                         <button
                             onClick={closeForfeitDialog}
-                            className='px-4 py-2 text-sm font-medium rounded border border-edge hover:bg-surface-input transition-colors'
+                            className='px-4 py-2 text-sm font-medium rounded-sm border border-edge hover:bg-surface-input transition-colors'
                         >
                             Cancel
                         </button>
                         <button
                             onClick={confirmForfeit}
-                            className='px-4 py-2 text-sm font-semibold rounded bg-status-danger text-white hover:opacity-90 transition-opacity'
+                            className='px-4 py-2 text-sm font-semibold rounded-sm bg-status-danger text-white hover:opacity-90 transition-opacity'
                             autoFocus
                         >
                             Forfeit
