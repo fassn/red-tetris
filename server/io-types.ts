@@ -12,6 +12,7 @@ export interface SocketData {
     playerState: PlayerState
     messages: Message[]
     game: Game
+    isReconnect?: boolean
 }
 
 export type TypedServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>

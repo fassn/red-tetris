@@ -40,6 +40,16 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     const sd = socket.data
     const roomLog = createLogger(sd.roomName)
 
+    // On reconnect, disconnect any stale socket for the same player
+    if (sd.isReconnect) {
+        const allSockets = await io.in(sd.roomName).fetchSockets()
+        for (const old of allSockets) {
+            if (old.data.playerId === sd.playerId && old.id !== socket.id) {
+                old.disconnect(true)
+            }
+        }
+    }
+
     // Join room upon connection
     const allSockets = await io.in(sd.roomName).fetchSockets()
 
