@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react"
 import { SocketContext } from "../context/socket"
 import { useTheme } from "../context/theme"
+import { useSound } from "../context/sound"
 
 import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
 import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme } from "../utils/draw"
@@ -22,6 +23,7 @@ type GameClientProps = {
 const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const { theme } = useTheme()
+    const { play: playSound } = useSound()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const previewRef = useRef<HTMLCanvasElement>(null)
     const keysDown = useRef(new Set<string>())
@@ -41,7 +43,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
         syncCanvasTheme()
     }, [theme])
 
-    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled })
+    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled, playSound })
 
     // Draw next piece preview when it changes or theme switches
     useEffect(() => {

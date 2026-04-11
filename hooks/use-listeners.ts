@@ -2,6 +2,7 @@ import { MutableRefObject, useContext, useEffect } from "react"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import { SocketContext } from "../context/socket"
 import { PieceProps, Stack, TileProps } from "../shared/types"
+import type { SoundName } from "../utils/sound-manager"
 
 type useListenersProps = {
     stack: MutableRefObject<Stack[]>,
@@ -12,9 +13,10 @@ type useListenersProps = {
     gameWon: MutableRefObject<boolean>,
     cascadeTiles: MutableRefObject<TileProps[]>,
     getCascadeTilesCalled: MutableRefObject<boolean>,
+    playSound: (name: SoundName) => void,
 }
 
-const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled }: useListenersProps) => {
+const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled, playSound }: useListenersProps) => {
     const socket = useContext(SocketContext)
     useEffect(() => {
         const handleNewGame = ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
@@ -23,9 +25,14 @@ const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, g
             setNextPiece(secondPiece)
         }
 
-        const handleNewStack = ({ newStack, newScore }: { newStack: Stack[], newScore: number }) => {
+        const handleNewStack = ({ newStack, newScore, linesCleared }: { newStack: Stack[], newScore: number, linesCleared: number }) => {
             stack.current = newStack
             setScore(newScore)
+            if (linesCleared >= 4) {
+                playSound('tetris')
+            } else if (linesCleared > 0) {
+                playSound('clear')
+            }
         }
 
         const handleNewPosition = (newY: number) => {

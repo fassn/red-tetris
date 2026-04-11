@@ -42,7 +42,7 @@ export function updatePiecesStack(playerPieces: Piece[], game: Game) {
 export function emitStackAndScore(io: TypedServer, game: Game, player: Player, playerStack: Stack[]) {
     const lineCount = game.countFilledLines(playerStack)
     const score = game.addToScore(lineCount, player.id)
-    io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score })
+    io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score, linesCleared: lineCount })
 
     // Check for level-up after scoring
     const newLevel = game.updateLevel()

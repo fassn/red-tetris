@@ -6,7 +6,7 @@ export interface ServerToClientEvents {
     roomIsFull: () => void
     newState: (data: { playerState?: PlayerState; otherPlayers?: RoomPlayer[]; gameMode?: GameMode }) => void
     newGame: (data: { newStack: Stack[]; firstPiece: PieceProps; secondPiece: PieceProps }) => void
-    newStack: (data: { newStack: Stack[]; newScore: number }) => void
+    newStack: (data: { newStack: Stack[]; newScore: number; linesCleared: number }) => void
     newPosition: (newY: number) => void
     newPiece: (data: { newCurrentPiece: PieceProps; newNextPiece: PieceProps }) => void
     newMoveDown: (newY: number) => void
