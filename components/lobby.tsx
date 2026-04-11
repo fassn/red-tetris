@@ -82,10 +82,10 @@ const GuestMenu = ({ playerState, otherPlayers, gameMode, onSetReady }: { player
         <PlayerList otherPlayers={otherPlayers} />
         <div className='flex flex-col text-lg justify-center px-4 pb-6'>
             <div className='text-center mb-2'>Wait for the game leader to start the game!</div>
-            <div className='text-center text-sm text-content-secondary mb-4'>
+            <div className='border-t-2 border-brand-hover' />
+            <div className='text-center text-sm text-content-secondary mt-4 mb-4'>
                 Mode: {gameMode === GameMode.TIME_ATTACK ? '⏱ Time Attack' : '🏆 Classic'}
             </div>
-            <div className='border-t-2 border-brand-hover' />
             <div className='flex justify-center mt-8 mb-4'>
                 <label htmlFor='ready'>Ready?</label>
                 <input id='ready' name='ready' type='checkbox' checked={playerState.playState === PlayState.READY} className='accent-brand mx-6 w-7' onChange={onSetReady} />
