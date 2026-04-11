@@ -4,6 +4,7 @@ import InMemorySessionStore from "./stores/session-store"
 import Player from "./player"
 import { GameMode, PlayerState, PlayState, RoomPlayer, Message } from "../shared/types"
 import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
+import { emitEndGameToPlayers } from "./gameloop"
 
 export type GameDeps = {
     sessionStore: InMemorySessionStore
@@ -183,6 +184,14 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const quitGame = async () => {
+        if (isPlayerActive()) {
+            // Player is forfeiting mid-game — treat as a loss
+            const player = sd.game.players.find((p: Player) => p.id === sd.playerId)
+            if (player) {
+                emitEndGameToPlayers(io, player, sd.game)
+            }
+        }
+        // Reset the forfeiting player back to lobby
         io.to(socket.id).emit('resetGame')
         sd.playerState.playState = PlayState.WAITING
         await broadcastRoomState()
