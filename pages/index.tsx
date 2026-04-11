@@ -154,10 +154,17 @@ const Home: NextPage = () => {
                 <>
                 <header className='flex items-center justify-between bg-brand px-4 h-10 shrink-0'>
                     <button
-                        onClick={() => { socket.disconnect(); router.push('/') }}
+                        onClick={() => {
+                            if (isInGame) {
+                                socket.emit('quitGame')
+                            } else {
+                                socket.disconnect()
+                                router.push('/')
+                            }
+                        }}
                         className='text-sm font-medium hover:underline'
                     >
-                        ← Home
+                        {isInGame ? '← Forfeit' : '← Home'}
                     </button>
                     <h1 className='text-lg font-bold uppercase tracking-wider'>Red Tetris</h1>
                     <div className='w-16' />
