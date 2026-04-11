@@ -32,7 +32,7 @@ const Welcome = () => {
                 ⚡ Real-time multiplayer
             </span>
             <span className='flex items-center gap-1.5 text-xs sm:text-sm font-medium bg-surface-card px-3 py-1.5 rounded-full shadow-sm border border-edge'>
-                🎮 NES-style difficulty
+                📱 Mobile friendly
             </span>
             <span className='flex items-center gap-1.5 text-xs sm:text-sm font-medium bg-surface-card px-3 py-1.5 rounded-full shadow-sm border border-edge'>
                 🌙 Dark &amp; light modes
