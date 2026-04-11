@@ -1,8 +1,8 @@
 import type { TypedServer } from "./io-types"
-import { PIECE_COLORS, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { PIECE_COLORS, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH, TIME_ATTACK_SECONDS } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
-import { PieceProps, PieceType, RGBA, Stack } from "../shared/types"
+import { GameMode, PieceProps, PieceType, RGBA, Stack } from "../shared/types"
 
 /**
  * NES-style speed curve expressed in seconds, converted to ticks.
@@ -32,6 +32,11 @@ class Game {
     dropInterval: number
     level: number
     totalLinesCleared: number
+    gameMode: GameMode
+    /** Remaining ticks for TIME_ATTACK mode. -1 means no timer. */
+    timeRemainingTicks: number
+    /** Last emitted second value, to emit timeUpdate only once per second */
+    private _lastEmittedSecond: number
 
     constructor(io: TypedServer, players: Player[]) {
         this.io = io
@@ -43,6 +48,9 @@ class Game {
         this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
         this.totalLinesCleared = 0
+        this.gameMode = GameMode.CLASSIC
+        this.timeRemainingTicks = -1
+        this._lastEmittedSecond = -1
     }
 
     reset() {
@@ -52,13 +60,48 @@ class Game {
         this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
         this.totalLinesCleared = 0
+        this.timeRemainingTicks = -1
+        this._lastEmittedSecond = -1
         this.players = []
+    }
+
+    /** Start the timer for TIME_ATTACK mode */
+    startTimer() {
+        if (this.gameMode === GameMode.TIME_ATTACK) {
+            this.timeRemainingTicks = TIME_ATTACK_SECONDS * TICK_RATE
+            this._lastEmittedSecond = TIME_ATTACK_SECONDS
+        }
     }
 
     /** Advance tick counter. Returns true when a gravity drop should happen. */
     tick(): boolean {
         this.tickCount++
+        if (this.timeRemainingTicks > 0) {
+            this.timeRemainingTicks--
+        }
         return this.tickCount % this.dropInterval === 0
+    }
+
+    /** Get remaining seconds (for client display). Returns -1 if no timer. */
+    get timeRemainingSeconds(): number {
+        if (this.timeRemainingTicks < 0) return -1
+        return Math.ceil(this.timeRemainingTicks / TICK_RATE)
+    }
+
+    /** Returns true if a timeUpdate should be emitted this tick (once per second). */
+    shouldEmitTimeUpdate(): boolean {
+        if (this.timeRemainingTicks < 0) return false
+        const currentSecond = this.timeRemainingSeconds
+        if (currentSecond !== this._lastEmittedSecond) {
+            this._lastEmittedSecond = currentSecond
+            return true
+        }
+        return false
+    }
+
+    /** Returns true if the time-attack timer has expired. */
+    get isTimeExpired(): boolean {
+        return this.gameMode === GameMode.TIME_ATTACK && this.timeRemainingTicks === 0
     }
 
     /**

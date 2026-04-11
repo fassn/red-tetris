@@ -36,6 +36,7 @@ module.exports = {
                     playing: 'var(--status-playing)',
                     inactive: 'var(--status-inactive)',
                     muted: 'var(--status-muted)',
+                    danger: 'var(--status-danger)',
                 },
             },
         },

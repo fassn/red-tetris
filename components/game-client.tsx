@@ -6,7 +6,7 @@ import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, SOFT_DROP_MS, TICK_RATE } fr
 import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
-import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps } from "../shared/types"
+import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps, GameMode } from "../shared/types"
 import MiniBoard from "./mini-board"
 import DPad from "./d-pad"
 import type { OpponentBoard } from "../pages/index"
@@ -15,9 +15,11 @@ type GameClientProps = {
     playerState: PlayerState,
     opponentBoards: Map<string, OpponentBoard>,
     otherPlayers: RoomPlayer[],
+    gameMode: GameMode,
+    timeRemaining: number,
 }
 
-const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientProps) => {
+const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const { theme } = useTheme()
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -139,6 +141,13 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
     const activeOpponents = otherPlayers.filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME)
     const hasMiniboards = activeOpponents.length > 0
+    const isTimeAttack = gameMode === GameMode.TIME_ATTACK
+
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60)
+        const s = seconds % 60
+        return `${m}:${s.toString().padStart(2, '0')}`
+    }
 
     return (
         <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:items-start h-full sm:h-auto'>
@@ -162,6 +171,14 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers }: GameClientPro
                             <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Level</span>
                             <span className='text-2xl font-bold'>{level}</span>
                         </div>
+                        {isTimeAttack && timeRemaining >= 0 && (
+                            <div className='flex flex-col'>
+                                <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Time</span>
+                                <span className={`text-2xl font-bold tabular-nums ${timeRemaining <= 30 ? 'text-status-danger animate-pulse' : ''}`}>
+                                    {formatTime(timeRemaining)}
+                                </span>
+                            </div>
+                        )}
                     </div>
                     {hasMiniboards && (
                         <aside className='flex flex-row gap-3' aria-label='Opponent boards'>

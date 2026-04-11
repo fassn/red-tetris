@@ -1,4 +1,4 @@
-import type { PieceProps, PlayerState, Point, RoomPlayer, Stack, Message } from "./types"
+import type { PieceProps, PlayerState, Point, RoomPlayer, Stack, Message, GameMode } from "./types"
 
 export interface ServerToClientEvents {
     session: (data: { sessionId: string; playerId: string }) => void
@@ -18,6 +18,8 @@ export interface ServerToClientEvents {
     newIncomingMsg: (msg: Message) => void
     opponentStack: (data: { playerId: string; playerName: string; stack: Stack[] }) => void
     levelUp: (data: { level: number; dropInterval: number }) => void
+    timeUpdate: (data: { remaining: number }) => void
+    gameModeChanged: (data: { gameMode: GameMode }) => void
 }
 
 export interface ClientToServerEvents {
@@ -29,4 +31,5 @@ export interface ClientToServerEvents {
     rotate: () => void
     quitGame: () => void
     createdMessage: (msg: Message) => void
+    setGameMode: (mode: GameMode) => void
 }

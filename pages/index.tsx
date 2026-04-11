@@ -12,7 +12,7 @@ import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
 import { useConnectionStatus } from '../hooks/use-connection-status'
-import { PlayerState, PlayState, RoomPlayer, Stack } from '../shared/types'
+import { PlayerState, PlayState, RoomPlayer, Stack, GameMode } from '../shared/types'
 import { BOARDHEIGHT } from '../shared/config'
 
 export type OpponentBoard = {
@@ -48,7 +48,8 @@ const Home: NextPage = () => {
     const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
     const [otherPlayers, setOtherPlayers] = useState<RoomPlayer[]>([])
     const [opponentBoards, setOpponentBoards] = useState<Map<string, OpponentBoard>>(new Map())
-
+    const [gameMode, setGameMode] = useState<GameMode>(GameMode.CLASSIC)
+    const [timeRemaining, setTimeRemaining] = useState(-1)
     const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
     useEffect(() => {
@@ -85,9 +86,10 @@ const Home: NextPage = () => {
         const handleNewState = ({ playerState, otherPlayers }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[] }) => {
             if (playerState) {
                 setPlayerState(playerState)
-                // Clear opponent boards when returning to lobby
+                // Clear opponent boards and timer when returning to lobby
                 if (playerState.playState === PlayState.WAITING) {
                     setOpponentBoards(new Map())
+                    setTimeRemaining(-1)
                 }
             }
             if (otherPlayers) {
@@ -103,11 +105,21 @@ const Home: NextPage = () => {
             })
         }
 
+        const handleTimeUpdate = ({ remaining }: { remaining: number }) => {
+            setTimeRemaining(remaining)
+        }
+
+        const handleGameModeChanged = ({ gameMode }: { gameMode: GameMode }) => {
+            setGameMode(gameMode)
+        }
+
         router.events.on('hashChangeComplete', handleHashChange)
         socket.on('roomIsFull', handleRoomFull)
         socket.on('session', handleSession)
         socket.on('newState', handleNewState)
         socket.on('opponentStack', handleOpponentStack)
+        socket.on('timeUpdate', handleTimeUpdate)
+        socket.on('gameModeChanged', handleGameModeChanged)
 
         return () => {
             router.events.off('hashChangeComplete', handleHashChange)
@@ -115,6 +127,8 @@ const Home: NextPage = () => {
             socket.off('session', handleSession)
             socket.off('newState', handleNewState)
             socket.off('opponentStack', handleOpponentStack)
+            socket.off('timeUpdate', handleTimeUpdate)
+            socket.off('gameModeChanged', handleGameModeChanged)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -138,14 +152,14 @@ const Home: NextPage = () => {
                     <div className='flex flex-col items-center justify-center sm:flex-row sm:items-start gap-4 sm:gap-6 py-2 sm:py-12 flex-1 min-h-0'>
                         <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96${isInGame ? ' hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
                             <section aria-label='Lobby'>
-                                <Lobby playerState={playerState} otherPlayers={otherPlayers} />
+                                <Lobby playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} />
                             </section>
                             <section className='flex-1 min-h-0 flex flex-col' aria-label='Chat'>
                                 <Chat playerName={playerName} />
                             </section>
                         </div>
                         <section className={`w-full sm:w-auto min-h-0 flex-1 sm:flex-initial${isInGame ? '' : ' hidden sm:block'}`} aria-label='Game'>
-                            <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} />
+                            <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} />
                         </section>
                     </div>
                 </main>

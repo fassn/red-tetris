@@ -2,7 +2,7 @@ import { MAX_PLAYERS, SPACING, TILEWIDTH } from "../shared/config"
 import InMemoryMessageStore from "./stores/message-store"
 import InMemorySessionStore from "./stores/session-store"
 import Player from "./player"
-import { PlayerState, PlayState, RoomPlayer, Message } from "../shared/types"
+import { GameMode, PlayerState, PlayState, RoomPlayer, Message } from "../shared/types"
 import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
 
 export type GameDeps = {
@@ -65,6 +65,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const startGame = async () => {
         sd.game.isStarted = true
+        sd.game.startTimer()
         addPlayer()
 
         // Transition all eligible players to PLAYING
@@ -152,6 +153,16 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         deps.messageStore.saveMessage(sd.roomName, msg)
     }
 
+    const setGameMode = async (mode: GameMode) => {
+        if (!sd.playerState.host) return
+        if (sd.game.isStarted) return
+        sd.game.gameMode = mode
+        const sockets = await io.in(sd.roomName).fetchSockets()
+        for (const sock of sockets) {
+            io.to(sock.id).emit('gameModeChanged', { gameMode: mode })
+        }
+    }
+
     const onDisconnect = async () => {
         sd.game.removePlayer(sd.playerId)
 
@@ -194,6 +205,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     socket.on('setReady', safe(setReady))
     socket.on('startGame', safe(startGame))
+    socket.on('setGameMode', safe(setGameMode))
 
     socket.on('moveDown', safe(moveDown))
     socket.on('moveLeft', safe(moveLeft))

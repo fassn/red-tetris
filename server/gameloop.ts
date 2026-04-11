@@ -100,3 +100,39 @@ export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game)
         game.reset()
     }
 }
+
+/**
+ * Handle end of a TIME_ATTACK game when the timer expires.
+ * Highest score wins. Ties = all tying players win.
+ */
+export function emitTimeAttackEnd(io: TypedServer, game: Game) {
+    const activePlayers = game.players.filter(
+        (p) => p.socket.data.playerState.playState === PlayState.PLAYING
+    )
+    if (activePlayers.length === 0) return
+
+    const maxScore = Math.max(...activePlayers.map((p) => p.score))
+
+    for (const player of activePlayers) {
+        player.socket.data.playerState.playState = PlayState.ENDGAME
+        const won = player.score === maxScore
+        io.to(player.socket.id).emit('gameOver', { won })
+    }
+
+    // Broadcast updated states to everyone
+    for (const player of game.players) {
+        const otherPlayers = game.players
+            .filter((p) => p.id !== player.id)
+            .map((p) => ({
+                playerId: p.id,
+                playerName: p.name,
+                state: p.socket.data.playerState,
+            }))
+        io.to(player.socket.id).emit('newState', {
+            playerState: player.socket.data.playerState,
+            otherPlayers,
+        })
+    }
+
+    game.reset()
+}
