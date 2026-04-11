@@ -190,19 +190,31 @@ describe('Game', () => {
     })
 
     describe('player management', () => {
-        it('getPlayerStack throws for unknown player', () => {
+        it('getPlayer returns null for unknown player', () => {
             const game = createTestGame()
-            expect(() => game.getPlayerStack('unknown')).toThrow()
+            expect(game.getPlayer('unknown')).toBeNull()
         })
 
-        it('getPlayerScore throws for unknown player', () => {
+        it('getPlayer returns the player for known ID', () => {
             const game = createTestGame()
-            expect(() => game.getPlayerScore('unknown')).toThrow()
+            const p1 = createMockPlayer('p1')
+            game.addPlayer(p1)
+            expect(game.getPlayer('p1')).toBe(p1)
         })
 
-        it('getPlayerPieces throws for unknown player', () => {
+        it('getPlayerStack returns null for unknown player', () => {
             const game = createTestGame()
-            expect(() => game.getPlayerPieces('unknown')).toThrow()
+            expect(game.getPlayerStack('unknown')).toBeNull()
+        })
+
+        it('getPlayerScore returns null for unknown player', () => {
+            const game = createTestGame()
+            expect(game.getPlayerScore('unknown')).toBeNull()
+        })
+
+        it('getPlayerPieces returns null for unknown player', () => {
+            const game = createTestGame()
+            expect(game.getPlayerPieces('unknown')).toBeNull()
         })
 
         it('removePlayer removes the correct player', () => {

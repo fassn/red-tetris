@@ -128,31 +128,20 @@ class Game {
         this.players = this.players.filter(player => player.id !== playerId)
     }
 
-    getPlayerStack = (playerId: string) => {
-        for (const player of this.players) {
-            if (player.id === playerId) {
-                return player.stack
-            }
-        }
-        throw new Error('Stack for the player not found!')
+    getPlayer = (playerId: string): Player | null => {
+        return this.players.find(p => p.id === playerId) ?? null
     }
 
-    getPlayerPieces = (playerId: string) => {
-        for (const player of this.players) {
-            if (player.id === playerId) {
-                return player.pieces
-            }
-        }
-        throw new Error('Pieces for the player not found!')
+    getPlayerStack = (playerId: string): Stack[] | null => {
+        return this.getPlayer(playerId)?.stack ?? null
     }
 
-    getPlayerScore = (playerId: string) => {
-        for (const player of this.players) {
-            if (player.id === playerId) {
-                return player.score
-            }
-        }
-        throw new Error('Score for the player not found!')
+    getPlayerPieces = (playerId: string): Piece[] | null => {
+        return this.getPlayer(playerId)?.pieces ?? null
+    }
+
+    getPlayerScore = (playerId: string): number | null => {
+        return this.getPlayer(playerId)?.score ?? null
     }
 
     private setPlayerScore(score: number, playerId: string) {
@@ -210,9 +199,11 @@ class Game {
         return lineCount
     }
 
-    addToScore(lineCount: number, playerId: string) {
+    addToScore(lineCount: number, playerId: string): number {
+        const currentScore = this.getPlayerScore(playerId)
+        if (currentScore === null) return 0
         this.totalLinesCleared += lineCount
-        let score = this.getPlayerScore(playerId)
+        let score = currentScore
         // NES scoring: base points × (level + 1)
         const multiplier = this.level + 1
         switch (lineCount) {

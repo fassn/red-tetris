@@ -116,36 +116,40 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     const moveDown = () => {
         if (!isPlayerActive()) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
-        const playerCurrentPiece = sd.game.getPlayerPieces(sd.playerId)[0]
-        playerCurrentPiece.down(playerStack)
-        const newY = playerCurrentPiece.getY()
+        const playerPieces = sd.game.getPlayerPieces(sd.playerId)
+        if (!playerStack || !playerPieces?.[0]) return
+        playerPieces[0].down(playerStack)
+        const newY = playerPieces[0].getY()
         io.to(socket.id).emit('newMoveDown', newY)
     }
 
     const moveLeft = () => {
         if (!isPlayerActive()) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
-        const playerCurrentPiece = sd.game.getPlayerPieces(sd.playerId)[0]
-        playerCurrentPiece.setX(playerCurrentPiece.getX() - TILEWIDTH - SPACING, playerStack)
-        const newX = playerCurrentPiece.getX()
+        const playerPieces = sd.game.getPlayerPieces(sd.playerId)
+        if (!playerStack || !playerPieces?.[0]) return
+        playerPieces[0].setX(playerPieces[0].getX() - TILEWIDTH - SPACING, playerStack)
+        const newX = playerPieces[0].getX()
         io.to(socket.id).emit('newMoveLeft', newX)
     }
 
     const moveRight = () => {
         if (!isPlayerActive()) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
-        const playerCurrentPiece = sd.game.getPlayerPieces(sd.playerId)[0]
-        playerCurrentPiece.setX(playerCurrentPiece.getX() + TILEWIDTH + SPACING, playerStack)
-        const newX = playerCurrentPiece.getX()
+        const playerPieces = sd.game.getPlayerPieces(sd.playerId)
+        if (!playerStack || !playerPieces?.[0]) return
+        playerPieces[0].setX(playerPieces[0].getX() + TILEWIDTH + SPACING, playerStack)
+        const newX = playerPieces[0].getX()
         io.to(socket.id).emit('newMoveRight', newX)
     }
 
     const rotate = () => {
         if (!isPlayerActive()) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
-        const playerCurrentPiece = sd.game.getPlayerPieces(sd.playerId)[0]
-        if (playerCurrentPiece.rotate(playerStack)) {
-            const newPoints = playerCurrentPiece.getPoints()
+        const playerPieces = sd.game.getPlayerPieces(sd.playerId)
+        if (!playerStack || !playerPieces?.[0]) return
+        if (playerPieces[0].rotate(playerStack)) {
+            const newPoints = playerPieces[0].getPoints()
             io.to(socket.id).emit('newPoints', newPoints)
         }
     }
