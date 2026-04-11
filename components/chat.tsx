@@ -22,7 +22,8 @@ const Chat = ({ playerName }: ChatProps) => {
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        bottomRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' })
     }, [messages])
 
     useEffect(() => {

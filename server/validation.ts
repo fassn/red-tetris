@@ -16,7 +16,7 @@ export function isValidName(name: unknown): name is string {
 export function isValidMessage(message: unknown): message is string {
     return (
         typeof message === 'string' &&
-        message.length >= 1 &&
+        message.trim().length >= 1 &&
         message.length <= MAX_MESSAGE_LENGTH
     )
 }

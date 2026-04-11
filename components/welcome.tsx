@@ -45,7 +45,7 @@ const Welcome = () => {
                 🌙 Dark &amp; light modes
             </span>
         </div>
-        <form className='flex flex-col w-full max-w-sm sm:max-w-md m-4 sm:m-16 px-4 sm:px-6 pt-8 sm:pt-16 pb-6 sm:pb-8 bg-surface-card outline-solid shadow-md shadow-brand drop-shadow-lg outline-brand rounded-sm' onSubmit={onSubmit} action=''>
+        <form className='flex flex-col w-full max-w-sm sm:max-w-md m-4 sm:m-16 px-4 sm:px-6 pt-8 sm:pt-16 pb-6 sm:pb-8 bg-surface-card outline-solid shadow-md shadow-brand drop-shadow-lg outline-brand rounded-sm' onSubmit={onSubmit}>
             {error === 'roomIsFull' && (
                 <div className='mb-4 p-3 rounded-sm bg-status-danger/10 border border-status-danger text-status-danger text-sm text-center' role='alert'>
                     That room is full (max 4 players). Try a different room name.

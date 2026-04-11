@@ -29,9 +29,13 @@ function rgba(c: RGBA): string {
 }
 
 function tile(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    ctx.beginPath()
-    ctx.roundRect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
-    ctx.fill()
+    if (typeof ctx.roundRect === 'function') {
+        ctx.beginPath()
+        ctx.roundRect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
+        ctx.fill()
+    } else {
+        ctx.fillRect(x, y, TILEWIDTH, TILEHEIGHT)
+    }
 }
 
 export const clearCanvas = (ctx: CanvasRenderingContext2D) => {
@@ -92,9 +96,13 @@ export const drawPreviewPiece = (ctx: CanvasRenderingContext2D, piece: PieceProp
     for (const gp of gridPoints) {
         const x = offsetX + (gp.col - minCol) * (PREVIEW_TILE + PREVIEW_GAP)
         const y = offsetY + (gp.row - minRow) * (PREVIEW_TILE + PREVIEW_GAP)
-        ctx.beginPath()
-        ctx.roundRect(x, y, PREVIEW_TILE, PREVIEW_TILE, 4)
-        ctx.fill()
+        if (typeof ctx.roundRect === 'function') {
+            ctx.beginPath()
+            ctx.roundRect(x, y, PREVIEW_TILE, PREVIEW_TILE, 4)
+            ctx.fill()
+        } else {
+            ctx.fillRect(x, y, PREVIEW_TILE, PREVIEW_TILE)
+        }
     }
 }
 

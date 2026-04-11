@@ -27,6 +27,29 @@ export type GameDeps = {
     cleanStores: (roomName: string) => void
 }
 
+/**
+ * Per-room join lock to prevent TOCTOU race between fetchSockets() and
+ * socket.join(). Without this, two sockets arriving simultaneously could
+ * both pass the MAX_PLAYERS check before either has joined.
+ */
+const roomJoinLocks = new Map<string, Promise<void>>()
+
+async function withJoinLock<T>(roomName: string, fn: () => Promise<T>): Promise<T> {
+    const prev = roomJoinLocks.get(roomName) ?? Promise.resolve()
+    let release!: () => void
+    const lock = new Promise<void>(r => { release = r })
+    roomJoinLocks.set(roomName, lock)
+    await prev
+    try {
+        return await fn()
+    } finally {
+        release()
+        if (roomJoinLocks.get(roomName) === lock) {
+            roomJoinLocks.delete(roomName)
+        }
+    }
+}
+
 /** Build a RoomPlayer summary from a remote socket */
 function toRoomPlayer(sock: TypedSocket | TypedRemoteSocket): RoomPlayer {
     return {
@@ -50,16 +73,18 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         }
     }
 
-    // Join room upon connection
-    const allSockets = await io.in(sd.roomName).fetchSockets()
-
-    if (allSockets.length >= MAX_PLAYERS) {
-        io.to(socket.id).emit('roomIsFull')
-        socket.disconnect()
-        return
-    }
-
-    socket.join(sd.roomName)
+    // Join room upon connection — serialised per-room to prevent TOCTOU race
+    const joined = await withJoinLock(sd.roomName, async () => {
+        const allSockets = await io.in(sd.roomName).fetchSockets()
+        if (allSockets.length >= MAX_PLAYERS) {
+            io.to(socket.id).emit('roomIsFull')
+            socket.disconnect()
+            return false
+        }
+        socket.join(sd.roomName)
+        return true
+    })
+    if (!joined) return
     socket.emit('session', { sessionId: sd.sessionId, playerId: sd.playerId })
     socket.emit('messages', sd.messages)
 
@@ -83,10 +108,12 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         if (sockets.length === 0) return
 
         // Keep existing host if still connected
-        const currentHost = sockets.find(s => s.data.playerState.host)
+        const currentHost = sockets.find(s => s.data.playerState?.host)
         const hostId = currentHost ? currentHost.id : sockets[0].id
         for (const sock of sockets) {
-            sock.data.playerState.host = sock.id === hostId
+            if (sock.data.playerState) {
+                sock.data.playerState.host = sock.id === hostId
+            }
         }
         await broadcastRoomState()
     }
@@ -244,35 +271,35 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         await broadcastRoomState()
     }
 
-    const safe = (handler: (...args: any[]) => any) => {
+    const safe = (name: string, handler: (...args: any[]) => any) => {
         return (...args: any[]) => {
             try {
                 const result = handler(...args)
                 if (result && typeof result.catch === 'function') {
                     return result.catch((err: unknown) => {
-                        roomLog.error('Socket handler error:', err)
+                        roomLog.error(`[${name}] handler error:`, err)
                     })
                 }
                 return result
             } catch (err) {
-                roomLog.error('Socket handler error:', err)
+                roomLog.error(`[${name}] handler error:`, err)
             }
         }
     }
 
-    socket.on('setReady', safe(setReady))
-    socket.on('startGame', safe(startGame))
-    socket.on('setGameMode', safe(setGameMode))
+    socket.on('setReady', safe('setReady', setReady))
+    socket.on('startGame', safe('startGame', startGame))
+    socket.on('setGameMode', safe('setGameMode', setGameMode))
 
-    socket.on('moveDown', safe(moveDown))
-    socket.on('moveLeft', safe(moveLeft))
-    socket.on('moveRight', safe(moveRight))
-    socket.on('rotate', safe(rotate))
+    socket.on('moveDown', safe('moveDown', moveDown))
+    socket.on('moveLeft', safe('moveLeft', moveLeft))
+    socket.on('moveRight', safe('moveRight', moveRight))
+    socket.on('rotate', safe('rotate', rotate))
 
-    socket.on('disconnect', safe(onDisconnect))
-    socket.on('quitGame', safe(quitGame))
+    socket.on('disconnect', safe('disconnect', onDisconnect))
+    socket.on('quitGame', safe('quitGame', quitGame))
 
-    socket.on('createdMessage', safe(createdMessage))
+    socket.on('createdMessage', safe('createdMessage', createdMessage))
 }
 
 export default GameHandler

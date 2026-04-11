@@ -6,7 +6,17 @@ type ResponseData = { scores: HighscoreEntry[] } | { error: string }
 
 const RATE_WINDOW_MS = 60_000
 const MAX_REQUESTS = 30
+const CLEANUP_INTERVAL_MS = 5 * 60_000
 const hits = new Map<string, { count: number; resetAt: number }>()
+
+// Periodically evict expired entries to prevent unbounded growth
+const cleanupTimer = setInterval(() => {
+    const now = Date.now()
+    for (const [ip, entry] of hits) {
+        if (now > entry.resetAt) hits.delete(ip)
+    }
+}, CLEANUP_INTERVAL_MS)
+cleanupTimer.unref()
 
 function isRateLimited(ip: string): boolean {
     const now = Date.now()
