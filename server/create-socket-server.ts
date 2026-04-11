@@ -52,9 +52,15 @@ export function createSocketServer(httpServer: HttpServer, deps: SocketServerDep
                 socket.data.playerId = session.playerId
                 socket.data.roomName = session.roomName
                 socket.data.playerName = session.playerName
-                socket.data.playerState = session.playerState
                 socket.data.messages = messageStore.findMessagesForRoom(session.roomName)
-                socket.data.game = gameStore.findGame(session.roomName) ?? gameStore.create(session.roomName, io, [])
+                const existingGame = gameStore.findGame(session.roomName)
+                socket.data.game = existingGame ?? gameStore.create(session.roomName, io, [])
+                // If the game was GC'd, reset stale playerState to WAITING
+                if (existingGame) {
+                    socket.data.playerState = session.playerState
+                } else {
+                    socket.data.playerState = { host: false, playState: PlayState.WAITING }
+                }
                 socket.data.isReconnect = true
                 return next()
             }
