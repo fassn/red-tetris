@@ -34,9 +34,14 @@ COPY --from=builder /app/next.config.js ./
 RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 ENV DATA_DIR=/app/data
 
-USER nextjs
+# su-exec for dropping privileges in entrypoint
+RUN apk add --no-cache su-exec
+
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 3000
 ENV PORT=3000
 
-CMD ["npx", "tsx", "server/index.ts"]
+# Start as root so entrypoint can fix volume permissions, then drop to nextjs
+CMD ["/app/docker-entrypoint.sh"]
