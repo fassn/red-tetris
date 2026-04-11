@@ -72,3 +72,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Print: hide interactive elements, use system colors */
+@media print {
+  header, footer, canvas, .lg\:hidden, [role="group"] {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
