@@ -9,6 +9,7 @@ interface FormData {
 
 const Welcome = () => {
     const router = useRouter()
+    const error = router.query.error as string | undefined
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -40,13 +41,18 @@ const Welcome = () => {
             </span>
         </div>
         <form className='flex flex-col w-full max-w-sm sm:max-w-md m-4 sm:m-16 px-4 sm:px-6 pt-8 sm:pt-16 pb-6 sm:pb-8 bg-surface-card outline shadow-md shadow-brand drop-shadow-lg outline-brand rounded' onSubmit={onSubmit} action=''>
+            {error === 'roomIsFull' && (
+                <div className='mb-4 p-3 rounded bg-status-danger/10 border border-status-danger text-status-danger text-sm text-center' role='alert'>
+                    That room is full (max 4 players). Try a different room name.
+                </div>
+            )}
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='room_name'>Room name</label>
-                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='room_name' name='room_name' required></input>
+                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='room_name' name='room_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only'></input>
             </div>
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='player_name'>Player name</label>
-                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required></input>
+                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only'></input>
             </div>
             <button className='mt-8 sm:mt-16 p-3 w-full bg-brand rounded uppercase font-semibold hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2' type='submit'>Start/Join room</button>
             <Link href='/leaderboard' className='mt-4 text-center text-sm text-content-secondary hover:text-brand transition-colors'>

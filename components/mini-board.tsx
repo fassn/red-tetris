@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { COLS, ROWS } from '../shared/config'
 import { useTheme } from '../context/theme'
 import { syncCanvasTheme, getTileBg } from '../utils/draw'
@@ -72,4 +72,4 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
     )
 }
 
-export default MiniBoard
+export default memo(MiniBoard)

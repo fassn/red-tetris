@@ -1,7 +1,8 @@
-import { KeyboardEvent, useContext, useEffect, useState } from "react";
+import { KeyboardEvent, useContext, useEffect, useRef, useState } from "react";
 import { SocketContext } from "../context/socket";
 
 type Message = {
+    id: string,
     author: string,
     message: string
 }
@@ -10,20 +11,29 @@ type ChatProps = {
     playerName: string
 }
 
+let msgCounter = 0
+const nextMsgId = () => `msg-${Date.now()}-${++msgCounter}`
+
 const Chat = ({ playerName }: ChatProps) => {
     const socket = useContext(SocketContext)
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState<Array<Message>>([])
+    const bottomRef = useRef<HTMLDivElement>(null)
+
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages])
 
     useEffect(() => {
-        const handleMessages = (messages: Message[]) => {
-            setMessages(messages)
+        const handleMessages = (msgs: { author: string; message: string }[]) => {
+            setMessages(msgs.map(m => ({ ...m, id: nextMsgId() })))
         }
 
-        const handleNewMsg = (msg: Message) => {
-            setMessages((currentMsg) => [
-                ...currentMsg,
-                { author: msg.author, message: msg.message }
+        const handleNewMsg = (msg: { author: string; message: string }) => {
+            setMessages((prev) => [
+                ...prev,
+                { id: nextMsgId(), author: msg.author, message: msg.message }
             ])
         }
 
@@ -41,9 +51,9 @@ const Chat = ({ playerName }: ChatProps) => {
         const trimmed = message.trim()
         if (!trimmed) return
         socket.emit('createdMessage', { author: playerName, message: trimmed })
-        setMessages((currentMsg) => [
-            ...currentMsg,
-            { author: playerName, message: trimmed }
+        setMessages((prev) => [
+            ...prev,
+            { id: nextMsgId(), author: playerName, message: trimmed }
         ])
         setMessage('')
     }
@@ -63,11 +73,11 @@ const Chat = ({ playerName }: ChatProps) => {
     return (
         <div className='flex flex-col bg-surface-card w-full rounded-lg shadow-sm shadow-brand overflow-hidden flex-1' role='region' aria-label='Chat'>
             <div className='flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-brand' aria-live='polite' aria-relevant='additions'>
-            {messages.map((msg, i) => {
+            {messages.map((msg) => {
                 return (
                 <div
                     className="w-full py-2 px-3 border-b border-edge-subtle"
-                    key={i}
+                    key={msg.id}
                 >
                     <span className='sr-only'>{msg.author} says:</span>
                     <span className='font-semibold text-brand'>{msg.author}:</span>{' '}
@@ -75,6 +85,7 @@ const Chat = ({ playerName }: ChatProps) => {
                 </div>
                 );
             })}
+            <div ref={bottomRef} />
             </div>
             <div className="border-t border-edge w-full flex">
             <input
@@ -83,6 +94,7 @@ const Chat = ({ playerName }: ChatProps) => {
                 placeholder="New message..."
                 value={message}
                 aria-label='Chat message'
+                maxLength={500}
                 className="py-2.5 px-3 flex-1 text-sm bg-surface-input placeholder:text-content-muted outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyUp={handleKeypress}

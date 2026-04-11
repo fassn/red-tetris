@@ -1,18 +1,16 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
+import { useState } from 'react'
 
 import Chat from '../components/chat'
 import ConnectionOverlay from '../components/connection-overlay'
-import { socket } from '../context/socket'
 
 import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
 import Footer from "../components/footer"
 import GameClient from "../components/game-client"
-import { useConnectionStatus } from '../hooks/use-connection-status'
-import { PlayerState, PlayState, RoomPlayer, Stack, GameMode } from '../shared/types'
+import { useGameState } from '../hooks/use-game-state'
+import { Stack } from '../shared/types'
 import { BOARDHEIGHT } from '../shared/config'
 
 export type OpponentBoard = {
@@ -21,120 +19,39 @@ export type OpponentBoard = {
     stack: Stack[]
 }
 
-function parseHash(url: string) {
-    const hash = url.split('#')[1] || ''
-    const separatorIndex = hash.indexOf('/')
-    if (separatorIndex === -1) return {}
-    const room = decodeURIComponent(hash.slice(0, separatorIndex))
-    const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
-    if (!room || !playerName) return {}
-    return { room, playerName }
-}
-
-function connectSocket(roomName: string, playerName: string) {
-    const sessionId = localStorage.getItem('sessionId')
-    socket.auth = sessionId
-        ? { sessionId, playerName, roomName }
-        : { playerName, roomName }
-    socket.connect()
-}
+export type OpponentBoards = Record<string, OpponentBoard>
 
 const Home: NextPage = () => {
-    const router = useRouter()
-    const { status: connectionStatus, error: connectionError, markConnecting } = useConnectionStatus()
+    const {
+        playerName,
+        isLobby,
+        isInGame,
+        playerState,
+        otherPlayers,
+        opponentBoards,
+        gameMode,
+        setGameMode,
+        timeRemaining,
+        connectionStatus,
+        connectionError,
+        navigateHome,
+        forfeitGame,
+    } = useGameState()
 
-    const [playerName, setPlayerName] = useState('')
-    const [isLobby, setIsLobby] = useState(false)
-    const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
-    const [otherPlayers, setOtherPlayers] = useState<RoomPlayer[]>([])
-    const [opponentBoards, setOpponentBoards] = useState<Map<string, OpponentBoard>>(new Map())
-    const [gameMode, setGameMode] = useState<GameMode>(GameMode.CLASSIC)
-    const [timeRemaining, setTimeRemaining] = useState(-1)
-    const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
+    const [showForfeitDialog, setShowForfeitDialog] = useState(false)
 
-    useEffect(() => {
-        // URL hash is unavailable during SSR, so initial state must be set in an effect
-        const { room, playerName: name } = parseHash(router.asPath)
-        if (room && name) {
-            setPlayerName(name)
-            setIsLobby(true)
-            markConnecting()
-            connectSocket(room, name)
+    const handleHeaderAction = () => {
+        if (isInGame) {
+            setShowForfeitDialog(true)
+        } else {
+            navigateHome()
         }
+    }
 
-        const handleHashChange = (url: string) => {
-            const { room, playerName: name } = parseHash(url)
-            if (room && name) {
-                setPlayerName(name)
-                setIsLobby(true)
-                markConnecting()
-                connectSocket(room, name)
-            }
-        }
-
-        const handleRoomFull = () => {
-            router.push('/?error=roomIsFull')
-            setIsLobby(false)
-        }
-
-        const handleSession = ({ sessionId, playerId }: { sessionId: string, playerId: string }) => {
-            socket.auth = { sessionId }
-            localStorage.setItem('sessionId', sessionId)
-            socket.playerId = playerId
-        }
-
-        const handleNewState = ({ playerState, otherPlayers, gameMode: mode }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[], gameMode?: GameMode }) => {
-            if (playerState) {
-                setPlayerState(playerState)
-                // Clear opponent boards and timer when returning to lobby
-                if (playerState.playState === PlayState.WAITING) {
-                    setOpponentBoards(new Map())
-                    setTimeRemaining(-1)
-                }
-            }
-            if (otherPlayers) {
-                setOtherPlayers(otherPlayers)
-            }
-            if (mode) {
-                setGameMode(mode)
-            }
-        }
-
-        const handleOpponentStack = ({ playerId, playerName, stack }: { playerId: string; playerName: string; stack: Stack[] }) => {
-            setOpponentBoards((prev) => {
-                const next = new Map(prev)
-                next.set(playerId, { playerId, playerName, stack })
-                return next
-            })
-        }
-
-        const handleTimeUpdate = ({ remaining }: { remaining: number }) => {
-            setTimeRemaining(remaining)
-        }
-
-        const handleGameModeChanged = ({ gameMode }: { gameMode: GameMode }) => {
-            setGameMode(gameMode)
-        }
-
-        router.events.on('hashChangeComplete', handleHashChange)
-        socket.on('roomIsFull', handleRoomFull)
-        socket.on('session', handleSession)
-        socket.on('newState', handleNewState)
-        socket.on('opponentStack', handleOpponentStack)
-        socket.on('timeUpdate', handleTimeUpdate)
-        socket.on('gameModeChanged', handleGameModeChanged)
-
-        return () => {
-            router.events.off('hashChangeComplete', handleHashChange)
-            socket.off('roomIsFull', handleRoomFull)
-            socket.off('session', handleSession)
-            socket.off('newState', handleNewState)
-            socket.off('opponentStack', handleOpponentStack)
-            socket.off('timeUpdate', handleTimeUpdate)
-            socket.off('gameModeChanged', handleGameModeChanged)
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    const confirmForfeit = () => {
+        setShowForfeitDialog(false)
+        forfeitGame()
+    }
 
     return (
         <div className='h-dvh flex flex-col overflow-hidden'>
@@ -154,15 +71,7 @@ const Home: NextPage = () => {
                 <>
                 <header className='flex items-center justify-between bg-brand px-4 h-10 shrink-0'>
                     <button
-                        onClick={() => {
-                            if (isInGame) {
-                                socket.emit('quitGame')
-                            } else {
-                                socket.disconnect()
-                                setIsLobby(false)
-                                router.push('/')
-                            }
-                        }}
+                        onClick={handleHeaderAction}
                         className='text-sm font-medium hover:underline'
                     >
                         {isInGame ? '← Lobby' : '← Home'}
@@ -191,6 +100,32 @@ const Home: NextPage = () => {
             }
 
             <Footer />
+
+            {showForfeitDialog && (
+                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50' role='dialog' aria-modal='true' aria-label='Forfeit confirmation'>
+                    <div className='bg-surface-card rounded-lg shadow-lg p-6 max-w-sm mx-4'>
+                        <h2 className='text-lg font-semibold mb-2'>Forfeit Game?</h2>
+                        <p className='text-content-secondary text-sm mb-6'>
+                            Are you sure you want to forfeit? This will count as a loss and you won&apos;t be eligible for the leaderboard.
+                        </p>
+                        <div className='flex gap-3 justify-end'>
+                            <button
+                                onClick={() => setShowForfeitDialog(false)}
+                                className='px-4 py-2 text-sm font-medium rounded border border-edge hover:bg-surface-input transition-colors'
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmForfeit}
+                                className='px-4 py-2 text-sm font-semibold rounded bg-status-danger text-white hover:opacity-90 transition-opacity'
+                                autoFocus
+                            >
+                                Forfeit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
