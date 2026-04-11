@@ -31,6 +31,17 @@
 }
 
 /*
+  Tailwind v4 changed .flex-1 from `flex: 1 1 0%` to `flex: 1`.
+  While spec-equivalent, this causes centering regressions in nested
+  flex layouts on some browsers. Restore the v3 longhand.
+  Uses a CSS variable to prevent LightningCSS from collapsing the shorthand.
+*/
+.flex-1 {
+  --flex-basis: 0%;
+  flex: 1 1 var(--flex-basis);
+}
+
+/*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.
