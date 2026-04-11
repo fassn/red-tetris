@@ -54,20 +54,29 @@ function getDb(): Database.Database {
 }
 
 export function saveScore(playerName: string, score: number, gameMode: GameMode, roomName: string): void {
-    const stmt = getDb().prepare(
-        'INSERT INTO highscores (player_name, score, game_mode, room_name) VALUES (?, ?, ?, ?)'
-    )
-    stmt.run(playerName, score, gameMode, roomName)
+    try {
+        const stmt = getDb().prepare(
+            'INSERT INTO highscores (player_name, score, game_mode, room_name) VALUES (?, ?, ?, ?)'
+        )
+        stmt.run(playerName, score, gameMode, roomName)
+    } catch (err) {
+        console.error('Failed to save highscore:', err)
+    }
 }
 
 export function getTopScores(gameMode: GameMode, limit = 10): HighscoreEntry[] {
-    const stmt = getDb().prepare(`
-        SELECT id, player_name as playerName, score, game_mode as gameMode,
-               room_name as roomName, created_at as createdAt
-        FROM highscores
-        WHERE game_mode = ?
-        ORDER BY score DESC
-        LIMIT ?
-    `)
-    return stmt.all(gameMode, limit) as HighscoreEntry[]
+    try {
+        const stmt = getDb().prepare(`
+            SELECT id, player_name as playerName, score, game_mode as gameMode,
+                   room_name as roomName, created_at as createdAt
+            FROM highscores
+            WHERE game_mode = ?
+            ORDER BY score DESC
+            LIMIT ?
+        `)
+        return stmt.all(gameMode, limit) as HighscoreEntry[]
+    } catch (err) {
+        console.error('Failed to fetch highscores:', err)
+        return []
+    }
 }

@@ -5,6 +5,8 @@ import Player from "./player"
 import { GameMode, PlayerState, PlayState, RoomPlayer, Message } from "../shared/types"
 import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
 import { emitEndGameToPlayers } from "./gameloop"
+import { isValidGameMode, isValidMessage } from "./validation"
+import { isRateLimited, cleanupRateLimits } from "./rate-limiter"
 
 export type GameDeps = {
     sessionStore: InMemorySessionStore
@@ -115,6 +117,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveDown = () => {
         if (!isPlayerActive()) return
+        if (isRateLimited(socket.id, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -125,6 +128,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveLeft = () => {
         if (!isPlayerActive()) return
+        if (isRateLimited(socket.id, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -135,6 +139,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveRight = () => {
         if (!isPlayerActive()) return
+        if (isRateLimited(socket.id, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -145,6 +150,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const rotate = () => {
         if (!isPlayerActive()) return
+        if (isRateLimited(socket.id, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -155,13 +161,21 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const createdMessage = (msg: Message) => {
-        socket.to(sd.roomName).emit('newIncomingMsg', msg)
-        deps.messageStore.saveMessage(sd.roomName, msg)
+        if (!isValidMessage(msg?.message)) return
+        if (isRateLimited(socket.id, 'chat')) return
+        const sanitized: Message = {
+            author: msg.author,
+            message: msg.message.slice(0, 500),
+        }
+        socket.to(sd.roomName).emit('newIncomingMsg', sanitized)
+        deps.messageStore.saveMessage(sd.roomName, sanitized)
     }
 
     const setGameMode = async (mode: GameMode) => {
         if (!sd.playerState.host) return
         if (sd.game.isStarted) return
+        if (!isValidGameMode(mode)) return
+        if (isRateLimited(socket.id, 'mode')) return
         sd.game.gameMode = mode
         const sockets = await io.in(sd.roomName).fetchSockets()
         for (const sock of sockets) {
@@ -170,6 +184,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const onDisconnect = async () => {
+        cleanupRateLimits(socket.id)
         sd.game.removePlayer(sd.playerId)
 
         deps.sessionStore.saveSession(sd.sessionId, {

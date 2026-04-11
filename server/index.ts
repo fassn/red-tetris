@@ -11,6 +11,7 @@ import { TICK_RATE } from '../shared/config'
 import { PlayState } from '../shared/types'
 import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
 import type { SocketData } from './io-types'
+import { isValidName } from './validation'
 import {
     broadcastOpponentStack,
     checkIfPieceHasHit,
@@ -64,8 +65,8 @@ app.prepare().then(() => {
 
         const playerName = socket.handshake.auth.playerName
         const roomName = socket.handshake.auth.roomName
-        if (!roomName) return next(new Error('invalid room name'))
-        if (!playerName) return next(new Error('invalid player name'))
+        if (!isValidName(roomName)) return next(new Error('invalid room name'))
+        if (!isValidName(playerName)) return next(new Error('invalid player name'))
 
         socket.data.sessionId = randomId()
         socket.data.playerId = randomId()
@@ -86,8 +87,8 @@ app.prepare().then(() => {
     // Game loop — each game tracks its own tick count and drop interval
     const loop = () => {
         setTimeout(() => {
-            try {
-                for (const [, game] of gameStore.games) {
+            for (const [roomName, game] of gameStore.games) {
+                try {
                     if (!game.isStarted) continue
                     const shouldDrop = game.tick()
 
@@ -126,9 +127,9 @@ app.prepare().then(() => {
                             emitNextPiece(io, game, player, playerPieces)
                         }
                     }
+                } catch (err) {
+                    console.error(`[${roomName}] Game loop error:`, err)
                 }
-            } catch (err) {
-                console.error('Game loop error:', err)
             }
 
             loop()
@@ -139,4 +140,23 @@ app.prepare().then(() => {
     httpServer.listen(port, () => {
         console.log(`> Server listening on http://${hostname}:${port}`)
     })
+
+    // Graceful shutdown
+    const shutdown = (signal: string) => {
+        console.log(`\n${signal} received — shutting down gracefully...`)
+        io.close(() => {
+            console.log('Socket.IO closed')
+            httpServer.close(() => {
+                console.log('HTTP server closed')
+                process.exit(0)
+            })
+        })
+        // Force exit after 10s if graceful shutdown stalls
+        setTimeout(() => {
+            console.error('Forced shutdown after timeout')
+            process.exit(1)
+        }, 10_000).unref()
+    }
+    process.on('SIGTERM', () => shutdown('SIGTERM'))
+    process.on('SIGINT', () => shutdown('SIGINT'))
 })

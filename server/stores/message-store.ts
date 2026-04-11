@@ -1,5 +1,7 @@
 import type { Message } from "../../shared/types"
 
+const MAX_MESSAGES_PER_ROOM = 100
+
 export interface MessageStore {
     saveMessage(roomName: string, message: Message): void
     findMessagesForRoom(roomName: string): Message[]
@@ -17,7 +19,10 @@ export default class InMemoryMessageStore implements MessageStore {
         const messages = this.messages.get(roomName)
         if (messages) {
             messages.push(message)
-            this.messages.set(roomName, messages)
+            // FIFO cap: remove oldest messages when over limit
+            while (messages.length > MAX_MESSAGES_PER_ROOM) {
+                messages.shift()
+            }
         } else {
             this.messages.set(roomName, [message])
         }
