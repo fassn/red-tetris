@@ -6,3 +6,14 @@ npm-debug.log
 README.md
 .next
 .git
+__tests__
+coverage
+*.test.*
+*.spec.*
+.env*
+!.env.example
+data
+*.db
+*.db-wal
+*.db-shm
+.nvmrc

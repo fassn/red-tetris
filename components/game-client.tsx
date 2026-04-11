@@ -208,7 +208,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                         style={{ aspectRatio: `${BOARDWIDTH} / ${BOARDHEIGHT}` }}
                         onClick={handleClick}
                         role='img'
-                        aria-label='Tetris game board. Use arrow keys to move and rotate pieces.'
+                        aria-label={`Tetris game board — Score: ${score}, Level: ${level}. Use arrow keys to move and rotate pieces.`}
                         tabIndex={0}
                     />
                 </div>

@@ -123,7 +123,7 @@ export function emitTimeAttackEnd(io: TypedServer, game: Game) {
     )
     if (activePlayers.length === 0) return
 
-    const maxScore = Math.max(...activePlayers.map((p) => p.score))
+    const maxScore = Math.max(0, ...activePlayers.map((p) => p.score))
 
     for (const player of activePlayers) {
         player.socket.data.playerState.playState = PlayState.ENDGAME

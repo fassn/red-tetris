@@ -19,9 +19,10 @@ export default class InMemoryMessageStore implements MessageStore {
         const messages = this.messages.get(roomName)
         if (messages) {
             messages.push(message)
-            // FIFO cap: remove oldest messages when over limit
-            while (messages.length > MAX_MESSAGES_PER_ROOM) {
-                messages.shift()
+            // FIFO cap: remove oldest messages when over limit (single splice vs. loop of shift)
+            const overflow = messages.length - MAX_MESSAGES_PER_ROOM
+            if (overflow > 0) {
+                messages.splice(0, overflow)
             }
         } else {
             this.messages.set(roomName, [message])
