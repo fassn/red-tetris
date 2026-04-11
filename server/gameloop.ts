@@ -98,10 +98,9 @@ export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game)
 
     // If no active players remain, reset the game
     if (activePlayers.length <= 1) {
-        // Save highscores for all players with score > 0
         const roomName = game.players[0]?.socket.data.roomName ?? ''
         for (const player of game.players) {
-            if (player.score > 0) {
+            if (player.score > 0 && !player.forfeited) {
                 saveScore(player.name, player.score, game.gameMode, roomName)
             }
         }
@@ -142,10 +141,10 @@ export function emitTimeAttackEnd(io: TypedServer, game: Game) {
         })
     }
 
-    // Save highscores for all players with score > 0
+    // Save highscores for all players with score > 0 (excluding forfeited)
     const roomName = game.players[0]?.socket.data.roomName ?? ''
     for (const player of game.players) {
-        if (player.score > 0) {
+        if (player.score > 0 && !player.forfeited) {
             saveScore(player.name, player.score, game.gameMode, roomName)
         }
     }

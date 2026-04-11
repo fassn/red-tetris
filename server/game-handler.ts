@@ -185,13 +185,12 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const quitGame = async () => {
         if (isPlayerActive()) {
-            // Player is forfeiting mid-game — treat as a loss
             const player = sd.game.players.find((p: Player) => p.id === sd.playerId)
             if (player) {
+                player.forfeited = true
                 emitEndGameToPlayers(io, player, sd.game)
             }
         }
-        // Reset the forfeiting player back to lobby
         io.to(socket.id).emit('resetGame')
         sd.playerState.playState = PlayState.WAITING
         await broadcastRoomState()
