@@ -12,6 +12,7 @@ import { PlayState } from '../shared/types'
 import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socket-events'
 import type { SocketData } from './io-types'
 import { isValidName } from './validation'
+import { log } from './logger'
 import {
     broadcastOpponentStack,
     checkIfPieceHasHit,
@@ -128,7 +129,7 @@ app.prepare().then(() => {
                         }
                     }
                 } catch (err) {
-                    console.error(`[${roomName}] Game loop error:`, err)
+                    log.error(`[${roomName}] Game loop error:`, err)
                 }
             }
 
@@ -138,22 +139,22 @@ app.prepare().then(() => {
     loop()
 
     httpServer.listen(port, () => {
-        console.log(`> Server listening on http://${hostname}:${port}`)
+        log.info(`Server listening on http://${hostname}:${port}`)
     })
 
     // Graceful shutdown
     const shutdown = (signal: string) => {
-        console.log(`\n${signal} received — shutting down gracefully...`)
+        log.info(`${signal} received — shutting down gracefully...`)
         io.close(() => {
-            console.log('Socket.IO closed')
+            log.info('Socket.IO closed')
             httpServer.close(() => {
-                console.log('HTTP server closed')
+                log.info('HTTP server closed')
                 process.exit(0)
             })
         })
         // Force exit after 10s if graceful shutdown stalls
         setTimeout(() => {
-            console.error('Forced shutdown after timeout')
+            log.error('Forced shutdown after timeout')
             process.exit(1)
         }, 10_000).unref()
     }

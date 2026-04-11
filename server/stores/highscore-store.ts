@@ -2,6 +2,9 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
 import { GameMode } from '../../shared/types'
+import { createLogger } from '../logger'
+
+const storeLog = createLogger('highscore-store')
 
 export interface HighscoreEntry {
     id: number
@@ -60,7 +63,7 @@ export function saveScore(playerName: string, score: number, gameMode: GameMode,
         )
         stmt.run(playerName, score, gameMode, roomName)
     } catch (err) {
-        console.error('Failed to save highscore:', err)
+        storeLog.error('Failed to save highscore:', err)
     }
 }
 
@@ -76,7 +79,7 @@ export function getTopScores(gameMode: GameMode, limit = 10): HighscoreEntry[] {
         `)
         return stmt.all(gameMode, limit) as HighscoreEntry[]
     } catch (err) {
-        console.error('Failed to fetch highscores:', err)
+        storeLog.error('Failed to fetch highscores:', err)
         return []
     }
 }

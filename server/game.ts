@@ -1,5 +1,5 @@
 import type { TypedServer } from "./io-types"
-import { PIECE_COLORS, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH, TIME_ATTACK_SECONDS } from "../shared/config"
+import { PIECE_COLORS, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH, TIME_ATTACK_SECONDS, LINES_PER_LEVEL, LINE_SCORES } from "../shared/config"
 import Piece from "./piece"
 import Player from "./player"
 import { GameMode, PieceProps, PieceType, RGBA, Stack } from "../shared/types"
@@ -110,7 +110,7 @@ class Game {
      * Returns the new level if it changed, or null.
      */
     updateLevel(): number | null {
-        const newLevel = Math.floor(this.totalLinesCleared / 10)
+        const newLevel = Math.floor(this.totalLinesCleared / LINES_PER_LEVEL)
         if (newLevel === this.level) return null
         this.level = newLevel
         this.dropInterval = dropIntervalForLevel(newLevel)
@@ -204,20 +204,10 @@ class Game {
         if (currentScore === null) return 0
         this.totalLinesCleared += lineCount
         let score = currentScore
-        // NES scoring: base points × (level + 1)
         const multiplier = this.level + 1
-        switch (lineCount) {
-            case 1:
-                score += 40 * multiplier
-                break;
-            case 2:
-                score += 100 * multiplier
-                break;
-            case 3:
-                score += 300 * multiplier
-                break;
-            case 4:
-                score += 1200 * multiplier
+        const basePoints = LINE_SCORES[lineCount]
+        if (basePoints) {
+            score += basePoints * multiplier
         }
         this.setPlayerScore(score, playerId)
         return score
