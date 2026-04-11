@@ -97,7 +97,7 @@ const Chat = ({ playerName }: ChatProps) => {
                 maxLength={500}
                 className="py-2.5 px-3 flex-1 text-sm bg-surface-input placeholder:text-content-muted outline-none focus:ring-2 focus:ring-inset focus:ring-brand"
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyUp={handleKeypress}
+                onKeyDown={handleKeypress}
             />
             <button
                 className="uppercase px-4 text-sm font-semibold bg-brand hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand"

@@ -1,10 +1,20 @@
-/** Per-socket event rate limiter using a token-bucket approach. */
+/**
+ * Token-bucket rate limiter keyed on persistent player IDs.
+ * Buckets are evicted after STALE_MS of inactivity to prevent memory leaks.
+ */
+const STALE_MS = 5 * 60 * 1000 // 5 minutes
+
 export class RateLimiter {
     private buckets = new Map<string, { tokens: number; lastRefill: number }>()
+    private evictionTimer: ReturnType<typeof setInterval>
+
+    constructor() {
+        this.evictionTimer = setInterval(() => this.evictStale(), 60_000)
+    }
 
     /**
      * Check if an event is allowed under its rate limit.
-     * @param key   Unique key (e.g. socketId + eventName)
+     * @param key   Unique key (e.g. playerId:category)
      * @param maxTokens   Max burst tokens
      * @param refillMs    Time in ms to fully refill the bucket
      */
@@ -32,13 +42,19 @@ export class RateLimiter {
         return false
     }
 
-    /** Remove all buckets for a given socket (call on disconnect). */
-    cleanup(socketId: string) {
-        for (const key of this.buckets.keys()) {
-            if (key.startsWith(socketId)) {
+    /** Remove buckets not accessed in the last STALE_MS. */
+    private evictStale() {
+        const now = Date.now()
+        for (const [key, bucket] of this.buckets) {
+            if (now - bucket.lastRefill > STALE_MS) {
                 this.buckets.delete(key)
             }
         }
+    }
+
+    destroy() {
+        clearInterval(this.evictionTimer)
+        this.buckets.clear()
     }
 }
 
@@ -51,12 +67,13 @@ const LIMITS: Record<string, [number, number]> = {
     mode:    [2, 1000],   // 2 mode changes per second
 }
 
-export function isRateLimited(socketId: string, category: string): boolean {
+/** Check rate limit keyed on a persistent ID (playerId). */
+export function isRateLimited(id: string, category: string): boolean {
     const config = LIMITS[category]
     if (!config) return false
-    return !limiter.allow(`${socketId}:${category}`, config[0], config[1])
+    return !limiter.allow(`${id}:${category}`, config[0], config[1])
 }
 
-export function cleanupRateLimits(socketId: string) {
-    limiter.cleanup(socketId)
+export function destroyRateLimiter() {
+    limiter.destroy()
 }

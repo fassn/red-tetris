@@ -7,6 +7,7 @@ export interface SessionStore {
     saveSession(id: string, session: Session): void
     findAllSessions(): Session[]
     removeSessionsFromRoom(roomName: string): void
+    removeSession(id: string): void
 }
 
 export type Session = {
@@ -42,6 +43,10 @@ export default class InMemorySessionStore implements SessionStore {
 
     findAllSessions() {
         return [...this.sessions.values()]
+    }
+
+    removeSession(id: string) {
+        this.sessions.delete(id)
     }
 
     removeSessionsFromRoom(roomName: string) {

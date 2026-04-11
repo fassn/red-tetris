@@ -1,3 +1,4 @@
+import * as crypto from 'crypto'
 import type { TypedServer } from "./io-types"
 import { PIECE_COLORS, COLS, ROWS, SPACING, TICK_RATE, TILEHEIGHT, TILEWIDTH, TIME_ATTACK_SECONDS, LINES_PER_LEVEL, LINE_SCORES } from "../shared/config"
 import Piece from "./piece"
@@ -163,7 +164,7 @@ class Game {
 
     getRandomPieceProps = (): { type: PieceType, color: RGBA} => {
         const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
-        const type: PieceType = types[Math.floor(Math.random() * types.length)]
+        const type: PieceType = types[crypto.randomInt(types.length)]
         const color: RGBA = PIECE_COLORS[type]
 
         return { type, color }

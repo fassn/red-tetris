@@ -13,6 +13,8 @@ import type { ClientToServerEvents, ServerToClientEvents } from '../shared/socke
 import type { SocketData } from './io-types'
 import { isValidName } from './validation'
 import { log } from './logger'
+import { destroyRateLimiter } from './rate-limiter'
+import { closeDb } from './stores/highscore-store'
 import {
     broadcastOpponentStack,
     checkIfPieceHasHit,
@@ -45,7 +47,13 @@ const cleanStores = (roomName: string) => {
 
 app.prepare().then(() => {
     const httpServer = createServer(handle)
-    const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer)
+    // Socket.IO v4 blocks cross-origin requests by default (same-origin only).
+    // Set SOCKET_CORS_ORIGIN to allow a specific cross-origin for CDN/split deployments.
+    const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer, {
+        ...(process.env.SOCKET_CORS_ORIGIN && {
+            cors: { origin: process.env.SOCKET_CORS_ORIGIN },
+        }),
+    })
 
     // Session recovery middleware
     io.use((socket, next) => {
@@ -53,7 +61,10 @@ app.prepare().then(() => {
         if (sessionId) {
             const session: Session | undefined = sessionStore.findSession(sessionId)
             if (session) {
-                socket.data.sessionId = sessionId
+                // Rotate sessionId on reconnect to prevent replay of stolen tokens
+                const newSessionId = randomId()
+                sessionStore.removeSession(sessionId)
+                socket.data.sessionId = newSessionId
                 socket.data.playerId = session.playerId
                 socket.data.roomName = session.roomName
                 socket.data.playerName = session.playerName
@@ -78,6 +89,7 @@ app.prepare().then(() => {
         socket.data.playerState = { host: false, playState: PlayState.WAITING }
         socket.data.messages = messageStore.findMessagesForRoom(roomName)
         const game = gameStore.findGame(roomName)
+        if (!game && gameStore.isFull()) return next(new Error('server is full'))
         socket.data.game = game ?? gameStore.create(roomName, io, [])
 
         next()
@@ -147,6 +159,9 @@ app.prepare().then(() => {
     // Graceful shutdown
     const shutdown = (signal: string) => {
         log.info(`${signal} received — shutting down gracefully...`)
+        destroyRateLimiter()
+        sessionStore.destroy()
+        try { closeDb() } catch (err) { log.error('Error closing database:', err) }
         io.close(() => {
             log.info('Socket.IO closed')
             httpServer.close(() => {

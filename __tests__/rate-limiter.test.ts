@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { RateLimiter, isRateLimited, cleanupRateLimits } from '../server/rate-limiter'
+import { RateLimiter, isRateLimited } from '../server/rate-limiter'
 
 describe('RateLimiter', () => {
     let limiter: RateLimiter
@@ -33,26 +33,28 @@ describe('RateLimiter', () => {
         expect(limiter.allow('key-b', 5, 1000)).toBe(true)
     })
 
-    it('cleans up keys by prefix', () => {
-        limiter.allow('socket1:move', 5, 1000)
-        limiter.allow('socket1:chat', 5, 1000)
-        limiter.allow('socket2:move', 5, 1000)
-        limiter.cleanup('socket1')
-        // After cleanup, socket1 keys are fresh (allowed)
-        expect(limiter.allow('socket1:move', 1, 1000)).toBe(true)
+    it('destroy clears all state', () => {
+        limiter.allow('test', 5, 1000)
+        limiter.destroy()
+        // After destroy, new calls still work (fresh bucket)
+        expect(limiter.allow('test', 5, 1000)).toBe(true)
     })
 })
 
-describe('isRateLimited / cleanupRateLimits', () => {
+describe('isRateLimited', () => {
     it('is not rate limited on first call', () => {
-        expect(isRateLimited('sock1', 'move')).toBe(false)
+        expect(isRateLimited('player1', 'move')).toBe(false)
     })
 
     it('returns false for unknown category', () => {
-        expect(isRateLimited('sock1', 'unknown')).toBe(false)
+        expect(isRateLimited('player1', 'unknown')).toBe(false)
     })
 
-    it('cleanupRateLimits does not throw', () => {
-        expect(() => cleanupRateLimits('sock1')).not.toThrow()
+    it('rate limits persist across calls with same id', () => {
+        // Exhaust the move bucket (15 burst)
+        for (let i = 0; i < 15; i++) {
+            isRateLimited('player1', 'move')
+        }
+        expect(isRateLimited('player1', 'move')).toBe(true)
     })
 })

@@ -104,7 +104,8 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
 
         animId = requestAnimationFrame(render)
         return () => cancelAnimationFrame(animId)
-    }, [playerState.playState, socket])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [playerState.playState])
 
     // Keyboard controls — skip when typing in input fields
     useEffect(() => {

@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import dynamic from 'next/dynamic'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Chat from '../components/chat'
 import ConnectionOverlay from '../components/connection-overlay'
@@ -41,21 +41,59 @@ const Home: NextPage = () => {
     } = useGameState()
 
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
+    const mainContentRef = useRef<HTMLDivElement>(null)
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const forfeitTriggerRef = useRef<HTMLElement | null>(null)
 
-    const closeForfeitDialog = useCallback(() => setShowForfeitDialog(false), [])
+    const closeForfeitDialog = useCallback(() => {
+        setShowForfeitDialog(false)
+        requestAnimationFrame(() => forfeitTriggerRef.current?.focus())
+    }, [])
 
-    // Close forfeit dialog on Escape
+    // Toggle inert on main content when forfeit dialog is shown
+    useEffect(() => {
+        const el = mainContentRef.current
+        if (!el) return
+        if (showForfeitDialog) {
+            el.setAttribute('inert', '')
+            el.setAttribute('aria-hidden', 'true')
+        } else {
+            el.removeAttribute('inert')
+            el.removeAttribute('aria-hidden')
+        }
+    }, [showForfeitDialog])
+
+    // Focus trap + Escape handling for forfeit dialog
     useEffect(() => {
         if (!showForfeitDialog) return
-        const handleKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') closeForfeitDialog()
+        const dialog = dialogRef.current
+        if (!dialog) return
+        const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                closeForfeitDialog()
+                return
+            }
+            if (e.key !== 'Tab') return
+            const focusable = dialog.querySelectorAll<HTMLElement>(focusableSelector)
+            if (focusable.length === 0) return
+            const first = focusable[0]
+            const last = focusable[focusable.length - 1]
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault()
+                last.focus()
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault()
+                first.focus()
+            }
         }
-        window.addEventListener('keydown', handleKey)
-        return () => window.removeEventListener('keydown', handleKey)
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
     }, [showForfeitDialog, closeForfeitDialog])
 
     const handleHeaderAction = () => {
         if (isInGame) {
+            forfeitTriggerRef.current = document.activeElement as HTMLElement
             setShowForfeitDialog(true)
         } else {
             navigateHome()
@@ -68,7 +106,8 @@ const Home: NextPage = () => {
     }
 
     return (
-        <div className='h-dvh flex flex-col overflow-hidden'>
+        <>
+        <div ref={mainContentRef} className='h-dvh flex flex-col overflow-hidden'>
             <Head>
                 <title>Red Tetris</title>
                 <meta name="description" content="A Typescript Implementation of Tetris" />
@@ -114,33 +153,42 @@ const Home: NextPage = () => {
             }
 
             <Footer />
+        </div>
 
-            {showForfeitDialog && (
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50' role='dialog' aria-modal='true' aria-label='Forfeit confirmation' onClick={closeForfeitDialog}>
-                    <div className='bg-surface-card rounded-lg shadow-lg p-6 max-w-sm mx-4' onClick={(e) => e.stopPropagation()}>
-                        <h2 className='text-lg font-semibold mb-2'>Forfeit Game?</h2>
-                        <p className='text-content-secondary text-sm mb-6'>
-                            Are you sure you want to forfeit? This will count as a loss and you won&apos;t be eligible for the leaderboard.
-                        </p>
-                        <div className='flex gap-3 justify-end'>
-                            <button
-                                onClick={closeForfeitDialog}
-                                className='px-4 py-2 text-sm font-medium rounded border border-edge hover:bg-surface-input transition-colors'
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmForfeit}
-                                className='px-4 py-2 text-sm font-semibold rounded bg-status-danger text-white hover:opacity-90 transition-opacity'
-                                autoFocus
-                            >
-                                Forfeit
-                            </button>
-                        </div>
+        {showForfeitDialog && (
+            <div
+                ref={dialogRef}
+                className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'
+                role='alertdialog'
+                aria-modal='true'
+                aria-labelledby='forfeit-title'
+                aria-describedby='forfeit-desc'
+                onClick={closeForfeitDialog}
+            >
+                <div className='bg-surface-card rounded-lg shadow-lg p-6 max-w-sm mx-4' onClick={(e) => e.stopPropagation()}>
+                    <h2 id='forfeit-title' className='text-lg font-semibold mb-2'>Forfeit Game?</h2>
+                    <p id='forfeit-desc' className='text-content-secondary text-sm mb-6'>
+                        Are you sure you want to forfeit? This will count as a loss and you won&apos;t be eligible for the leaderboard.
+                    </p>
+                    <div className='flex gap-3 justify-end'>
+                        <button
+                            onClick={closeForfeitDialog}
+                            className='px-4 py-2 text-sm font-medium rounded border border-edge hover:bg-surface-input transition-colors'
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmForfeit}
+                            className='px-4 py-2 text-sm font-semibold rounded bg-status-danger text-white hover:opacity-90 transition-opacity'
+                            autoFocus
+                        >
+                            Forfeit
+                        </button>
                     </div>
                 </div>
-            )}
-        </div>
+            </div>
+        )}
+        </>
     )
 }
 
