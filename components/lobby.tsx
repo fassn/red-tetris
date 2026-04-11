@@ -6,6 +6,7 @@ type LobbyProps = {
     playerState: PlayerState,
     otherPlayers: RoomPlayer[],
     gameMode: GameMode,
+    onToggleMode: (next: GameMode) => void,
 }
 
 const Logo = () => (
@@ -93,7 +94,7 @@ const GuestMenu = ({ playerState, otherPlayers, gameMode, onSetReady }: { player
     </>
 )
 
-const Lobby = ({ playerState, otherPlayers, gameMode }: LobbyProps) => {
+const Lobby = ({ playerState, otherPlayers, gameMode, onToggleMode }: LobbyProps) => {
     const socket = useContext(SocketContext)
 
     const setReady = (event: ChangeEvent<HTMLInputElement>) => {
@@ -106,6 +107,7 @@ const Lobby = ({ playerState, otherPlayers, gameMode }: LobbyProps) => {
 
     const toggleMode = () => {
         const next = gameMode === GameMode.CLASSIC ? GameMode.TIME_ATTACK : GameMode.CLASSIC
+        onToggleMode(next)
         socket.emit('setGameMode', next)
     }
 
