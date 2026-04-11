@@ -9,11 +9,11 @@ import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps, GameMode } from "../shared/types"
 import MiniBoard from "./mini-board"
 import DPad from "./d-pad"
-import type { OpponentBoard } from "../pages/index"
+import type { OpponentBoard, OpponentBoards } from "../pages/index"
 
 type GameClientProps = {
     playerState: PlayerState,
-    opponentBoards: Map<string, OpponentBoard>,
+    opponentBoards: OpponentBoards,
     otherPlayers: RoomPlayer[],
     gameMode: GameMode,
     timeRemaining: number,
@@ -183,7 +183,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                     {hasMiniboards && (
                         <aside className='flex flex-row gap-3' aria-label='Opponent boards'>
                             {activeOpponents.map((p) => {
-                                const board = opponentBoards.get(p.playerId)
+                                const board = opponentBoards[p.playerId]
                                 return (
                                     <MiniBoard
                                         key={p.playerId}
