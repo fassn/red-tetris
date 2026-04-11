@@ -4,10 +4,30 @@ import { GameMode } from '../../shared/types'
 
 type ResponseData = { scores: HighscoreEntry[] } | { error: string }
 
+const RATE_WINDOW_MS = 60_000
+const MAX_REQUESTS = 30
+const hits = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(ip: string): boolean {
+    const now = Date.now()
+    const entry = hits.get(ip)
+    if (!entry || now > entry.resetAt) {
+        hits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
+        return false
+    }
+    entry.count++
+    return entry.count > MAX_REQUESTS
+}
+
 export default function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
     if (req.method !== 'GET') {
         res.setHeader('Allow', 'GET')
         return res.status(405).json({ error: 'Method not allowed' })
+    }
+
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown'
+    if (isRateLimited(ip)) {
+        return res.status(429).json({ error: 'Too many requests' })
     }
 
     const mode = req.query.mode as string

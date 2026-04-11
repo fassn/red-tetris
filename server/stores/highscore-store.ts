@@ -26,25 +26,30 @@ function ensureDir(dir: string) {
 function createDb(): Database.Database {
     ensureDir(DATA_DIR)
     const dbPath = path.join(DATA_DIR, 'highscores.db')
-    const db = new Database(dbPath)
+    try {
+        const db = new Database(dbPath)
 
-    db.pragma('journal_mode = WAL')
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS highscores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_name TEXT NOT NULL,
-            score INTEGER NOT NULL,
-            game_mode TEXT NOT NULL,
-            room_name TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-    `)
-    db.exec(`
-        CREATE INDEX IF NOT EXISTS idx_highscores_mode_score
-        ON highscores (game_mode, score DESC)
-    `)
+        db.pragma('journal_mode = WAL')
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS highscores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_name TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                game_mode TEXT NOT NULL,
+                room_name TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        `)
+        db.exec(`
+            CREATE INDEX IF NOT EXISTS idx_highscores_mode_score
+            ON highscores (game_mode, score DESC)
+        `)
 
-    return db
+        return db
+    } catch (err) {
+        storeLog.error('Failed to initialize database:', err)
+        throw err
+    }
 }
 
 let db: Database.Database | null = null
