@@ -17,6 +17,7 @@ import {
     emitEndGameToPlayers,
     emitNextPiece,
     emitStackAndScore,
+    emitTimeAttackEnd,
     movePieceDown,
     updatePiecesStack,
 } from './gameloop'
@@ -89,6 +90,18 @@ app.prepare().then(() => {
                 for (const [, game] of gameStore.games) {
                     if (!game.isStarted) continue
                     const shouldDrop = game.tick()
+
+                    // Time-attack: emit countdown and check expiry
+                    if (game.shouldEmitTimeUpdate()) {
+                        const remaining = game.timeRemainingSeconds
+                        for (const player of game.players) {
+                            io.to(player.socket.id).emit('timeUpdate', { remaining })
+                        }
+                    }
+                    if (game.isTimeExpired) {
+                        emitTimeAttackEnd(io, game)
+                        continue
+                    }
 
                     for (const player of game.players) {
                         if (player.socket.data.playerState.playState !== PlayState.PLAYING) continue

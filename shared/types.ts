@@ -40,6 +40,11 @@ export enum PlayState {
     ENDGAME
 }
 
+export enum GameMode {
+    CLASSIC = 'CLASSIC',
+    TIME_ATTACK = 'TIME_ATTACK',
+}
+
 export type PlayerState = {
     host: boolean
     playState: PlayState

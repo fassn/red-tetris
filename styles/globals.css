@@ -16,6 +16,7 @@
     --status-playing: #3b82f6;  /* blue-500 */
     --status-inactive: #9ca3af; /* gray-400 */
     --status-muted: #d1d5db;    /* gray-300 */
+    --status-danger: #ef4444;   /* red-500 */
 
     /* Theme-aware surfaces */
     --surface-app: #f8fafc;     /* slate-50 */
