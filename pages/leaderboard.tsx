@@ -19,6 +19,12 @@ function formatDate(iso: string): string {
 const Leaderboard = () => {
     const [activeMode, setActiveMode] = useState<GameMode>(GameMode.CLASSIC)
     const [result, setResult] = useState<{ mode: GameMode; scores: HighscoreEntry[] } | null>(null)
+    const [fetchError, setFetchError] = useState<string | null>(null)
+
+    const switchMode = (mode: GameMode) => {
+        setFetchError(null)
+        setActiveMode(mode)
+    }
 
     useEffect(() => {
         let cancelled = false
@@ -28,7 +34,10 @@ const Leaderboard = () => {
                 if (!cancelled) setResult({ mode: activeMode, scores: data.scores ?? [] })
             })
             .catch(() => {
-                if (!cancelled) setResult({ mode: activeMode, scores: [] })
+                if (!cancelled) {
+                    setFetchError('Failed to load leaderboard. Please try again later.')
+                    setResult({ mode: activeMode, scores: [] })
+                }
             })
         return () => { cancelled = true }
     }, [activeMode])
@@ -59,7 +68,7 @@ const Leaderboard = () => {
                             key={mode}
                             role='tab'
                             aria-selected={activeMode === mode}
-                            onClick={() => setActiveMode(mode)}
+                            onClick={() => switchMode(mode)}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand ${
                                 activeMode === mode
                                     ? 'bg-brand text-white shadow-xs'
@@ -86,7 +95,9 @@ const Leaderboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {loading ? (
+                            {fetchError ? (
+                                <tr><td colSpan={4} className='px-4 py-8 text-center text-status-danger'>{fetchError}</td></tr>
+                            ) : loading ? (
                                 <tr><td colSpan={4} className='px-4 py-8 text-center text-content-muted'>Loading…</td></tr>
                             ) : scores.length === 0 ? (
                                 <tr><td colSpan={4} className='px-4 py-8 text-center text-content-muted'>No scores yet. Be the first!</td></tr>

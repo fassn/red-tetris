@@ -69,6 +69,13 @@ const Home: NextPage = () => {
         const dialog = dialogRef.current
         if (!dialog) return
         const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
+        // Verify initial focus landed inside the dialog (fallback for autoFocus)
+        if (!dialog.contains(document.activeElement)) {
+            const first = dialog.querySelector<HTMLElement>(focusableSelector)
+            first?.focus()
+        }
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 closeForfeitDialog()
@@ -113,7 +120,7 @@ const Home: NextPage = () => {
                 <meta name="description" content="A Typescript Implementation of Tetris" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <a href='#main-content' className='sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface-card focus:px-4 focus:py-2 focus:rounded-sm focus:shadow-sm'>
+            <a href='#main-content' className='sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface-card focus:px-4 focus:py-2 focus:rounded-sm focus:shadow-xs'>
                 Skip to content
             </a>
             {isLobby && (

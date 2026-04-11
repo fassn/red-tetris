@@ -68,6 +68,7 @@ app.prepare().then(() => {
                         const playerStack = player.stack
                         const playerPieces = player.pieces
                         const currentPiece = playerPieces[0]
+                        if (!currentPiece) continue
 
                         movePieceDown(io, currentPiece, player, playerStack)
 
@@ -94,6 +95,22 @@ app.prepare().then(() => {
     }
     loop()
 
+    // Periodic GC: remove game objects for rooms with no connected sockets
+    const gcInterval = setInterval(async () => {
+        for (const [roomName] of gameStore.games) {
+            try {
+                const sockets = await io.in(roomName).fetchSockets()
+                if (sockets.length === 0) {
+                    log.info(`[GC] Cleaning empty room: ${roomName}`)
+                    sessionStore.removeSessionsFromRoom(roomName)
+                    messageStore.removeMessagesFromRoom(roomName)
+                    gameStore.removeGameFromRoom(roomName)
+                }
+            } catch { /* room already cleaned */ }
+        }
+    }, 60_000)
+    gcInterval.unref()
+
     httpServer.listen(port, () => {
         log.info(`Server listening on http://${hostname}:${port}`)
     })
@@ -101,6 +118,7 @@ app.prepare().then(() => {
     // Graceful shutdown
     const shutdown = (signal: string) => {
         log.info(`${signal} received — shutting down gracefully...`)
+        clearInterval(gcInterval)
         destroyRateLimiter()
         sessionStore.destroy()
         try { closeDb() } catch (err) { log.error('Error closing database:', err) }

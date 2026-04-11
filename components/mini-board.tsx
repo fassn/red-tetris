@@ -35,6 +35,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
 
         syncCanvasTheme()
         const tileBg = getTileBg()
+        const hasRoundRect = typeof ctx.roundRect === 'function'
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         let x = 0
         let y = 0
@@ -43,9 +44,13 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
             for (let row = 0; row < ROWS; row++) {
                 const t = stack[row * COLS + col]
                 ctx.fillStyle = t.isFilled ? rgba(t.color) : tileBg
-                ctx.beginPath()
-                ctx.roundRect(x, y, MINI_TILE, MINI_TILE, MINI_RADIUS)
-                ctx.fill()
+                if (hasRoundRect) {
+                    ctx.beginPath()
+                    ctx.roundRect(x, y, MINI_TILE, MINI_TILE, MINI_RADIUS)
+                    ctx.fill()
+                } else {
+                    ctx.fillRect(x, y, MINI_TILE, MINI_TILE)
+                }
                 y += MINI_TILE + MINI_SPACING
             }
             y = 0
