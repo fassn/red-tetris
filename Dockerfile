@@ -1,5 +1,5 @@
 # Install dependencies only when needed
-FROM node:20.20-alpine AS builder
+FROM node:25-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -12,7 +12,7 @@ RUN npm run build
 RUN npx tsc --project tsconfig.server.json
 
 # Production image, copy all the files and run next
-FROM node:20.20-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

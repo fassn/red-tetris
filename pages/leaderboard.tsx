@@ -53,16 +53,16 @@ const Leaderboard = () => {
 
             <main className='flex-1 min-h-0 flex flex-col items-center px-4 py-8 overflow-y-auto'>
                 {/* Tabs */}
-                <div className='flex gap-1 bg-surface-card rounded-lg p-1 shadow-sm border border-edge mb-8' role='tablist' aria-label='Game mode'>
+                <div className='flex gap-1 bg-surface-card rounded-lg p-1 shadow-xs border border-edge mb-8' role='tablist' aria-label='Game mode'>
                     {tabs.map(({ mode, label }) => (
                         <button
                             key={mode}
                             role='tab'
                             aria-selected={activeMode === mode}
                             onClick={() => setActiveMode(mode)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand ${
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand ${
                                 activeMode === mode
-                                    ? 'bg-brand text-white shadow-sm'
+                                    ? 'bg-brand text-white shadow-xs'
                                     : 'text-content-muted hover:text-content'
                             }`}
                         >
@@ -72,7 +72,7 @@ const Leaderboard = () => {
                 </div>
 
                 {/* Table */}
-                <div className='w-full max-w-lg bg-surface-card rounded-lg shadow-sm border border-edge overflow-hidden'>
+                <div className='w-full max-w-lg bg-surface-card rounded-lg shadow-xs border border-edge overflow-hidden'>
                     <table className='w-full text-sm'>
                         <caption className='sr-only'>
                             {activeMode === GameMode.CLASSIC ? 'Classic' : 'Time Attack'} mode high scores

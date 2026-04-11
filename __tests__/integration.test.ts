@@ -41,7 +41,6 @@ function waitForEvent<E extends keyof ServerToClientEvents>(
 ): Promise<Parameters<ServerToClientEvents[E]>> {
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error(`Timeout waiting for ${event}`)), timeout)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(client as any).once(event, (...args: any[]) => {
             clearTimeout(timer)
             resolve(args as Parameters<ServerToClientEvents[E]>)
@@ -283,16 +282,13 @@ describe('Socket.IO Integration', () => {
             const resetPromise = waitForEvent(host, 'resetGame')
             const waitingPromise = new Promise<{ playState: number }>((resolve, reject) => {
                 const timer = setTimeout(() => reject(new Error('Timeout waiting for WAITING state')), 2000)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const handler = (state: any) => {
                     if (state.playerState?.playState === PlayState.WAITING) {
                         clearTimeout(timer)
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         ;(host as any).off('newState', handler)
                         resolve(state.playerState)
                     }
                 }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ;(host as any).on('newState', handler)
             })
 

@@ -25,7 +25,7 @@ class ErrorBoundary extends Component<Props, State> {
                     <p className="text-content-secondary mb-6">{this.state.error?.message}</p>
                     <button
                         onClick={() => window.location.reload()}
-                        className="px-6 py-2 bg-brand text-content-inverse rounded hover:bg-brand-hover transition-colors"
+                        className="px-6 py-2 bg-brand text-content-inverse rounded-sm hover:bg-brand-hover transition-colors"
                     >
                         Try again
                     </button>

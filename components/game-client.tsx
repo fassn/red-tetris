@@ -154,7 +154,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
     return (
         <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:items-start h-full sm:h-auto'>
             {isPlaying && (
-                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-2 sm:gap-0 flex-shrink-0 w-full sm:w-auto sm:h-[638px]'>
+                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-2 sm:gap-0 shrink-0 w-full sm:w-auto sm:h-[638px]'>
                     <div className={`flex ${hasMiniboards ? 'flex-col' : 'flex-row'} sm:flex-col items-center sm:items-start gap-2 sm:gap-4`}>
                         <div className='flex flex-col gap-1'>
                             <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
@@ -162,7 +162,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                                 ref={previewRef}
                                 width={90}
                                 height={50}
-                                className='rounded'
+                                className='rounded-sm'
                             />
                         </div>
                         <div className='flex flex-col'>
