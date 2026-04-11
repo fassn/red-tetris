@@ -1,3 +1,15 @@
+/**
+ * Socket event handlers for game rooms.
+ *
+ * **Mutation model:**
+ * Node.js is single-threaded — socket handlers and the game loop (setInterval)
+ * never execute concurrently. Handlers mutate player piece position (moveLeft,
+ * moveRight, rotate, moveDown) and game mode. The game loop (server/index.ts)
+ * drives gravity (auto-drop), line clearing, scoring, and game-over detection.
+ * Both paths share Game state safely because only one runs at a time on the
+ * event loop.
+ */
+
 import { MAX_PLAYERS, SPACING, TILEWIDTH } from "../shared/config"
 import InMemoryMessageStore from "./stores/message-store"
 import InMemorySessionStore from "./stores/session-store"
@@ -7,6 +19,7 @@ import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
 import { emitEndGameToPlayers } from "./gameloop"
 import { isValidGameMode, isValidMessage } from "./validation"
 import { isRateLimited, cleanupRateLimits } from "./rate-limiter"
+import { createLogger } from "./logger"
 
 export type GameDeps = {
     sessionStore: InMemorySessionStore
@@ -25,6 +38,7 @@ function toRoomPlayer(sock: TypedSocket | TypedRemoteSocket): RoomPlayer {
 
 const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps) => {
     const sd = socket.data
+    const roomLog = createLogger(sd.roomName)
 
     // Join room upon connection
     const allSockets = await io.in(sd.roomName).fetchSockets()
@@ -221,12 +235,12 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
                 const result = handler(...args)
                 if (result && typeof result.catch === 'function') {
                     return result.catch((err: unknown) => {
-                        console.error(`[${sd.roomName}] Socket handler error:`, err)
+                        roomLog.error('Socket handler error:', err)
                     })
                 }
                 return result
             } catch (err) {
-                console.error(`[${sd.roomName}] Socket handler error:`, err)
+                roomLog.error('Socket handler error:', err)
             }
         }
     }
