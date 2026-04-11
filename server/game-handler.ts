@@ -18,7 +18,7 @@ import { GameMode, PlayerState, PlayState, RoomPlayer, Message } from "../shared
 import type { TypedServer, TypedSocket, TypedRemoteSocket } from "./io-types"
 import { emitEndGameToPlayers } from "./gameloop"
 import { isValidGameMode, isValidMessage } from "./validation"
-import { isRateLimited, cleanupRateLimits } from "./rate-limiter"
+import { isRateLimited } from "./rate-limiter"
 import { createLogger } from "./logger"
 
 export type GameDeps = {
@@ -92,12 +92,15 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     await assignHost()
 
     const startGame = async () => {
+        if (!sd.playerState.host) return
+        if (sd.game.isStarted) return
         sd.game.isStarted = true
         sd.game.startTimer()
         addPlayer()
 
         // Transition all eligible players to PLAYING
         for (const player of sd.game.players) {
+            if (!player.pieces[0] || !player.pieces[1]) continue
             const ps = player.socket.data.playerState
             if (ps.host || ps.playState === PlayState.READY) {
                 ps.playState = PlayState.PLAYING
@@ -141,7 +144,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveDown = () => {
         if (!isPlayerActive()) return
-        if (isRateLimited(socket.id, 'move')) return
+        if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -152,7 +155,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveLeft = () => {
         if (!isPlayerActive()) return
-        if (isRateLimited(socket.id, 'move')) return
+        if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -163,7 +166,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveRight = () => {
         if (!isPlayerActive()) return
-        if (isRateLimited(socket.id, 'move')) return
+        if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -174,7 +177,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const rotate = () => {
         if (!isPlayerActive()) return
-        if (isRateLimited(socket.id, 'move')) return
+        if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
         if (!playerStack || !playerPieces?.[0]) return
@@ -186,9 +189,9 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const createdMessage = (msg: Message) => {
         if (!isValidMessage(msg?.message)) return
-        if (isRateLimited(socket.id, 'chat')) return
+        if (isRateLimited(sd.playerId, 'chat')) return
         const sanitized: Message = {
-            author: msg.author,
+            author: sd.playerName,
             message: msg.message.slice(0, 500),
         }
         socket.to(sd.roomName).emit('newIncomingMsg', sanitized)
@@ -199,7 +202,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         if (!sd.playerState.host) return
         if (sd.game.isStarted) return
         if (!isValidGameMode(mode)) return
-        if (isRateLimited(socket.id, 'mode')) return
+        if (isRateLimited(sd.playerId, 'mode')) return
         sd.game.gameMode = mode
         const sockets = await io.in(sd.roomName).fetchSockets()
         for (const sock of sockets) {
@@ -208,7 +211,6 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const onDisconnect = async () => {
-        cleanupRateLimits(socket.id)
         sd.game.removePlayer(sd.playerId)
 
         deps.sessionStore.saveSession(sd.sessionId, {

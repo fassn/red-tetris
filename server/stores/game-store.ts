@@ -1,4 +1,5 @@
 import type { TypedServer } from "../io-types"
+import { MAX_ROOMS } from "../../shared/config"
 import Game from "../game"
 import Player from "../player"
 
@@ -7,6 +8,7 @@ export interface GameStore {
     findGame(roomName: string): Game | undefined
     saveGame(roomName: string, game: Game): void
     removeGameFromRoom(roomName: string): void
+    isFull(): boolean
 }
 
 export default class InMemoryGameStore implements GameStore {
@@ -21,6 +23,10 @@ export default class InMemoryGameStore implements GameStore {
             this.games.set(roomName, new Game(io, players))
         }
         return this.games.get(roomName)!
+    }
+
+    isFull(): boolean {
+        return this.games.size >= MAX_ROOMS
     }
 
     findGame(roomName: string): Game | undefined {

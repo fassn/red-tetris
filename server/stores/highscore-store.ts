@@ -56,6 +56,14 @@ function getDb(): Database.Database {
     return db
 }
 
+/** Close the database connection. Call on shutdown. */
+export function closeDb(): void {
+    if (db) {
+        db.close()
+        db = null
+    }
+}
+
 export function saveScore(playerName: string, score: number, gameMode: GameMode, roomName: string): void {
     try {
         const stmt = getDb().prepare(
