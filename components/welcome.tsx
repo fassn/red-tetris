@@ -1,4 +1,5 @@
 import { useRouter } from "next/router"
+import Link from "next/link"
 import { FormEvent } from "react"
 
 interface FormData {
@@ -48,6 +49,9 @@ const Welcome = () => {
                 <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline outline-edge rounded focus:outline-none focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required></input>
             </div>
             <button className='mt-8 sm:mt-16 p-3 w-full bg-brand rounded uppercase font-semibold hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2' type='submit'>Start/Join room</button>
+            <Link href='/leaderboard' className='mt-4 text-center text-sm text-content-secondary hover:text-brand transition-colors'>
+                🏆 View Leaderboard
+            </Link>
         </form>
     </main>
     )
