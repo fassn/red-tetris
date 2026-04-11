@@ -9,8 +9,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [theme, setTheme] = useState<Theme>('dark')
 
     useEffect(() => {
-        // Sync React state with the class set by the inline FOUC-prevention script
+        // Sync React state with the class set by the inline FOUC-prevention script.
+        // Intentional: reading DOM after hydration requires a one-time setState.
         const isDark = document.documentElement.classList.contains('dark')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTheme(isDark ? 'dark' : 'light')
     }, [])
 

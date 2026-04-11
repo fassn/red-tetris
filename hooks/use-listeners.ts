@@ -97,6 +97,7 @@ const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, g
             socket.off('levelUp', handleLevelUp)
             socket.off('resetGame', handleResetGame)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 }
 

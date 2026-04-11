@@ -34,6 +34,7 @@ const Chat = ({ playerName }: ChatProps) => {
             socket.off('messages', handleMessages)
             socket.off('newIncomingMsg', handleNewMsg)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const sendMessage = () => {
