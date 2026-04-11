@@ -18,8 +18,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs \
+    && apk add --no-cache su-exec curl
 
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
@@ -29,12 +30,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/next.config.js ./
 
-# Persistent data directory for SQLite (mount a volume here)
 RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 ENV DATA_DIR=/app/data
-
-# su-exec for dropping privileges in entrypoint
-RUN apk add --no-cache su-exec curl
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh

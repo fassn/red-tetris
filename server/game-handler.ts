@@ -82,9 +82,11 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         const sockets = await io.in(sd.roomName).fetchSockets()
         if (sockets.length === 0) return
 
-        // First socket in the room becomes host
+        // Keep existing host if still connected
+        const currentHost = sockets.find(s => s.data.playerState.host)
+        const hostId = currentHost ? currentHost.id : sockets[0].id
         for (const sock of sockets) {
-            sock.data.playerState.host = sock.id === sockets[0].id
+            sock.data.playerState.host = sock.id === hostId
         }
         await broadcastRoomState()
     }
