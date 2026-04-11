@@ -165,7 +165,7 @@ const Home: NextPage = () => {
                         }}
                         className='text-sm font-medium hover:underline'
                     >
-                        {isInGame ? '← Forfeit' : '← Home'}
+                        {isInGame ? '← Lobby' : '← Home'}
                     </button>
                     <h1 className='text-lg font-bold uppercase tracking-wider'>Red Tetris</h1>
                     <div className='w-16' />
