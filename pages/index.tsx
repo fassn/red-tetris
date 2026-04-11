@@ -159,6 +159,7 @@ const Home: NextPage = () => {
                                 socket.emit('quitGame')
                             } else {
                                 socket.disconnect()
+                                setIsLobby(false)
                                 router.push('/')
                             }
                         }}
