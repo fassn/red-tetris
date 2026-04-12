@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Chat from '../components/chat'
 import ConnectionOverlay from '../components/connection-overlay'
+import NamePrompt from '../components/name-prompt'
 
 import Lobby from "../components/lobby"
 import Welcome from "../components/welcome"
@@ -40,6 +41,10 @@ const Home: NextPage = () => {
         forfeitGame,
         backNavigationPending,
         cancelBackNavigation,
+        needsPlayerName,
+        submitPlayerName,
+        cancelNamePrompt,
+        roomName,
     } = useGameState()
 
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
@@ -198,6 +203,14 @@ const Home: NextPage = () => {
                     </div>
                 </div>
             </div>
+        )}
+
+        {needsPlayerName && (
+            <NamePrompt
+                roomName={roomName}
+                onSubmit={submitPlayerName}
+                onCancel={cancelNamePrompt}
+            />
         )}
         </>
     )
