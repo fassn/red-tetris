@@ -1,6 +1,8 @@
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { FormEvent, useEffect, useRef } from "react"
+import { FormEvent, useCallback, useEffect, useRef } from "react"
+
+const NAME_RE = /[^a-zA-Z0-9_-]/g
 
 interface FormData {
     room_name: { value: string },
@@ -16,11 +18,21 @@ const Welcome = () => {
         roomInputRef.current?.focus()
     }, [])
 
+    // Strip characters that aren't allowed by the server NAME_PATTERN
+    const sanitize = useCallback((e: React.FormEvent<HTMLInputElement>) => {
+        const input = e.currentTarget
+        const cleaned = input.value.replace(NAME_RE, '')
+        if (cleaned !== input.value) input.value = cleaned
+    }, [])
+
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const target = event.target as EventTarget & FormData
+        const room = target.room_name.value.replace(NAME_RE, '')
+        const player = target.player_name.value.replace(NAME_RE, '')
+        if (!room || !player) return
 
-        router.push(`/#${encodeURIComponent(target.room_name.value)}/${encodeURIComponent(target.player_name.value)}`)
+        router.push(`/#${encodeURIComponent(room)}/${encodeURIComponent(player)}`)
     }
 
     return (
@@ -53,11 +65,11 @@ const Welcome = () => {
             )}
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='room_name'>Room name</label>
-                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline-solid outline-edge rounded-sm focus:outline-hidden focus:ring-2 focus:ring-brand' type='text' id='room_name' name='room_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only' ref={roomInputRef}></input>
+                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline-solid outline-edge rounded-sm focus:outline-hidden focus:ring-2 focus:ring-brand' type='text' id='room_name' name='room_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only' onInput={sanitize} ref={roomInputRef}></input>
             </div>
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='player_name'>Player name</label>
-                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline-solid outline-edge rounded-sm focus:outline-hidden focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only'></input>
+                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline-solid outline-edge rounded-sm focus:outline-hidden focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only' onInput={sanitize}></input>
             </div>
             <button className='mt-8 sm:mt-16 p-3 w-full bg-brand rounded-sm uppercase font-semibold hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand focus:ring-offset-2' type='submit'>Start/Join room</button>
             <Link href='/leaderboard' className='mt-4 text-center text-sm text-content-secondary hover:text-brand transition-colors'>

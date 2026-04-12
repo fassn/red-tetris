@@ -5,6 +5,8 @@ import { useConnectionStatus } from './use-connection-status'
 import { PlayerState, PlayState, RoomPlayer, Stack, GameMode } from '../shared/types'
 import type { OpponentBoard, OpponentBoards } from '../pages/index'
 
+const NAME_PATTERN = /^[a-zA-Z0-9_-]+$/
+
 function parseHash(url: string) {
     const hash = url.split('#')[1] || ''
     const separatorIndex = hash.indexOf('/')
@@ -12,6 +14,7 @@ function parseHash(url: string) {
     const room = decodeURIComponent(hash.slice(0, separatorIndex))
     const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
     if (!room || !playerName) return {}
+    if (!NAME_PATTERN.test(room) || !NAME_PATTERN.test(playerName)) return {}
     return { room, playerName }
 }
 
