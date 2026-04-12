@@ -44,19 +44,32 @@ export function useGameState() {
     const isInGameRef = useRef(false)
     const isLobbyRef = useRef(false)
     const roomRef = useRef('')
+    // True when we pushed a /#room/playing entry (so router.back returns to /#room)
+    const pushedGameEntryRef = useRef(false)
 
     useEffect(() => { isInGameRef.current = isInGame }, [isInGame])
     useEffect(() => { isLobbyRef.current = isLobby }, [isLobby])
 
-    // Push /#room/playing when game starts, replace with /#room when it ends
+    // Push /#room/playing when game starts; navigate back to /#room when it ends.
+    // Uses router.push so history entries get Next.js __N state, required for
+    // beforePopState to fire on back/forward navigation.
     useEffect(() => {
         if (!roomRef.current) return
-        if (isInGame) {
-            window.history.pushState(null, '', `/#${encodeURIComponent(roomRef.current)}/playing`)
-        } else if (isLobby) {
-            window.history.replaceState(null, '', `/#${encodeURIComponent(roomRef.current)}`)
+        const encoded = encodeURIComponent(roomRef.current)
+        if (isInGame && !parseHash(window.location.href).playing) {
+            pushedGameEntryRef.current = true
+            router.push(`/#${encoded}/playing`, undefined, { shallow: true }).catch(() => {})
+        } else if (!isInGame && isLobby && parseHash(window.location.href).playing) {
+            if (pushedGameEntryRef.current) {
+                // Go back to the existing /#room entry instead of creating a duplicate
+                pushedGameEntryRef.current = false
+                router.back()
+            } else {
+                // Direct URL entry — no lobby entry to go back to, replace in-place
+                router.replace(`/#${encoded}`, undefined, { shallow: true }).catch(() => {})
+            }
         }
-    }, [isInGame, isLobby])
+    }, [isInGame, isLobby, router])
 
     // Try to join a room using stored player name, or show name prompt
     const joinRoom = (room: string) => {
@@ -107,6 +120,7 @@ export function useGameState() {
                 setOtherPlayers([])
                 setOpponentBoards({})
                 setTimeRemaining(-1)
+                roomRef.current = ''
             }
         }
 
@@ -117,9 +131,12 @@ export function useGameState() {
             if (isInGameRef.current && room && !playing) {
                 // In-game → back to lobby: show forfeit dialog
                 setBackNavigationPending(true)
+                const encoded = encodeURIComponent(roomRef.current)
+                // Include __N so Next.js recognises this entry on future popstate
                 window.history.pushState(
-                    null, '',
-                    `/#${encodeURIComponent(roomRef.current)}/playing`,
+                    { __N: true, url: '/', as: `/#${encoded}/playing`, options: {} },
+                    '',
+                    `/#${encoded}/playing`,
                 )
                 return false
             }
@@ -133,6 +150,7 @@ export function useGameState() {
                 setOtherPlayers([])
                 setOpponentBoards({})
                 setTimeRemaining(-1)
+                roomRef.current = ''
             }
 
             return true
@@ -141,6 +159,7 @@ export function useGameState() {
         const handleRoomFull = () => {
             router.push('/?error=roomIsFull')
             setIsLobby(false)
+            roomRef.current = ''
         }
 
         const handleSession = ({ sessionId, playerId }: { sessionId: string, playerId: string }) => {
@@ -180,7 +199,11 @@ export function useGameState() {
             setGameMode(gameMode)
         }
 
+        // Native hashchange catches address-bar edits that Next.js doesn't handle
+        const onNativeHashChange = () => handleHashChange(window.location.href)
+
         router.events.on('hashChangeComplete', handleHashChange)
+        window.addEventListener('hashchange', onNativeHashChange)
         socket.on('roomIsFull', handleRoomFull)
         socket.on('session', handleSession)
         socket.on('newState', handleNewState)
@@ -191,6 +214,7 @@ export function useGameState() {
         return () => {
             router.beforePopState(() => true)
             router.events.off('hashChangeComplete', handleHashChange)
+            window.removeEventListener('hashchange', onNativeHashChange)
             socket.off('roomIsFull', handleRoomFull)
             socket.off('session', handleSession)
             socket.off('newState', handleNewState)
@@ -204,6 +228,7 @@ export function useGameState() {
     const navigateHome = () => {
         socket.disconnect()
         setIsLobby(false)
+        roomRef.current = ''
         router.push('/')
     }
 
