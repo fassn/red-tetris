@@ -12,8 +12,13 @@ const Welcome = () => {
     const router = useRouter()
     const error = router.query.error as string | undefined
     const roomInputRef = useRef<HTMLInputElement>(null)
+    const playerInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
+        const stored = localStorage.getItem('playerName')
+        if (stored && playerInputRef.current) {
+            playerInputRef.current.value = stored
+        }
         roomInputRef.current?.focus()
     }, [])
 
@@ -31,7 +36,8 @@ const Welcome = () => {
         const player = sanitizeName(target.player_name.value)
         if (!room || !player) return
 
-        router.push(`/#${encodeURIComponent(room)}/${encodeURIComponent(player)}`)
+        localStorage.setItem('playerName', player)
+        router.push(`/#${encodeURIComponent(room)}`)
     }
 
     return (
@@ -68,7 +74,7 @@ const Welcome = () => {
             </div>
             <div className='flex flex-col sm:flex-row my-3 gap-2'>
                 <label className='sm:w-1/3 self-start sm:self-center sm:text-center' htmlFor='player_name'>Player name</label>
-                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline-solid outline-edge rounded-sm focus:outline-hidden focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only' onInput={sanitize}></input>
+                <input className='sm:w-2/3 h-10 px-3 bg-surface-input outline-1 outline-solid outline-edge rounded-sm focus:outline-hidden focus:ring-2 focus:ring-brand' type='text' id='player_name' name='player_name' required maxLength={32} pattern='[a-zA-Z0-9_-]+' title='Letters, numbers, hyphens and underscores only' onInput={sanitize} ref={playerInputRef}></input>
             </div>
             <button className='mt-8 sm:mt-16 p-3 w-full bg-brand rounded-sm uppercase font-semibold hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand focus:ring-offset-2' type='submit'>Start/Join room</button>
             <Link href='/leaderboard' className='mt-4 text-center text-sm text-content-secondary hover:text-brand transition-colors'>

@@ -8,12 +8,12 @@ import type { OpponentBoard, OpponentBoards } from '../pages/index'
 
 function parseHash(url: string) {
     const hash = url.split('#')[1] || ''
-    const separatorIndex = hash.indexOf('/')
-    if (separatorIndex === -1) return {}
-    const room = decodeURIComponent(hash.slice(0, separatorIndex))
-    const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
-    if (!isValidName(room) || !isValidName(playerName)) return {}
-    return { room, playerName }
+    if (!hash) return {}
+    const parts = hash.split('/')
+    const room = decodeURIComponent(parts[0])
+    if (!isValidName(room)) return {}
+    const playing = parts[1] === 'playing'
+    return { room, playing }
 }
 
 function connectSocket(roomName: string, playerName: string) {
@@ -30,6 +30,7 @@ export function useGameState() {
 
     const [playerName, setPlayerName] = useState('')
     const [isLobby, setIsLobby] = useState(false)
+    const [needsPlayerName, setNeedsPlayerName] = useState(false)
     const [playerState, setPlayerState] = useState<PlayerState>({ host: false, playState: PlayState.WAITING })
     const [otherPlayers, setOtherPlayers] = useState<RoomPlayer[]>([])
     const [opponentBoards, setOpponentBoards] = useState<OpponentBoards>({})
@@ -43,52 +44,91 @@ export function useGameState() {
     const isInGameRef = useRef(false)
     const isLobbyRef = useRef(false)
     const roomRef = useRef('')
-    const playerNameRef = useRef('')
 
     useEffect(() => { isInGameRef.current = isInGame }, [isInGame])
     useEffect(() => { isLobbyRef.current = isLobby }, [isLobby])
 
+    // Push /#room/playing when game starts, replace with /#room when it ends
     useEffect(() => {
-        const { room, playerName: name } = parseHash(router.asPath)
-        if (room && name) {
-            roomRef.current = room
-            playerNameRef.current = name
-            setPlayerName(name)
+        if (!roomRef.current) return
+        if (isInGame) {
+            window.history.pushState(null, '', `/#${encodeURIComponent(roomRef.current)}/playing`)
+        } else if (isLobby) {
+            window.history.replaceState(null, '', `/#${encodeURIComponent(roomRef.current)}`)
+        }
+    }, [isInGame, isLobby])
+
+    // Try to join a room using stored player name, or show name prompt
+    const joinRoom = (room: string) => {
+        roomRef.current = room
+        const storedName = localStorage.getItem('playerName')
+        if (storedName && isValidName(storedName)) {
+            setPlayerName(storedName)
             setIsLobby(true)
             markConnecting()
-            connectSocket(room, name)
+            connectSocket(room, storedName)
+        } else {
+            setIsLobby(true)
+            setNeedsPlayerName(true)
+        }
+    }
+
+    // Called from name prompt overlay when user submits a name
+    const submitPlayerName = (name: string) => {
+        localStorage.setItem('playerName', name)
+        setPlayerName(name)
+        setNeedsPlayerName(false)
+        markConnecting()
+        connectSocket(roomRef.current, name)
+    }
+
+    const cancelNamePrompt = () => {
+        setNeedsPlayerName(false)
+        setIsLobby(false)
+        roomRef.current = ''
+        router.push('/')
+    }
+
+    useEffect(() => {
+        const { room } = parseHash(router.asPath)
+        if (room) {
+            joinRoom(room)
         }
 
         const handleHashChange = (url: string) => {
-            const { room, playerName: name } = parseHash(url)
-            if (room && name) {
-                roomRef.current = room
-                playerNameRef.current = name
-                setPlayerName(name)
-                setIsLobby(true)
-                markConnecting()
-                connectSocket(room, name)
+            const { room } = parseHash(url)
+            if (room && room !== roomRef.current) {
+                joinRoom(room)
+            } else if (!room && isLobbyRef.current) {
+                socket.disconnect()
+                setIsLobby(false)
+                setNeedsPlayerName(false)
+                setPlayerState({ host: false, playState: PlayState.WAITING })
+                setOtherPlayers([])
+                setOpponentBoards({})
+                setTimeRemaining(-1)
             }
         }
 
         // Intercept browser back/forward to clean up game/lobby state
         router.beforePopState(() => {
-            const { room } = parseHash(window.location.href)
+            const { room, playing } = parseHash(window.location.href)
 
-            if (isInGameRef.current && !room) {
-                // In-game → back: show forfeit dialog instead of navigating
+            if (isInGameRef.current && room && !playing) {
+                // In-game → back to lobby: show forfeit dialog
                 setBackNavigationPending(true)
                 window.history.pushState(
                     null, '',
-                    `/#${encodeURIComponent(roomRef.current)}/${encodeURIComponent(playerNameRef.current)}`,
+                    `/#${encodeURIComponent(roomRef.current)}/playing`,
                 )
                 return false
             }
 
             if (isLobbyRef.current && !room) {
-                // Lobby → back: disconnect and return to welcome
+                // Lobby → back to welcome: disconnect
                 socket.disconnect()
                 setIsLobby(false)
+                setNeedsPlayerName(false)
                 setPlayerState({ host: false, playState: PlayState.WAITING })
                 setOtherPlayers([])
                 setOpponentBoards({})
@@ -180,6 +220,7 @@ export function useGameState() {
         playerName,
         isLobby,
         isInGame,
+        needsPlayerName,
         playerState,
         otherPlayers,
         opponentBoards,
@@ -192,5 +233,8 @@ export function useGameState() {
         forfeitGame,
         backNavigationPending,
         cancelBackNavigation,
+        submitPlayerName,
+        cancelNamePrompt,
+        roomName: roomRef.current,
     }
 }
