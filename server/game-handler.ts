@@ -145,7 +145,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const setReady = async (isReady: boolean) => {
-        if (!isReady && sd.game.isStarted) return
+        if (sd.game.isStarted) return
         if (isReady) {
             addPlayer()
             sd.playerState.playState = PlayState.READY

@@ -4,7 +4,7 @@ import { useTheme } from "../context/theme"
 import { useSound } from "../context/sound"
 
 import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
-import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme } from "../utils/draw"
+import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme, setupHiDPI } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps, GameMode } from "../shared/types"
@@ -49,7 +49,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
     useEffect(() => {
         const canvas = previewRef.current
         if (!canvas) return
-        const ctx = canvas.getContext('2d')
+        const ctx = setupHiDPI(canvas, 90, 50)
         if (!ctx) return
         drawPreviewPiece(ctx, nextPiece)
     }, [nextPiece, theme])
@@ -58,7 +58,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
     useEffect(() => {
         const canvas = canvasRef.current
         if (!canvas) return
-        const ctx = canvas.getContext('2d')
+        const ctx = setupHiDPI(canvas, BOARDWIDTH, BOARDHEIGHT)
         if (!ctx) return
 
         let animId: number
