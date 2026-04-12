@@ -1,4 +1,4 @@
-import { useCallback, useContext, useRef } from 'react'
+import { useCallback, useContext, useEffect, useRef } from 'react'
 import { SocketContext } from '../context/socket'
 
 const REPEAT_DELAY = 200 // ms before auto-repeat starts
@@ -15,6 +15,9 @@ const DPad = ({ disabled }: DPadProps) => {
         if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
         if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
     }, [])
+
+    // Clean up timers on unmount (e.g. game over while touch is active)
+    useEffect(() => stopRepeat, [stopRepeat])
 
     const startRepeat = useCallback((action: () => void) => {
         stopRepeat()

@@ -8,6 +8,27 @@ let _tileBg = '#1e293b'   // Empty tile fill
 let _textColor = '#f1f5f9' // Text on canvas (matches --content)
 let _lastTheme = ''
 
+function getDPR(): number {
+    return typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1
+}
+
+/** Configure a canvas for HiDPI rendering. Returns the 2d context (or null). */
+export function setupHiDPI(canvas: HTMLCanvasElement, logicalWidth: number, logicalHeight: number): CanvasRenderingContext2D | null {
+    const dpr = getDPR()
+    canvas.width = Math.round(logicalWidth * dpr)
+    canvas.height = Math.round(logicalHeight * dpr)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    return ctx
+}
+
+/** Return the logical (CSS-pixel) size of a HiDPI canvas. */
+function logicalSize(canvas: HTMLCanvasElement): { w: number; h: number } {
+    const dpr = getDPR()
+    return { w: canvas.width / dpr, h: canvas.height / dpr }
+}
+
 /** Read CSS custom properties and cache them for canvas rendering. Skips if theme hasn't changed. */
 export function syncCanvasTheme() {
     if (typeof window === 'undefined') return
@@ -39,8 +60,9 @@ function tile(ctx: CanvasRenderingContext2D, x: number, y: number) {
 }
 
 export const clearCanvas = (ctx: CanvasRenderingContext2D) => {
+    const { w, h } = logicalSize(ctx.canvas)
     ctx.fillStyle = _appBg
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.fillRect(0, 0, w, h)
 }
 
 export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
@@ -70,9 +92,10 @@ const PREVIEW_GAP = 2
 
 export const drawPreviewPiece = (ctx: CanvasRenderingContext2D, piece: PieceProps) => {
     const gridUnit = TILEWIDTH + SPACING
+    const { w: canvasW, h: canvasH } = logicalSize(ctx.canvas)
 
     ctx.fillStyle = _appBg
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.fillRect(0, 0, canvasW, canvasH)
 
     // Convert pixel-based points to grid coordinates
     const gridPoints = piece.points.map(p => ({
@@ -89,8 +112,8 @@ export const drawPreviewPiece = (ctx: CanvasRenderingContext2D, piece: PieceProp
     const pieceH = maxRow - minRow + 1
     const totalW = pieceW * PREVIEW_TILE + (pieceW - 1) * PREVIEW_GAP
     const totalH = pieceH * PREVIEW_TILE + (pieceH - 1) * PREVIEW_GAP
-    const offsetX = (ctx.canvas.width - totalW) / 2
-    const offsetY = (ctx.canvas.height - totalH) / 2
+    const offsetX = (canvasW - totalW) / 2
+    const offsetY = (canvasH - totalH) / 2
 
     ctx.fillStyle = rgba(piece.color)
     for (const gp of gridPoints) {

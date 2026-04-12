@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef } from 'react'
 import { COLS, ROWS } from '../shared/config'
 import { useTheme } from '../context/theme'
-import { syncCanvasTheme, getTileBg } from '../utils/draw'
+import { syncCanvasTheme, getTileBg, setupHiDPI } from '../utils/draw'
 import { PlayState, RGBA, Stack } from '../shared/types'
 
 const MINI_TILE = 8
@@ -27,7 +27,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
     useEffect(() => {
         const canvas = canvasRef.current
         if (!canvas) return
-        const ctx = canvas.getContext('2d')
+        const ctx = setupHiDPI(canvas, MINI_WIDTH, MINI_HEIGHT)
         if (!ctx) {
             console.warn('MiniBoard: failed to get 2d canvas context')
             return
@@ -36,7 +36,6 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
         syncCanvasTheme()
         const tileBg = getTileBg()
         const hasRoundRect = typeof ctx.roundRect === 'function'
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
         let x = 0
         let y = 0
 
