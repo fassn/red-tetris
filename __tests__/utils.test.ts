@@ -3,18 +3,16 @@ import { checkIfPieceHasHit } from '../server/gameloop'
 import Piece from '../server/piece'
 import { createEmptyStack } from '../shared/stack'
 import { TILEHEIGHT, SPACING } from '../shared/config'
+import { isValidName } from '../shared/validation'
 
-// parseHash is defined in hooks/use-game-state.ts — replicate it here for testing
-const NAME_PATTERN = /^[a-zA-Z0-9_-]+$/
-
+// Mirrors parseHash from hooks/use-game-state.ts
 function parseHash(url: string) {
     const hash = url.split('#')[1] || ''
     const separatorIndex = hash.indexOf('/')
     if (separatorIndex === -1) return {}
     const room = decodeURIComponent(hash.slice(0, separatorIndex))
     const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
-    if (!room || !playerName) return {}
-    if (!NAME_PATTERN.test(room) || !NAME_PATTERN.test(playerName)) return {}
+    if (!isValidName(room) || !isValidName(playerName)) return {}
     return { room, playerName }
 }
 

@@ -1,8 +1,7 @@
 import { useRouter } from "next/router"
 import Link from "next/link"
 import { FormEvent, useCallback, useEffect, useRef } from "react"
-
-const NAME_RE = /[^a-zA-Z0-9_-]/g
+import { NAME_PATTERN, sanitizeName } from "../shared/validation"
 
 interface FormData {
     room_name: { value: string },
@@ -21,15 +20,15 @@ const Welcome = () => {
     // Strip characters that aren't allowed by the server NAME_PATTERN
     const sanitize = useCallback((e: React.FormEvent<HTMLInputElement>) => {
         const input = e.currentTarget
-        const cleaned = input.value.replace(NAME_RE, '')
+        const cleaned = sanitizeName(input.value)
         if (cleaned !== input.value) input.value = cleaned
     }, [])
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const target = event.target as EventTarget & FormData
-        const room = target.room_name.value.replace(NAME_RE, '')
-        const player = target.player_name.value.replace(NAME_RE, '')
+        const room = sanitizeName(target.room_name.value)
+        const player = sanitizeName(target.player_name.value)
         if (!room || !player) return
 
         router.push(`/#${encodeURIComponent(room)}/${encodeURIComponent(player)}`)
