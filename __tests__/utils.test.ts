@@ -4,7 +4,9 @@ import Piece from '../server/piece'
 import { createEmptyStack } from '../shared/stack'
 import { TILEHEIGHT, SPACING } from '../shared/config'
 
-// parseHash is defined inline in pages/index.tsx — replicate it here for testing
+// parseHash is defined in hooks/use-game-state.ts — replicate it here for testing
+const NAME_PATTERN = /^[a-zA-Z0-9_-]+$/
+
 function parseHash(url: string) {
     const hash = url.split('#')[1] || ''
     const separatorIndex = hash.indexOf('/')
@@ -12,6 +14,7 @@ function parseHash(url: string) {
     const room = decodeURIComponent(hash.slice(0, separatorIndex))
     const playerName = decodeURIComponent(hash.slice(separatorIndex + 1))
     if (!room || !playerName) return {}
+    if (!NAME_PATTERN.test(room) || !NAME_PATTERN.test(playerName)) return {}
     return { room, playerName }
 }
 
@@ -29,9 +32,8 @@ describe('parseHash', () => {
         expect(parseHash('http://localhost:3000/#noroomsep')).toEqual({})
     })
 
-    it('handles URL-encoded names', () => {
-        const result = parseHash('http://localhost:3000/#my%20room/player%20one')
-        expect(result).toEqual({ room: 'my room', playerName: 'player one' })
+    it('rejects URL-encoded names with illegal characters', () => {
+        expect(parseHash('http://localhost:3000/#my%20room/player%20one')).toEqual({})
     })
 
     it('returns empty object when room is empty', () => {
@@ -42,9 +44,13 @@ describe('parseHash', () => {
         expect(parseHash('http://localhost:3000/#room/')).toEqual({})
     })
 
-    it('handles special characters', () => {
-        const result = parseHash('http://localhost:3000/#room%2Fname/player%40host')
-        expect(result).toEqual({ room: 'room/name', playerName: 'player@host' })
+    it('rejects special characters in room or player name', () => {
+        expect(parseHash('http://localhost:3000/#room%2Fname/player%40host')).toEqual({})
+    })
+
+    it('allows hyphens and underscores', () => {
+        const result = parseHash('http://localhost:3000/#my-room/player_1')
+        expect(result).toEqual({ room: 'my-room', playerName: 'player_1' })
     })
 })
 
