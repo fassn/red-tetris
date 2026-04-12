@@ -37,6 +37,7 @@ export function useGameState() {
     const [timeRemaining, setTimeRemaining] = useState(-1)
 
     const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
+    const [backNavigationPending, setBackNavigationPending] = useState(false)
 
     // Refs for beforePopState callback (avoids stale closures)
     const isInGameRef = useRef(false)
@@ -75,8 +76,8 @@ export function useGameState() {
             const { room } = parseHash(window.location.href)
 
             if (isInGameRef.current && !room) {
-                // In-game → back: forfeit and return to lobby
-                socket.emit('quitGame')
+                // In-game → back: show forfeit dialog instead of navigating
+                setBackNavigationPending(true)
                 window.history.pushState(
                     null, '',
                     `/#${encodeURIComponent(roomRef.current)}/${encodeURIComponent(playerNameRef.current)}`,
@@ -167,7 +168,12 @@ export function useGameState() {
     }
 
     const forfeitGame = () => {
+        setBackNavigationPending(false)
         socket.emit('quitGame')
+    }
+
+    const cancelBackNavigation = () => {
+        setBackNavigationPending(false)
     }
 
     return {
@@ -184,5 +190,7 @@ export function useGameState() {
         connectionError,
         navigateHome,
         forfeitGame,
+        backNavigationPending,
+        cancelBackNavigation,
     }
 }

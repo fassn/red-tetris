@@ -38,34 +38,38 @@ const Home: NextPage = () => {
         connectionError,
         navigateHome,
         forfeitGame,
+        backNavigationPending,
+        cancelBackNavigation,
     } = useGameState()
 
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
+    const forfeitDialogVisible = showForfeitDialog || backNavigationPending
     const mainContentRef = useRef<HTMLDivElement>(null)
     const dialogRef = useRef<HTMLDivElement>(null)
     const forfeitTriggerRef = useRef<HTMLElement | null>(null)
 
     const closeForfeitDialog = useCallback(() => {
         setShowForfeitDialog(false)
+        cancelBackNavigation()
         requestAnimationFrame(() => forfeitTriggerRef.current?.focus())
-    }, [])
+    }, [cancelBackNavigation])
 
     // Toggle inert on main content when forfeit dialog is shown
     useEffect(() => {
         const el = mainContentRef.current
         if (!el) return
-        if (showForfeitDialog) {
+        if (forfeitDialogVisible) {
             el.setAttribute('inert', '')
             el.setAttribute('aria-hidden', 'true')
         } else {
             el.removeAttribute('inert')
             el.removeAttribute('aria-hidden')
         }
-    }, [showForfeitDialog])
+    }, [forfeitDialogVisible])
 
     // Focus trap + Escape handling for forfeit dialog
     useEffect(() => {
-        if (!showForfeitDialog) return
+        if (!forfeitDialogVisible) return
         const dialog = dialogRef.current
         if (!dialog) return
         const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -96,7 +100,7 @@ const Home: NextPage = () => {
         }
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [showForfeitDialog, closeForfeitDialog])
+    }, [forfeitDialogVisible, closeForfeitDialog])
 
     const handleHeaderAction = () => {
         if (isInGame) {
@@ -162,7 +166,7 @@ const Home: NextPage = () => {
             <Footer />
         </div>
 
-        {showForfeitDialog && (
+        {forfeitDialogVisible && (
             <div
                 ref={dialogRef}
                 className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'
