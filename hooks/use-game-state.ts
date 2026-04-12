@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { socket } from '../context/socket'
 import { useConnectionStatus } from './use-connection-status'
@@ -38,9 +38,20 @@ export function useGameState() {
 
     const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
 
+    // Refs for beforePopState callback (avoids stale closures)
+    const isInGameRef = useRef(false)
+    const isLobbyRef = useRef(false)
+    const roomRef = useRef('')
+    const playerNameRef = useRef('')
+
+    useEffect(() => { isInGameRef.current = isInGame }, [isInGame])
+    useEffect(() => { isLobbyRef.current = isLobby }, [isLobby])
+
     useEffect(() => {
         const { room, playerName: name } = parseHash(router.asPath)
         if (room && name) {
+            roomRef.current = room
+            playerNameRef.current = name
             setPlayerName(name)
             setIsLobby(true)
             markConnecting()
@@ -50,12 +61,41 @@ export function useGameState() {
         const handleHashChange = (url: string) => {
             const { room, playerName: name } = parseHash(url)
             if (room && name) {
+                roomRef.current = room
+                playerNameRef.current = name
                 setPlayerName(name)
                 setIsLobby(true)
                 markConnecting()
                 connectSocket(room, name)
             }
         }
+
+        // Intercept browser back/forward to clean up game/lobby state
+        router.beforePopState(() => {
+            const { room } = parseHash(window.location.href)
+
+            if (isInGameRef.current && !room) {
+                // In-game → back: forfeit and return to lobby
+                socket.emit('quitGame')
+                window.history.pushState(
+                    null, '',
+                    `/#${encodeURIComponent(roomRef.current)}/${encodeURIComponent(playerNameRef.current)}`,
+                )
+                return false
+            }
+
+            if (isLobbyRef.current && !room) {
+                // Lobby → back: disconnect and return to welcome
+                socket.disconnect()
+                setIsLobby(false)
+                setPlayerState({ host: false, playState: PlayState.WAITING })
+                setOtherPlayers([])
+                setOpponentBoards({})
+                setTimeRemaining(-1)
+            }
+
+            return true
+        })
 
         const handleRoomFull = () => {
             router.push('/?error=roomIsFull')
@@ -108,6 +148,7 @@ export function useGameState() {
         socket.on('gameModeChanged', handleGameModeChanged)
 
         return () => {
+            router.beforePopState(() => true)
             router.events.off('hashChangeComplete', handleHashChange)
             socket.off('roomIsFull', handleRoomFull)
             socket.off('session', handleSession)
