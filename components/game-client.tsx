@@ -3,13 +3,14 @@ import { SocketContext } from "../context/socket"
 import { useTheme } from "../context/theme"
 import { useSound } from "../context/sound"
 
-import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
-import { drawLose, drawPiece, drawStack, drawWin, getCascadeTiles, advanceWinAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme, setupHiDPI } from "../utils/draw"
+import { BOARDHEIGHT, BOARDWIDTH, SOFT_DROP_MS, TICK_RATE } from "../shared/config"
+import { drawPiece, drawStack, getCascadeTiles, advanceCascadeAnimation, clearCanvas, drawPreviewPiece, syncCanvasTheme, setupHiDPI, drawEndgameBoard } from "../utils/draw"
 import { createEmptyPiece, createEmptyStack } from "../shared/stack"
 import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps, GameMode } from "../shared/types"
 import MiniBoard from "./mini-board"
 import DPad from "./d-pad"
+import EndgameOverlay from "./endgame-overlay"
 import type { OpponentBoard, OpponentBoards } from "../hooks/use-game-state"
 
 type GameClientProps = {
@@ -35,15 +36,15 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
     const cascadeTiles = useRef<TileProps[]>([])
     const [score, setScore] = useState(0)
     const [level, setLevel] = useState(0)
+    const [totalLines, setTotalLines] = useState(0)
     const gameWon = useRef<boolean>(false)
-    const loseColorIndex = useRef<number>(0)
 
     // Sync canvas background colors with CSS theme
     useEffect(() => {
         syncCanvasTheme()
     }, [theme])
 
-    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled, playSound })
+    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound })
 
     // Draw next piece preview when it changes or theme switches
     useEffect(() => {
@@ -88,19 +89,12 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                 const shouldAdvance = timestamp - lastAnimStep >= ANIM_STEP_MS
                 if (shouldAdvance) lastAnimStep = timestamp
 
-                if (gameWon.current) {
-                    if (!getCascadeTilesCalled.current) {
-                        getCascadeTiles(cascadeTiles.current, stack.current)
-                        getCascadeTilesCalled.current = true
-                    }
-                    if (shouldAdvance) advanceWinAnimation(cascadeTiles.current)
-                    drawWin(ctx, stack.current, cascadeTiles.current)
-                } else {
-                    if (shouldAdvance) {
-                        loseColorIndex.current = (loseColorIndex.current + 1) % PIECE_COLOR_LIST.length
-                    }
-                    drawLose(ctx, loseColorIndex.current)
+                if (!getCascadeTilesCalled.current) {
+                    getCascadeTiles(cascadeTiles.current, stack.current)
+                    getCascadeTilesCalled.current = true
                 }
+                if (shouldAdvance) advanceCascadeAnimation(cascadeTiles.current)
+                drawEndgameBoard(ctx, cascadeTiles.current)
             }
         }
 
@@ -135,13 +129,8 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
         }
     }, [socket])
 
-    const handleClick = () => {
-        if (playerState.playState === PlayState.ENDGAME) {
-            socket.emit('quitGame')
-        }
-    }
-
     const isPlaying = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
+    const isEndgame = playerState.playState === PlayState.ENDGAME
     const activeOpponents = otherPlayers.filter(p => p.state.playState === PlayState.PLAYING || p.state.playState === PlayState.ENDGAME)
     const hasMiniboards = activeOpponents.length > 0
     const isTimeAttack = gameMode === GameMode.TIME_ATTACK
@@ -202,18 +191,25 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                 </div>
             )}
             <div className='order-2 sm:order-1 flex flex-col items-center min-h-0 flex-1 sm:flex-none'>
-                <div className='flex-1 min-h-0 flex items-center justify-center'>
+                <div className='relative flex-1 min-h-0 flex items-center justify-center'>
                     <canvas
                         ref={canvasRef}
                         width={BOARDWIDTH}
                         height={BOARDHEIGHT}
                         className='block max-w-full max-h-full w-auto h-auto object-contain'
                         style={{ aspectRatio: `${BOARDWIDTH} / ${BOARDHEIGHT}` }}
-                        onClick={handleClick}
                         role='img'
                         aria-label={`Tetris game board — Score: ${score}, Level: ${level}. Use arrow keys to move and rotate pieces.`}
                         tabIndex={0}
                     />
+                    {isEndgame && (
+                        <EndgameOverlay
+                            won={gameWon.current}
+                            score={score}
+                            level={level}
+                            totalLines={totalLines}
+                        />
+                    )}
                 </div>
                 {isPlaying && playerState.playState === PlayState.PLAYING && (
                     <div className='lg:hidden w-full shrink-0'>

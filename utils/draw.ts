@@ -6,12 +6,10 @@ import { PieceProps, PieceType, RGBA, Stack, TileProps } from "../shared/types"
 // Cached canvas colors — synced from CSS custom properties via syncCanvasTheme()
 let _appBg = '#0f172a'
 let _tileBg = '#1e293b'   // Empty tile fill
-let _textColor = '#f1f5f9' // Text on canvas (matches --content)
 let _lastTheme = ''
 
 // Color remap: canonical (dark/server) RGBA → current theme RGBA
 const _colorRemap = new Map<string, RGBA>()
-let _themeColorList: RGBA[] = Object.values(DARK_PIECE_COLORS)
 
 function rgbaKey(c: RGBA): string {
     return `${c.r},${c.g},${c.b}`
@@ -52,7 +50,6 @@ export function syncCanvasTheme() {
     const s = getComputedStyle(document.documentElement)
     _appBg = s.getPropertyValue('--surface-app').trim() || _appBg
     _tileBg = s.getPropertyValue('--surface-tile').trim() || _tileBg
-    _textColor = s.getPropertyValue('--content').trim() || _textColor
 
     // Rebuild color remap: canonical (dark) → current theme
     const target = currentTheme === 'dark' ? DARK_PIECE_COLORS : LIGHT_PIECE_COLORS
@@ -60,7 +57,6 @@ export function syncCanvasTheme() {
     for (const type of Object.keys(DARK_PIECE_COLORS) as PieceType[]) {
         _colorRemap.set(rgbaKey(DARK_PIECE_COLORS[type]), target[type])
     }
-    _themeColorList = Object.values(target)
 }
 
 export function getTileBg(): string {
@@ -151,18 +147,29 @@ export const drawPreviewPiece = (ctx: CanvasRenderingContext2D, piece: PieceProp
     }
 }
 
-export const advanceWinAnimation = (cascadeTiles: TileProps[]) => {
+/** Advance the endgame cascade: tiles fall with gravity and settle with damped bounces. */
+const BOUNCE_DAMPING = 0.35
+const SETTLE_THRESHOLD = 1.5
+
+export const advanceCascadeAnimation = (cascadeTiles: TileProps[]) => {
+    const floorY = BOARDHEIGHT - TILEHEIGHT
     for (const t of cascadeTiles) {
-        if (t.y > BOARDHEIGHT - TILEHEIGHT + SPACING) {
-            t.dy = -t.dy
-        } else {
-            t.dy += t.gravity
+        if (t.y >= floorY && Math.abs(t.dy) < SETTLE_THRESHOLD) {
+            t.y = floorY
+            t.dy = 0
+            continue
         }
+        t.dy += t.gravity
         t.y += t.dy
+        if (t.y >= floorY) {
+            t.y = floorY
+            t.dy = -Math.abs(t.dy) * BOUNCE_DAMPING
+        }
     }
 }
 
-export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTiles: TileProps[]) => {
+/** Draw the endgame board background (empty grid + cascading tiles for win). */
+export const drawEndgameBoard = (ctx: CanvasRenderingContext2D, cascadeTiles: TileProps[]) => {
     ctx.fillStyle = _appBg
     ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 
@@ -173,12 +180,6 @@ export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTi
         ctx.fillStyle = rgba(resolveColor(t.color))
         tile(ctx, t.x, t.y)
     }
-
-    ctx.fillStyle = _textColor
-    ctx.font = '55px Helvetica'
-    ctx.fillText('ATTA BOY!!!', 5, BOARDHEIGHT / 2)
-    ctx.font = '20px Helvetica'
-    ctx.fillText('(click to quit game)', 75, BOARDHEIGHT - 40)
 }
 
 export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
@@ -199,14 +200,3 @@ export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
     }
 }
 
-export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number) => {
-    const colors = _themeColorList
-    ctx.fillStyle = rgba(colors[colorIndex])
-    ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
-
-    ctx.fillStyle = _textColor
-    ctx.font = '55px Helvetica'
-    ctx.fillText('YOU SUCK', 15, BOARDHEIGHT / 2)
-    ctx.font = '20px Helvetica'
-    ctx.fillText('(click to quit game)', 75, BOARDHEIGHT - 40)
-}

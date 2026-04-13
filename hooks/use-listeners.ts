@@ -10,13 +10,14 @@ type useListenersProps = {
     setNextPiece: (piece: PieceProps) => void,
     setScore: (score: number) => void,
     setLevel: (level: number) => void,
+    setTotalLines: React.Dispatch<React.SetStateAction<number>>,
     gameWon: MutableRefObject<boolean>,
     cascadeTiles: MutableRefObject<TileProps[]>,
     getCascadeTilesCalled: MutableRefObject<boolean>,
     playSound: (name: SoundName) => void,
 }
 
-const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, gameWon, cascadeTiles, getCascadeTilesCalled, playSound }: useListenersProps) => {
+const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound }: useListenersProps) => {
     const socket = useContext(SocketContext)
     useEffect(() => {
         const handleNewGame = ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
@@ -28,10 +29,13 @@ const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, g
         const handleNewStack = ({ newStack, newScore, linesCleared }: { newStack: Stack[], newScore: number, linesCleared: number }) => {
             stack.current = newStack
             setScore(newScore)
-            if (linesCleared >= 4) {
-                playSound('tetris')
-            } else if (linesCleared > 0) {
-                playSound('clear')
+            if (linesCleared > 0) {
+                setTotalLines(prev => prev + linesCleared)
+                if (linesCleared >= 4) {
+                    playSound('tetris')
+                } else {
+                    playSound('clear')
+                }
             }
         }
 
@@ -76,6 +80,7 @@ const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, g
             cascadeTiles.current = []
             setScore(0)
             setLevel(0)
+            setTotalLines(0)
             gameWon.current = false
         }
 
