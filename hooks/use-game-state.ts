@@ -153,6 +153,7 @@ export function useGameState(roomName: string) {
 
         return () => {
             socket.disconnect()
+            localStorage.removeItem('sessionId')
             router.beforePopState(() => true)
             socket.off('roomIsFull', handleRoomFull)
             socket.off('session', handleSession)

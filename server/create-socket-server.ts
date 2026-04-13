@@ -43,9 +43,11 @@ export function createSocketServer(httpServer: HttpServer, deps: SocketServerDep
     // Session recovery middleware
     io.use((socket, next) => {
         const sessionId = socket.handshake.auth.sessionId
+        const requestedRoom = socket.handshake.auth.roomName
         if (sessionId) {
             const session: Session | undefined = sessionStore.findSession(sessionId)
-            if (session) {
+            // Only recover if the client wants the same room (or didn't specify one)
+            if (session && (!requestedRoom || requestedRoom === session.roomName)) {
                 const newSessionId = randomId()
                 sessionStore.removeSession(sessionId)
                 socket.data.sessionId = newSessionId
