@@ -7,7 +7,7 @@ import { GameMode, PieceProps, PieceType, RGBA, Stack } from "../shared/types"
 
 /**
  * NES-style speed curve expressed in seconds, converted to ticks.
- * Every 10 lines cleared = 1 level up.
+ * Every LINES_PER_LEVEL lines cleared = 1 level up.
  * Changing TICK_RATE affects resolution/smoothness but NOT drop speed.
  */
 function dropIntervalForLevel(level: number): number {

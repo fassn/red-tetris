@@ -270,27 +270,27 @@ describe('Game', () => {
     describe('updateLevel', () => {
         it('returns null when level has not changed', () => {
             const game = createTestGame()
-            game.totalLinesCleared = 5
+            game.totalLinesCleared = 3
             expect(game.updateLevel()).toBeNull()
         })
 
         it('returns new level when threshold crossed', () => {
             const game = createTestGame()
-            game.totalLinesCleared = 10
+            game.totalLinesCleared = 5
             expect(game.updateLevel()).toBe(1)
             expect(game.level).toBe(1)
         })
 
         it('adjusts dropInterval on level up', () => {
             const game = createTestGame()
-            game.totalLinesCleared = 10
+            game.totalLinesCleared = 5
             game.updateLevel()
             expect(game.dropInterval).toBe(Math.round(0.87 * TICK_RATE)) // Level 1
         })
 
         it('calculates high levels correctly', () => {
             const game = createTestGame()
-            game.totalLinesCleared = 150 // Level 15
+            game.totalLinesCleared = 75 // Level 15
             game.updateLevel()
             expect(game.level).toBe(15)
             expect(game.dropInterval).toBe(Math.max(1, Math.round(0.07 * TICK_RATE)))
