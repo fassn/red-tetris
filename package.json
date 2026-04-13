@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "tsx server/index.ts",
+    "dev:fresh": "rm -rf .next && tsx server/index.ts",
     "build": "next build",
     "start": "NODE_ENV=production tsx server/index.ts",
     "lint": "eslint .",

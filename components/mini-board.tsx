@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef } from 'react'
 import { COLS, ROWS } from '../shared/config'
 import { useTheme } from '../context/theme'
-import { syncCanvasTheme, getTileBg, setupHiDPI } from '../utils/draw'
+import { syncCanvasTheme, getTileBg, setupHiDPI, resolveColor } from '../utils/draw'
 import { PlayState, RGBA, Stack } from '../shared/types'
 
 const MINI_TILE = 8
@@ -42,7 +42,7 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
         for (let col = 0; col < COLS; col++) {
             for (let row = 0; row < ROWS; row++) {
                 const t = stack[row * COLS + col]
-                ctx.fillStyle = t.isFilled ? rgba(t.color) : tileBg
+                ctx.fillStyle = t.isFilled ? rgba(resolveColor(t.color)) : tileBg
                 if (hasRoundRect) {
                     ctx.beginPath()
                     ctx.roundRect(x, y, MINI_TILE, MINI_TILE, MINI_RADIUS)

@@ -1,12 +1,26 @@
-import { BOARDHEIGHT, BOARDWIDTH, PIECE_COLOR_LIST, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { BOARDHEIGHT, BOARDWIDTH, COLS, RADIUS, ROWS, SPACING, TILEHEIGHT, TILEWIDTH } from "../shared/config"
+import { DARK_PIECE_COLORS, LIGHT_PIECE_COLORS } from "../shared/palette"
 import { createEmptyStack } from "../shared/stack"
-import { PieceProps, RGBA, Stack, TileProps } from "../shared/types"
+import { PieceProps, PieceType, RGBA, Stack, TileProps } from "../shared/types"
 
 // Cached canvas colors — synced from CSS custom properties via syncCanvasTheme()
 let _appBg = '#0f172a'
 let _tileBg = '#1e293b'   // Empty tile fill
 let _textColor = '#f1f5f9' // Text on canvas (matches --content)
 let _lastTheme = ''
+
+// Color remap: canonical (dark/server) RGBA → current theme RGBA
+const _colorRemap = new Map<string, RGBA>()
+let _themeColorList: RGBA[] = Object.values(DARK_PIECE_COLORS)
+
+function rgbaKey(c: RGBA): string {
+    return `${c.r},${c.g},${c.b}`
+}
+
+/** Remap a canonical piece color to the current theme's variant. */
+export function resolveColor(c: RGBA): RGBA {
+    return _colorRemap.get(rgbaKey(c)) ?? c
+}
 
 function getDPR(): number {
     return typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1
@@ -29,7 +43,7 @@ function logicalSize(canvas: HTMLCanvasElement): { w: number; h: number } {
     return { w: canvas.width / dpr, h: canvas.height / dpr }
 }
 
-/** Read CSS custom properties and cache them for canvas rendering. Skips if theme hasn't changed. */
+/** Read CSS custom properties and cache them for canvas rendering. Also rebuilds the piece color remap. */
 export function syncCanvasTheme() {
     if (typeof window === 'undefined') return
     const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
@@ -39,6 +53,14 @@ export function syncCanvasTheme() {
     _appBg = s.getPropertyValue('--surface-app').trim() || _appBg
     _tileBg = s.getPropertyValue('--surface-tile').trim() || _tileBg
     _textColor = s.getPropertyValue('--content').trim() || _textColor
+
+    // Rebuild color remap: canonical (dark) → current theme
+    const target = currentTheme === 'dark' ? DARK_PIECE_COLORS : LIGHT_PIECE_COLORS
+    _colorRemap.clear()
+    for (const type of Object.keys(DARK_PIECE_COLORS) as PieceType[]) {
+        _colorRemap.set(rgbaKey(DARK_PIECE_COLORS[type]), target[type])
+    }
+    _themeColorList = Object.values(target)
 }
 
 export function getTileBg(): string {
@@ -71,7 +93,7 @@ export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
     for (let i = 0; i < COLS; i++) {
         for (let j = 0; j < ROWS; j++) {
             const t = stack[j * COLS + i]
-            ctx.fillStyle = t.isFilled ? rgba(t.color) : _tileBg
+            ctx.fillStyle = t.isFilled ? rgba(resolveColor(t.color)) : _tileBg
             tile(ctx, x, y)
             y += TILEHEIGHT + SPACING
         }
@@ -81,7 +103,7 @@ export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
 }
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, currentPiece: PieceProps) => {
-    ctx.fillStyle = rgba(currentPiece.color)
+    ctx.fillStyle = rgba(resolveColor(currentPiece.color))
     for (let i = 0; i < 4; i++) {
         tile(ctx, currentPiece.x + currentPiece.points[i].x, currentPiece.y + currentPiece.points[i].y)
     }
@@ -115,7 +137,7 @@ export const drawPreviewPiece = (ctx: CanvasRenderingContext2D, piece: PieceProp
     const offsetX = (canvasW - totalW) / 2
     const offsetY = (canvasH - totalH) / 2
 
-    ctx.fillStyle = rgba(piece.color)
+    ctx.fillStyle = rgba(resolveColor(piece.color))
     for (const gp of gridPoints) {
         const x = offsetX + (gp.col - minCol) * (PREVIEW_TILE + PREVIEW_GAP)
         const y = offsetY + (gp.row - minRow) * (PREVIEW_TILE + PREVIEW_GAP)
@@ -148,7 +170,7 @@ export const drawWin = (ctx: CanvasRenderingContext2D, stack: Stack[], cascadeTi
     drawStack(ctx, emptyStack)
 
     for (const t of cascadeTiles) {
-        ctx.fillStyle = rgba(t.color)
+        ctx.fillStyle = rgba(resolveColor(t.color))
         tile(ctx, t.x, t.y)
     }
 
@@ -178,7 +200,7 @@ export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
 }
 
 export const drawLose = (ctx: CanvasRenderingContext2D, colorIndex: number) => {
-    const colors = PIECE_COLOR_LIST
+    const colors = _themeColorList
     ctx.fillStyle = rgba(colors[colorIndex])
     ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
 

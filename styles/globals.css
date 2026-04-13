@@ -51,7 +51,7 @@
 @layer base {
   :root {
     /* Brand — static across themes */
-    --brand: #f87171;           /* red-400 */
+    --brand: #ec6b6b;           /* red-400 */
     --brand-hover: #ef4444;     /* red-500 */
     --brand-dark: #b91c1c;      /* red-700 */
     --brand-darker: #7f1d1d;    /* red-900 */
@@ -61,24 +61,24 @@
     --status-ready: #22c55e;    /* green-500 */
     --status-playing: #3b82f6;  /* blue-500 */
     --status-inactive: #9ca3af; /* gray-400 */
-    --status-muted: #d1d5db;    /* gray-300 */
+    --status-muted: #94a3b8;    /* slate-400 — readable on light bg */
     --status-danger: #ef4444;   /* red-500 */
 
     /* Theme-aware surfaces */
-    --surface-app: #f8fafc;     /* slate-50 */
-    --surface-card: #ffffff;
-    --surface-input: #ffffff;
-    --surface-tile: #e2e8f0;    /* slate-200 — board tile bg (needs contrast with app bg) */
+    --surface-app: #e2e8f0;     /* slate-200 */
+    --surface-card: #f1f5f9;    /* slate-100 */
+    --surface-input: #f8fafc;   /* slate-50 */
+    --surface-tile: #cbd5e1;    /* slate-300 — board tile bg (needs contrast with app bg) */
 
     /* Theme-aware content */
     --content: #111827;         /* gray-900 */
-    --content-secondary: #6b7280; /* gray-500 */
-    --content-muted: #9ca3af;   /* gray-400 */
+    --content-secondary: #475569; /* slate-600 — legible on slate-100 cards */
+    --content-muted: #64748b;   /* slate-500 — toggle labels, placeholders */
     --content-inverse: #ffffff;
 
     /* Theme-aware edges */
-    --edge: #e5e7eb;            /* gray-200 */
-    --edge-subtle: #f3f4f6;     /* gray-100 */
+    --edge: #cbd5e1;            /* slate-300 — visible on slate-100 cards */
+    --edge-subtle: #e2e8f0;     /* slate-200 */
   }
 
   .dark {
