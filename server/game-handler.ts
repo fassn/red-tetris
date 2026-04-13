@@ -241,6 +241,15 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const onDisconnect = async () => {
+        // If the player was actively playing, treat disconnect as forfeit
+        if (isPlayerActive()) {
+            const player = sd.game.players.find((p: Player) => p.id === sd.playerId)
+            if (player) {
+                player.forfeited = true
+                emitEndGameToPlayers(io, player, sd.game)
+            }
+        }
+
         sd.game.removePlayer(sd.playerId)
 
         deps.sessionStore.saveSession(sd.sessionId, {
