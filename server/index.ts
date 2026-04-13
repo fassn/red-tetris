@@ -122,18 +122,25 @@ app.prepare().then(() => {
         destroyRateLimiter()
         sessionStore.destroy()
         try { closeDb() } catch (err) { log.error('Error closing database:', err) }
+
+        // Disconnect all sockets so io.close() doesn't hang
+        io.disconnectSockets(true)
         io.close(() => {
             log.info('Socket.IO closed')
-            httpServer.close(() => {
-                log.info('HTTP server closed')
-                process.exit(0)
-            })
         })
-        // Force exit after 10s if graceful shutdown stalls
+
+        // Close HTTP server — stop accepting new connections, destroy lingering ones
+        httpServer.close(() => {
+            log.info('HTTP server closed')
+            process.exit(0)
+        })
+        httpServer.closeAllConnections()
+
+        // Force exit after 3s if something still stalls
         setTimeout(() => {
             log.error('Forced shutdown after timeout')
             process.exit(1)
-        }, 10_000).unref()
+        }, 3_000).unref()
     }
     process.on('SIGTERM', () => shutdown('SIGTERM'))
     process.on('SIGINT', () => shutdown('SIGINT'))
