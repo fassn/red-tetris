@@ -155,7 +155,7 @@ function RoomView({ roomName }: { roomName: string }) {
                 <div className='flex flex-col items-center justify-center sm:flex-row sm:items-start gap-4 sm:gap-6 py-2 sm:py-12 flex-1 min-h-0'>
                     <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96 ${isInGame ? 'hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
                         <section aria-label='Lobby'>
-                            <Lobby playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
+                            <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
                         </section>
                         <section className='flex-1 min-h-0 flex flex-col' aria-label='Chat'>
                             <Chat playerName={playerName} />
