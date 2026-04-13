@@ -10,7 +10,7 @@ import useListeners from "../hooks/use-listeners"
 import { PieceProps, PlayerState, PlayState, RoomPlayer, Stack, TileProps, GameMode } from "../shared/types"
 import MiniBoard from "./mini-board"
 import DPad from "./d-pad"
-import type { OpponentBoard, OpponentBoards } from "../pages/index"
+import type { OpponentBoard, OpponentBoards } from "../hooks/use-game-state"
 
 type GameClientProps = {
     playerState: PlayerState,
