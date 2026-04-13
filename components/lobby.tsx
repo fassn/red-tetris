@@ -3,6 +3,7 @@ import { SocketContext } from "../context/socket"
 import { GameMode, PlayerState, PlayState, RoomPlayer } from "../shared/types"
 
 type LobbyProps = {
+    playerName: string,
     playerState: PlayerState,
     otherPlayers: RoomPlayer[],
     gameMode: GameMode,
@@ -18,11 +19,8 @@ const Logo = () => (
 const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
     <div className='px-4 py-4'>
         <h2 className='text-lg font-semibold mb-2'>Players</h2>
-        {otherPlayers.length === 0 ? (
-            <p className='text-content-muted text-sm'>Waiting for players to join…</p>
-        ) : (
-            <ul className='space-y-1' aria-label='Player list'>
-                {otherPlayers.map((p) => (
+        <ul className='space-y-1' aria-label='Player list'>
+            {otherPlayers.map((p) => (
                     <li key={p.playerId} className='flex items-center justify-between text-sm'>
                         <span>
                             {p.playerName}
@@ -38,8 +36,7 @@ const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
                         </span>
                     </li>
                 ))}
-            </ul>
-        )}
+        </ul>
     </div>
 )
 
@@ -94,8 +91,15 @@ const GuestMenu = ({ playerState, otherPlayers, gameMode, onSetReady }: { player
     </>
 )
 
-const Lobby = ({ playerState, otherPlayers, gameMode, onToggleMode }: LobbyProps) => {
+const Lobby = ({ playerName, playerState, otherPlayers, gameMode, onToggleMode }: LobbyProps) => {
     const socket = useContext(SocketContext)
+
+    const selfPlayer: RoomPlayer = {
+        playerId: socket.playerId ?? 'self',
+        playerName: playerName || 'You',
+        state: playerState,
+    }
+    const allPlayers = [selfPlayer, ...otherPlayers]
 
     const setReady = (event: ChangeEvent<HTMLInputElement>) => {
         socket.emit('setReady', event.target.checked)
@@ -111,22 +115,22 @@ const Lobby = ({ playerState, otherPlayers, gameMode, onToggleMode }: LobbyProps
         socket.emit('setGameMode', next)
     }
 
-    const anyPlaying = otherPlayers.some((p) => p.state.playState === PlayState.PLAYING)
+    const anyPlaying = allPlayers.some((p) => p.state.playState === PlayState.PLAYING)
     const card = 'bg-surface-card rounded-lg shadow-xs shadow-brand overflow-hidden'
 
     if (playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME) {
         return <div className={card}><Logo /></div>
     }
     if (playerState.host) {
-        return <div className={card}><HostMenu otherPlayers={otherPlayers} gameMode={gameMode} onStartGame={startGame} onToggleMode={toggleMode} /></div>
+        return <div className={card}><HostMenu otherPlayers={allPlayers} gameMode={gameMode} onStartGame={startGame} onToggleMode={toggleMode} /></div>
     }
     if (!anyPlaying) {
-        return <div className={card}><GuestMenu playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onSetReady={setReady} /></div>
+        return <div className={card}><GuestMenu playerState={playerState} otherPlayers={allPlayers} gameMode={gameMode} onSetReady={setReady} /></div>
     }
     return (
         <div className={card}>
             <Logo />
-            <PlayerList otherPlayers={otherPlayers} />
+            <PlayerList otherPlayers={allPlayers} />
             <div className='px-4 py-6 text-center text-lg'>A game is on-going. Please wait for it to finish!</div>
         </div>
     )

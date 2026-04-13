@@ -43,26 +43,32 @@ export function createSocketServer(httpServer: HttpServer, deps: SocketServerDep
     // Session recovery middleware
     io.use((socket, next) => {
         const sessionId = socket.handshake.auth.sessionId
+        const requestedRoom = socket.handshake.auth.roomName
         if (sessionId) {
             const session: Session | undefined = sessionStore.findSession(sessionId)
             if (session) {
-                const newSessionId = randomId()
-                sessionStore.removeSession(sessionId)
-                socket.data.sessionId = newSessionId
-                socket.data.playerId = session.playerId
-                socket.data.roomName = session.roomName
-                socket.data.playerName = session.playerName
-                socket.data.messages = messageStore.findMessagesForRoom(session.roomName)
-                const existingGame = gameStore.findGame(session.roomName)
-                socket.data.game = existingGame ?? gameStore.create(session.roomName, io, [])
-                // If the game was GC'd, reset stale playerState to WAITING
-                if (existingGame) {
-                    socket.data.playerState = session.playerState
+                // Clean up stale session if client switched rooms
+                if (requestedRoom && requestedRoom !== session.roomName) {
+                    sessionStore.removeSession(sessionId)
                 } else {
-                    socket.data.playerState = { host: false, playState: PlayState.WAITING }
+                    const newSessionId = randomId()
+                    sessionStore.removeSession(sessionId)
+                    socket.data.sessionId = newSessionId
+                    socket.data.playerId = session.playerId
+                    socket.data.roomName = session.roomName
+                    socket.data.playerName = session.playerName
+                    socket.data.messages = messageStore.findMessagesForRoom(session.roomName)
+                    const existingGame = gameStore.findGame(session.roomName)
+                    socket.data.game = existingGame ?? gameStore.create(session.roomName, io, [])
+                    // If the game was GC'd, reset stale playerState to WAITING
+                    if (existingGame) {
+                        socket.data.playerState = session.playerState
+                    } else {
+                        socket.data.playerState = { host: false, playState: PlayState.WAITING }
+                    }
+                    socket.data.isReconnect = true
+                    return next()
                 }
-                socket.data.isReconnect = true
-                return next()
             }
         }
 

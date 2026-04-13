@@ -37,7 +37,7 @@ const Welcome = () => {
         if (!room || !player) return
 
         localStorage.setItem('playerName', player)
-        router.push(`/#${encodeURIComponent(room)}`)
+        router.push(`/room/${encodeURIComponent(room)}`)
     }
 
     return (
