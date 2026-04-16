@@ -145,28 +145,28 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
     return (
         <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:items-start h-full sm:h-auto'>
             {isPlaying && (
-                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-2 sm:gap-0 shrink-0 w-full sm:w-auto sm:h-[638px]'>
-                    <div className={`flex ${hasMiniboards ? 'flex-col' : 'flex-row'} sm:flex-col items-center sm:items-start gap-2 sm:gap-4`}>
-                        <div className='flex flex-col gap-1'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
+                <div className='order-1 sm:order-2 flex flex-row sm:flex-col items-center sm:items-start justify-center sm:justify-between gap-3 sm:gap-0 min-h-0 w-full sm:w-auto sm:h-[638px]'>
+                    <div className='flex flex-row sm:flex-col items-stretch sm:items-start gap-3 sm:gap-4'>
+                        <div className='flex flex-col gap-0.5 sm:gap-1 items-center sm:items-start'>
+                            <span className='text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-content-secondary'>Next</span>
                             <canvas
                                 ref={previewRef}
                                 width={90}
                                 height={50}
-                                className='rounded-sm'
+                                className='rounded-sm w-[60px] h-[33px] sm:w-[90px] sm:h-[50px]'
                             />
                         </div>
-                        <div className='flex flex-col'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Score</span>
+                        <div className='flex flex-col items-center sm:items-start'>
+                            <span className='text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-content-secondary'>Score</span>
                             <span className='text-2xl font-bold tabular-nums'>{score}</span>
                         </div>
-                        <div className='flex flex-col'>
-                            <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Level</span>
+                        <div className='flex flex-col items-center sm:items-start'>
+                            <span className='text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-content-secondary'>Level</span>
                             <span className='text-2xl font-bold'>{level}</span>
                         </div>
                         {isTimeAttack && timeRemaining >= 0 && (
-                            <div className='flex flex-col'>
-                                <span className='text-xs font-semibold uppercase tracking-wide text-content-secondary'>Time</span>
+                            <div className='flex flex-col items-center sm:items-start'>
+                                <span className='text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-content-secondary'>Time</span>
                                 <span className={`text-2xl font-bold tabular-nums ${timeRemaining <= 30 ? 'text-status-danger animate-pulse' : ''}`}>
                                     {formatTime(timeRemaining)}
                                 </span>
@@ -174,7 +174,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                         )}
                     </div>
                     {hasMiniboards && (
-                        <aside className='flex flex-row gap-3' aria-label='Opponent boards'>
+                        <aside className='flex flex-row gap-2 sm:gap-3' aria-label='Opponent boards'>
                             {activeOpponents.map((p) => {
                                 const board = opponentBoards[p.playerId]
                                 return (
@@ -190,7 +190,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                     )}
                 </div>
             )}
-            <div className='order-2 sm:order-1 flex flex-col items-center min-h-0 flex-1 sm:flex-none'>
+            <div className='order-2 sm:order-1 flex flex-col items-center min-h-0 flex-1 sm:flex-none shrink-0'>
                 <div className='relative flex-1 min-h-0 flex items-center justify-center'>
                     <canvas
                         ref={canvasRef}

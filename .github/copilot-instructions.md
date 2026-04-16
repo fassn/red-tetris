@@ -37,6 +37,15 @@ Multiplayer Tetris (up to 4 players) built with Next.js 16, React 19, Socket.IO 
 - Two pre-existing `react-hooks/exhaustive-deps` warnings in `chat.tsx` and `use-listeners.ts` — intentional (socket refs are stable singletons).
 - Deployment target is Docker-based (Coolify), not serverless. `NEXT_PUBLIC_SOCKET_URL` is set via environment variable.
 
+## Caveman
+
+Terse like caveman. Technical substance exact. Only fluff die.
+Drop: articles, filler (just/really/basically), pleasantries, hedging.
+Fragments OK. Short synonyms. Code unchanged.
+Pattern: [thing] [action] [reason]. [next step].
+ACTIVE EVERY RESPONSE. No revert after many turns. No filler drift.
+Code/commits/PRs: normal. Off: "stop caveman" / "normal mode".
+
 ## Claude Model Interaction Instructions
 
 ### Rules for Claude models
