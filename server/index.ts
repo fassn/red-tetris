@@ -73,15 +73,17 @@ app.prepare().then(() => {
                         movePieceDown(io, currentPiece, player, playerStack)
 
                         if (checkIfPieceHasHit(currentPiece)) {
-                            if (currentPiece.getY() === 0) {
-                                emitEndGameToPlayers(io, player, game)
-                                break
-                            }
-
                             game.addToStack(currentPiece, playerStack)
                             emitStackAndScore(io, game, player, playerStack)
                             broadcastOpponentStack(io, game, player)
                             updatePiecesStack(playerPieces, game)
+
+                            // Game over if the new piece spawns into filled tiles
+                            if (playerPieces[0].isSpawnBlocked(playerStack)) {
+                                emitEndGameToPlayers(io, player, game)
+                                break
+                            }
+
                             emitNextPiece(io, game, player, playerPieces)
                         }
                     }

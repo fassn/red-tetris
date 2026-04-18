@@ -201,6 +201,20 @@ class Piece {
         }
         return false
     }
+
+    /** Check if piece at spawn position overlaps any filled tile in the stack. */
+    isSpawnBlocked(stack: Stack[]): boolean {
+        for (let i = 0; i < 4; i++) {
+            const { x, y } = this.points[i]
+            const idxX = (this.x + x) / (TILEWIDTH + SPACING)
+            const idxY = (this.y + y) / (TILEHEIGHT + SPACING)
+            const idx = idxY * COLS + idxX
+            if (idx >= 0 && idx < stack.length && stack[idx].isFilled) {
+                return true
+            }
+        }
+        return false
+    }
 }
 
 export default Piece
