@@ -46,14 +46,14 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
 
     useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound })
 
-    // Draw next piece preview when it changes or theme switches
+    // Draw next piece preview when it changes, theme switches, or play state changes (canvas mounts on PLAYING)
     useEffect(() => {
         const canvas = previewRef.current
         if (!canvas) return
         const ctx = setupHiDPI(canvas, 90, 50)
         if (!ctx) return
         drawPreviewPiece(ctx, nextPiece)
-    }, [nextPiece, theme])
+    }, [nextPiece, theme, playerState.playState])
 
     // Render loop — throttled to TICK_RATE to match server tick rate
     useEffect(() => {
