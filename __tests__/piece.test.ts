@@ -152,4 +152,65 @@ describe('Piece', () => {
             expect(JSON.stringify(piece.getPoints())).toBe(before)
         })
     })
+
+    describe('isSpawnBlocked', () => {
+        it('returns false on empty stack', () => {
+            const piece = makePiece('bar')
+            const stack = createEmptyStack()
+            expect(piece.isSpawnBlocked(stack)).toBe(false)
+        })
+
+        it('returns false when filled tiles are far below spawn', () => {
+            const piece = makePiece('T')
+            const stack = createEmptyStack()
+            // Fill row 15 (well below spawn area)
+            for (let x = 0; x < COLS; x++) {
+                stack[15 * COLS + x].isFilled = true
+            }
+            expect(piece.isSpawnBlocked(stack)).toBe(false)
+        })
+
+        it('returns true when stack overlaps spawn position', () => {
+            const piece = makePiece('bar')
+            const stack = createEmptyStack()
+            // bar rotation 0: [{x:0,y:0}, {x:w,y:0}, {x:2w,y:0}, {x:3w,y:0}]
+            // At spawn x=CANVASCENTER, y=0 — fills row 0, cols 4-7
+            const step = TILEWIDTH + SPACING
+            const spawnCol = CANVASCENTER / step
+            stack[0 * COLS + spawnCol].isFilled = true
+            expect(piece.isSpawnBlocked(stack)).toBe(true)
+        })
+
+        it('returns true for any of the 4 cells overlapping', () => {
+            const piece = makePiece('cube')
+            const stack = createEmptyStack()
+            // cube: [{x:0,y:0}, {x:w,y:0}, {x:0,y:h}, {x:w,y:h}]
+            // Only fill the cell at row 1, which is the bottom-right of the cube
+            const step = TILEWIDTH + SPACING
+            const spawnCol = CANVASCENTER / step
+            stack[1 * COLS + (spawnCol + 1)].isFilled = true
+            expect(piece.isSpawnBlocked(stack)).toBe(true)
+        })
+
+        it('returns false for all 7 piece types on empty stack', () => {
+            const types: PieceType[] = ['bar', 'left_L', 'right_L', 'cube', 'T', 'Z', 'rev_Z']
+            const stack = createEmptyStack()
+            for (const type of types) {
+                const piece = makePiece(type)
+                expect(piece.isSpawnBlocked(stack)).toBe(false)
+            }
+        })
+
+        it('detects blocking even with a single filled tile at spawn', () => {
+            // T-piece rotation 0: [{x:0,y:0}, {x:w,y:0}, {x:2w,y:0}, {x:w,y:h}]
+            // The fourth cell is at row 1
+            const piece = makePiece('T')
+            const stack = createEmptyStack()
+            const step = TILEWIDTH + SPACING
+            const spawnCol = CANVASCENTER / step
+            // Fill just the center cell of second row (where T stem goes)
+            stack[1 * COLS + (spawnCol + 1)].isFilled = true
+            expect(piece.isSpawnBlocked(stack)).toBe(true)
+        })
+    })
 })
