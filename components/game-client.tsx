@@ -24,7 +24,7 @@ type GameClientProps = {
 const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const { theme } = useTheme()
-    const { play: playSound } = useSound()
+    const { play: playSound, musicEnabled, startMusic, stopMusic } = useSound()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const previewRef = useRef<HTMLCanvasElement>(null)
     const keysDown = useRef(new Set<string>())
@@ -45,6 +45,17 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
     }, [theme])
 
     useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound })
+
+    // Start/stop background music based on play state and music preference
+    useEffect(() => {
+        if (playerState.playState === PlayState.PLAYING && musicEnabled) {
+            startMusic()
+        } else {
+            stopMusic()
+        }
+        return () => { stopMusic() }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [playerState.playState, musicEnabled])
 
     // Draw next piece preview when it changes, theme switches, or play state changes (canvas mounts on PLAYING)
     useEffect(() => {

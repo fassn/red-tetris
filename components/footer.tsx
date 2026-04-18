@@ -1,5 +1,6 @@
 import ThemeToggle from './theme-toggle'
 import SoundToggle from './sound-toggle'
+import MusicToggle from './music-toggle'
 
 const Footer = () => {
     return (
@@ -7,6 +8,7 @@ const Footer = () => {
             <div className='w-8' />
             <div className='text-center uppercase text-sm'>© 2026 fassn</div>
             <div className='flex items-center gap-1'>
+                <MusicToggle />
                 <SoundToggle />
                 <ThemeToggle />
             </div>

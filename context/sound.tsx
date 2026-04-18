@@ -6,19 +6,29 @@ type SoundContextValue = {
     muted: boolean
     toggleMute: () => void
     play: (name: SoundName) => void
+    musicEnabled: boolean
+    toggleMusic: () => void
+    startMusic: () => void
+    stopMusic: () => void
 }
 
 const SoundContext = createContext<SoundContextValue | null>(null)
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
     const [muted, setMuted] = useState(false)
+    const [musicEnabled, setMusicEnabled] = useState(false)
 
     useEffect(() => {
-        const stored = localStorage.getItem('soundMuted')
-        if (stored === 'true') {
+        const storedMuted = localStorage.getItem('soundMuted')
+        if (storedMuted === 'true') {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setMuted(true)
             soundManager.muted = true
+        }
+        const storedMusic = localStorage.getItem('musicEnabled')
+        if (storedMusic === 'true') {
+            setMusicEnabled(true)
+            soundManager.musicMuted = false
         }
     }, [])
 
@@ -50,8 +60,25 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
         soundManager.play(name)
     }, [])
 
+    const toggleMusic = useCallback(() => {
+        setMusicEnabled(prev => {
+            const next = !prev
+            soundManager.musicMuted = !next
+            localStorage.setItem('musicEnabled', String(next))
+            return next
+        })
+    }, [])
+
+    const startMusic = useCallback(() => {
+        soundManager.startMusic()
+    }, [])
+
+    const stopMusic = useCallback(() => {
+        soundManager.stopMusic()
+    }, [])
+
     return (
-        <SoundContext.Provider value={{ muted, toggleMute, play }}>
+        <SoundContext.Provider value={{ muted, toggleMute, play, musicEnabled, toggleMusic, startMusic, stopMusic }}>
             {children}
         </SoundContext.Provider>
     )

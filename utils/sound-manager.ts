@@ -5,18 +5,33 @@ const SOUND_FILES: Record<SoundName, string> = {
     tetris: '/sounds/tetris.mp3',
 }
 
+const MUSIC_URL = '/sounds/music.mp3'
+const MUSIC_VOLUME = 0.3
+const FADE_MS = 800
+
 class SoundManager {
     private ctx: AudioContext | null = null
     private buffers = new Map<SoundName, AudioBuffer>()
     private loading = false
     private _muted = false
     private _volume = 0.5
+    private musicEl: HTMLAudioElement | null = null
+    private _musicMuted = true
+    private fadeId = 0
 
     get muted() { return this._muted }
     set muted(v: boolean) { this._muted = v }
 
     get volume() { return this._volume }
     set volume(v: number) { this._volume = Math.max(0, Math.min(1, v)) }
+
+    get musicMuted() { return this._musicMuted }
+    set musicMuted(v: boolean) {
+        this._musicMuted = v
+        if (this.musicEl) {
+            this.musicEl.muted = v
+        }
+    }
 
     /** Resume AudioContext after user gesture (browser autoplay policy). */
     async unlock() {
@@ -63,6 +78,47 @@ class SoundManager {
         source.connect(gain)
         gain.connect(this.ctx.destination)
         source.start()
+    }
+
+    startMusic() {
+        if (!this.musicEl) {
+            this.musicEl = new Audio(MUSIC_URL)
+            this.musicEl.loop = true
+            this.musicEl.volume = 0
+            this.musicEl.muted = this._musicMuted
+        }
+        // Fade in
+        this.musicEl.volume = 0
+        this.musicEl.play().catch(() => {})
+        this.fadeMusic(0, MUSIC_VOLUME, FADE_MS)
+    }
+
+    stopMusic() {
+        if (!this.musicEl) return
+        const el = this.musicEl
+        this.fadeMusic(el.volume, 0, FADE_MS, () => {
+            el.pause()
+            el.currentTime = 0
+        })
+    }
+
+    private fadeMusic(from: number, to: number, durationMs: number, onDone?: () => void) {
+        if (!this.musicEl) return
+        const el = this.musicEl
+        const id = ++this.fadeId
+        const start = performance.now()
+        const step = () => {
+            if (this.fadeId !== id) return
+            const elapsed = performance.now() - start
+            const t = Math.min(elapsed / durationMs, 1)
+            el.volume = from + (to - from) * t
+            if (t < 1) {
+                requestAnimationFrame(step)
+            } else if (onDone) {
+                onDone()
+            }
+        }
+        requestAnimationFrame(step)
     }
 }
 
