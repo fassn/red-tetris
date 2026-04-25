@@ -80,7 +80,6 @@ const Chat = ({ playerName }: ChatProps) => {
                     className="w-full py-2 px-3 border-b border-edge-subtle"
                     key={msg.id}
                 >
-                    <span className='sr-only'>{msg.author} says:</span>
                     <span className='font-semibold text-brand'>{msg.author}:</span>{' '}
                     <span className='text-content-secondary'>{msg.message}</span>
                 </div>
