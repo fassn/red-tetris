@@ -21,7 +21,7 @@ function dropIntervalForLevel(level: number): number {
     else if (level <= 8)   seconds = 0.27
     else if (level <= 10)  seconds = 0.20
     else if (level <= 13)  seconds = 0.13
-    else seconds = 0.07
+    else seconds = 0.10
     return Math.max(1, Math.round(seconds * TICK_RATE))
 }
 class Game {
@@ -226,11 +226,8 @@ class Game {
     private moveDownUpperLines = (stack: Stack[], row: number) => {
         for (let y = row - 1; y > 0; y--) {
             for (let x = 0; x < COLS; x++) {
-                /* I have NO IDEA why the latter makes the array "corrupt"
-                after 18 cleared lines */
                 const tile = stack[y * COLS + x]
                 stack[(y + 1) * COLS + x] = {...tile}
-                // stack[(y + 1) * COLS + x] = stack[y * COLS + x]
             }
         }
     }
