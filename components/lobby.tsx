@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { ChangeEvent, useContext } from "react"
 import { SocketContext } from "../context/socket"
 import { GameMode, PlayerState, PlayState, RoomPlayer } from "../shared/types"
@@ -68,6 +69,9 @@ const HostMenu = ({ otherPlayers, gameMode, onStartGame, onToggleMode }: { other
                     <span className={`text-sm font-medium ${gameMode === GameMode.TIME_ATTACK ? 'text-content' : 'text-content-muted'}`}>Time Attack</span>
                 </div>
                 <button onClick={onStartGame} className='py-3 w-full max-w-xs self-center text-lg uppercase font-semibold mt-4 bg-brand rounded-sm hover:bg-brand-hover hover:text-content-inverse transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand focus:ring-offset-2'>Start Game</button>
+                <Link href='/leaderboard' className='mt-4 text-center text-sm text-content-secondary hover:text-brand transition-colors'>
+                    🏆 View Leaderboard
+                </Link>
             </div>
         </>
     )

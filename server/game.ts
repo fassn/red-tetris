@@ -224,11 +224,17 @@ class Game {
     }
 
     private moveDownUpperLines = (stack: Stack[], row: number) => {
-        for (let y = row - 1; y > 0; y--) {
+        // Shift all rows above the cleared row down by one
+        for (let y = row - 1; y >= 0; y--) {
             for (let x = 0; x < COLS; x++) {
                 const tile = stack[y * COLS + x]
                 stack[(y + 1) * COLS + x] = {...tile}
             }
+        }
+        // Clear the top row (row 0) since nothing shifted into it
+        for (let x = 0; x < COLS; x++) {
+            stack[x].isFilled = false
+            stack[x].color = {r: 0, g: 0, b: 0, a: 255}
         }
     }
 }
