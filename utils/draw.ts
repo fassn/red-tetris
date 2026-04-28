@@ -8,6 +8,24 @@ let _appBg = '#0f172a'
 let _tileBg = '#1e293b'   // Empty tile fill
 let _lastTheme = ''
 
+// Mutable tile dimensions — updated via setTileSize() for dynamic viewport scaling
+let _tileW = TILEWIDTH
+let _tileH = TILEHEIGHT
+
+/** Set tile dimensions for dynamic board sizing. Call before each render loop restart. */
+export function setTileSize(tileW: number, tileH: number): void {
+    _tileW = tileW
+    _tileH = tileH
+}
+
+/** Compute logical board dimensions from current tile sizes. */
+export function getBoardSize(): { width: number; height: number } {
+    return {
+        width: _tileW * COLS + SPACING * (COLS - 1),
+        height: _tileH * ROWS + SPACING * (ROWS - 1),
+    }
+}
+
 // Color remap: canonical (dark/server) RGBA → current theme RGBA
 const _colorRemap = new Map<string, RGBA>()
 
@@ -68,12 +86,13 @@ function rgba(c: RGBA): string {
 }
 
 function tile(ctx: CanvasRenderingContext2D, x: number, y: number) {
+    const r = Math.max(2, Math.round(_tileW / 3))
     if (typeof ctx.roundRect === 'function') {
         ctx.beginPath()
-        ctx.roundRect(x, y, TILEWIDTH, TILEHEIGHT, RADIUS)
+        ctx.roundRect(x, y, _tileW, _tileH, r)
         ctx.fill()
     } else {
-        ctx.fillRect(x, y, TILEWIDTH, TILEHEIGHT)
+        ctx.fillRect(x, y, _tileW, _tileH)
     }
 }
 
@@ -91,17 +110,22 @@ export const drawStack = (ctx: CanvasRenderingContext2D, stack: Stack[]) => {
             const t = stack[j * COLS + i]
             ctx.fillStyle = t.isFilled ? rgba(resolveColor(t.color)) : _tileBg
             tile(ctx, x, y)
-            y += TILEHEIGHT + SPACING
+            y += _tileH + SPACING
         }
         y = 0
-        x += TILEWIDTH + SPACING
+        x += _tileW + SPACING
     }
 }
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, currentPiece: PieceProps) => {
+    // Server sends pixel coords based on TILEWIDTH+SPACING=32. Convert to local pixel coords.
+    const serverStep = TILEWIDTH + SPACING
+    const localStep = _tileW + SPACING
     ctx.fillStyle = rgba(resolveColor(currentPiece.color))
     for (let i = 0; i < 4; i++) {
-        tile(ctx, currentPiece.x + currentPiece.points[i].x, currentPiece.y + currentPiece.points[i].y)
+        const col = Math.round((currentPiece.x + currentPiece.points[i].x) / serverStep)
+        const row = Math.round((currentPiece.y + currentPiece.points[i].y) / serverStep)
+        tile(ctx, col * localStep, row * localStep)
     }
 }
 
@@ -152,7 +176,7 @@ const BOUNCE_DAMPING = 0.35
 const SETTLE_THRESHOLD = 1.5
 
 export const advanceCascadeAnimation = (cascadeTiles: TileProps[]) => {
-    const floorY = BOARDHEIGHT - TILEHEIGHT
+    const floorY = _tileH * ROWS + SPACING * (ROWS - 1) - _tileH
     for (const t of cascadeTiles) {
         if (t.y >= floorY && Math.abs(t.dy) < SETTLE_THRESHOLD) {
             t.y = floorY
@@ -170,8 +194,9 @@ export const advanceCascadeAnimation = (cascadeTiles: TileProps[]) => {
 
 /** Draw the endgame board background (empty grid + cascading tiles for win). */
 export const drawEndgameBoard = (ctx: CanvasRenderingContext2D, cascadeTiles: TileProps[]) => {
+    const { width: bw, height: bh } = getBoardSize()
     ctx.fillStyle = _appBg
-    ctx.fillRect(0, 0, BOARDWIDTH, BOARDHEIGHT)
+    ctx.fillRect(0, 0, bw, bh)
 
     const emptyStack = createEmptyStack()
     drawStack(ctx, emptyStack)
@@ -187,8 +212,8 @@ export const getCascadeTiles = (cascadeTiles: TileProps[], stack: Stack[]) => {
         for (let row = 0; row < ROWS; row++) {
             if (stack[row * COLS + col].isFilled) {
                 const t: TileProps = {
-                    x: col * (TILEWIDTH + SPACING),
-                    y: row * (TILEHEIGHT + SPACING),
+                    x: col * (_tileW + SPACING),
+                    y: row * (_tileH + SPACING),
                     dy: 1,
                     gravity: 1,
                     friction: 0.9,

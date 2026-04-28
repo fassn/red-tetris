@@ -152,8 +152,9 @@ function RoomView({ roomName }: { roomName: string }) {
                 <div className='w-16' />
             </header>
             <main id='main-content' className='flex-1 min-h-0 flex flex-col px-4 sm:px-8' aria-label='Game room'>
-                <div className='flex flex-col items-center justify-center sm:flex-row sm:items-start gap-4 sm:gap-6 py-2 sm:py-12 flex-1 min-h-0'>
-                    <div className={`flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96 ${isInGame ? 'hidden lg:flex' : ''}`} style={{ maxHeight: BOARDHEIGHT }}>
+                <div className={`flex flex-col items-center justify-center sm:flex-row sm:items-start gap-4 sm:gap-6 py-2 sm:py-12 flex-1 min-h-0 ${isInGame ? 'lg:items-stretch lg:py-2' : ''}`}>
+                    {!isInGame && (
+                    <div className='flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96 min-h-0' style={{ maxHeight: BOARDHEIGHT }}>
                         <section aria-label='Lobby'>
                             <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
                         </section>
@@ -161,8 +162,9 @@ function RoomView({ roomName }: { roomName: string }) {
                             <Chat playerName={playerName} />
                         </section>
                     </div>
-                    <section className={`w-full sm:w-auto min-h-0 flex-1 sm:flex-initial ${isInGame ? '' : 'hidden sm:block'}`} aria-label='Game'>
-                        <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} />
+                    )}
+                    <section className={`min-h-0 ${isInGame ? 'flex-1 min-w-0 w-full lg:flex lg:items-stretch lg:justify-center' : 'hidden sm:block sm:flex-initial sm:w-auto'}`} aria-label='Game'>
+                        <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} /> : undefined} />
                     </section>
                 </div>
             </main>

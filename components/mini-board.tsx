@@ -4,7 +4,7 @@ import { useTheme } from '../context/theme'
 import { syncCanvasTheme, getTileBg, setupHiDPI, resolveColor } from '../utils/draw'
 import { PlayState, RGBA, Stack } from '../shared/types'
 
-const MINI_TILE = 8
+export const MINI_TILE = 12
 const MINI_SPACING = 1
 const MINI_RADIUS = 2
 const MINI_WIDTH = COLS * MINI_TILE + (COLS - 1) * MINI_SPACING
@@ -57,25 +57,26 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
         }
     }, [stack, theme])
 
-    const stateLabel = playState === PlayState.PLAYING
-        ? '🟢 Playing'
-        : playState === PlayState.ENDGAME
-            ? '🔴 Out'
-            : '⏳ Waiting'
+    const stateEmoji = playState === PlayState.PLAYING ? '🟢' : playState === PlayState.ENDGAME ? '🔴' : '⏳'
+    const stateLabel = playState === PlayState.PLAYING ? 'Playing' : playState === PlayState.ENDGAME ? 'Out' : 'Waiting'
 
     return (
-        <div className='flex flex-col items-center gap-1.5'>
-            <span className='hidden sm:block text-sm font-semibold truncate max-w-full'>{playerName}</span>
-            <canvas
-                ref={canvasRef}
-                width={MINI_WIDTH}
-                height={MINI_HEIGHT}
-                className='rounded-sm border border-edge max-h-[100px] sm:max-h-none w-auto'
-                style={{ aspectRatio: `${MINI_WIDTH} / ${MINI_HEIGHT}` }}
-                role='img'
-                aria-label={`${playerName}'s board — ${stateLabel}`}
-            />
-            <span className='hidden sm:block text-xs text-content-secondary'>{stateLabel}</span>
+        <div className='flex flex-col items-center gap-1 sm:h-full'>
+            <div className='hidden sm:flex items-center gap-1 w-full overflow-hidden px-0.5'>
+                <span className='text-xs font-semibold truncate flex-1 min-w-0'>{playerName}</span>
+                <span className='text-xs shrink-0'>{stateEmoji}</span>
+            </div>
+            <div className='sm:flex-1 sm:min-h-0 flex items-center justify-center min-w-0'>
+                <canvas
+                    ref={canvasRef}
+                    width={MINI_WIDTH}
+                    height={MINI_HEIGHT}
+                    className='rounded-sm border border-edge w-auto sm:max-w-full sm:max-h-full sm:h-auto'
+                    style={{ aspectRatio: `${MINI_WIDTH} / ${MINI_HEIGHT}` }}
+                    role='img'
+                    aria-label={`${playerName}'s board — ${stateLabel}`}
+                />
+            </div>
         </div>
     )
 }
