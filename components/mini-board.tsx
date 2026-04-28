@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react'
+import React, { memo, useCallback, useEffect, useRef } from 'react'
 import { COLS, ROWS } from '../shared/config'
 import { useTheme } from '../context/theme'
 import { syncCanvasTheme, getTileBg, setupHiDPI, resolveColor } from '../utils/draw'
@@ -18,16 +18,42 @@ type MiniBoardProps = {
     playerName: string
     playState: PlayState
     stack: Stack[]
+    /** Desktop: explicit tile size for dynamic canvas dimensions */
+    tileSize?: number
+    /** Fires with canvas-area dimensions when it resizes (for the first desktop cell) */
+    onContainerResize?: (w: number, h: number) => void
+    /** Mobile: hide the name/state label */
+    hideLabel?: boolean
 }
 
-const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
+const MiniBoard = ({ playerName, playState, stack, tileSize, onContainerResize, hideLabel }: MiniBoardProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const canvasAreaRef = useRef<HTMLDivElement>(null)
     const { theme } = useTheme()
+
+    const effectiveTile = tileSize ?? MINI_TILE
+    const canvasW = COLS * effectiveTile + (COLS - 1) * MINI_SPACING
+    const canvasH = ROWS * effectiveTile + (ROWS - 1) * MINI_SPACING
+
+    // Observe canvas area for desktop tile computation
+    const stableOnResize = useCallback((entries: ResizeObserverEntry[]) => {
+        const { width, height } = entries[0].contentRect
+        if (width > 0 && height > 0) onContainerResize?.(width, height)
+    }, [onContainerResize])
+
+    useEffect(() => {
+        if (!onContainerResize) return
+        const el = canvasAreaRef.current
+        if (!el) return
+        const obs = new ResizeObserver(stableOnResize)
+        obs.observe(el)
+        return () => obs.disconnect()
+    }, [onContainerResize, stableOnResize])
 
     useEffect(() => {
         const canvas = canvasRef.current
         if (!canvas) return
-        const ctx = setupHiDPI(canvas, MINI_WIDTH, MINI_HEIGHT)
+        const ctx = setupHiDPI(canvas, canvasW, canvasH)
         if (!ctx) {
             console.warn('MiniBoard: failed to get 2d canvas context')
             return
@@ -45,34 +71,49 @@ const MiniBoard = ({ playerName, playState, stack }: MiniBoardProps) => {
                 ctx.fillStyle = t.isFilled ? rgba(resolveColor(t.color)) : tileBg
                 if (hasRoundRect) {
                     ctx.beginPath()
-                    ctx.roundRect(x, y, MINI_TILE, MINI_TILE, MINI_RADIUS)
+                    ctx.roundRect(x, y, effectiveTile, effectiveTile, MINI_RADIUS)
                     ctx.fill()
                 } else {
-                    ctx.fillRect(x, y, MINI_TILE, MINI_TILE)
+                    ctx.fillRect(x, y, effectiveTile, effectiveTile)
                 }
-                y += MINI_TILE + MINI_SPACING
+                y += effectiveTile + MINI_SPACING
             }
             y = 0
-            x += MINI_TILE + MINI_SPACING
+            x += effectiveTile + MINI_SPACING
         }
-    }, [stack, theme])
+    }, [stack, theme, tileSize, effectiveTile, canvasW, canvasH])
 
     const stateEmoji = playState === PlayState.PLAYING ? '🟢' : playState === PlayState.ENDGAME ? '🔴' : '⏳'
     const stateLabel = playState === PlayState.PLAYING ? 'Playing' : playState === PlayState.ENDGAME ? 'Out' : 'Waiting'
 
+    // Canvas sizing strategy (non-tileSize case uses height-based flex scaling):
+    //   tileSize (desktop): explicit dimensions, HiDPI-correct inline style
+    //   no tileSize: h-full w-auto + aspect-ratio scales canvas to container height
+    const canvasClass = tileSize != null
+        ? 'block rounded-sm border border-edge'
+        : 'h-full w-auto rounded-sm border border-edge'
+    const canvasStyle: React.CSSProperties = tileSize != null
+        ? { width: canvasW, height: canvasH }
+        : { aspectRatio: `${MINI_WIDTH} / ${MINI_HEIGHT}` }
+
     return (
-        <div className='flex flex-col items-center gap-1 sm:h-full'>
-            <div className='hidden sm:flex items-center gap-1 w-full overflow-hidden px-0.5'>
-                <span className='text-xs font-semibold truncate flex-1 min-w-0'>{playerName}</span>
-                <span className='text-xs shrink-0'>{stateEmoji}</span>
-            </div>
-            <div className='sm:flex-1 sm:min-h-0 flex items-center justify-center min-w-0'>
+        <div className='h-full flex flex-col gap-0.5'>
+            {!hideLabel && (
+                <div className='flex items-center gap-1 shrink-0 overflow-hidden px-0.5'>
+                    <span className='text-xs font-semibold truncate flex-1 min-w-0'>{playerName}</span>
+                    <span className='text-xs shrink-0'>{stateEmoji}</span>
+                </div>
+            )}
+            <div
+                ref={canvasAreaRef}
+                className='flex-1 min-h-0 flex items-center justify-center min-w-0'
+            >
                 <canvas
                     ref={canvasRef}
-                    width={MINI_WIDTH}
-                    height={MINI_HEIGHT}
-                    className='rounded-sm border border-edge w-auto sm:max-w-full sm:max-h-full sm:h-auto'
-                    style={{ aspectRatio: `${MINI_WIDTH} / ${MINI_HEIGHT}` }}
+                    width={canvasW}
+                    height={canvasH}
+                    className={canvasClass}
+                    style={canvasStyle}
                     role='img'
                     aria-label={`${playerName}'s board — ${stateLabel}`}
                 />

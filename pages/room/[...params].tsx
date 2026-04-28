@@ -10,7 +10,6 @@ import NamePrompt from '../../components/name-prompt'
 import Lobby from '../../components/lobby'
 import Footer from '../../components/footer'
 import { useGameState } from '../../hooks/use-game-state'
-import { BOARDHEIGHT } from '../../shared/config'
 import { isValidName } from '../../shared/validation'
 
 const GameClient = dynamic(() => import('../../components/game-client'), { ssr: false })
@@ -151,22 +150,27 @@ function RoomView({ roomName }: { roomName: string }) {
                 <h1 className='text-lg font-bold uppercase tracking-wider'>Red Tetris</h1>
                 <div className='w-16' />
             </header>
-            <main id='main-content' className='flex-1 min-h-0 flex flex-col px-4 sm:px-8' aria-label='Game room'>
-                <div className={`flex flex-col items-center justify-center sm:flex-row sm:items-start gap-4 sm:gap-6 py-2 sm:py-12 flex-1 min-h-0 ${isInGame ? 'lg:items-stretch lg:py-2' : ''}`}>
-                    {!isInGame && (
-                    <div className='flex flex-col gap-4 w-full max-w-sm sm:w-80 xl:w-96 min-h-0' style={{ maxHeight: BOARDHEIGHT }}>
-                        <section aria-label='Lobby'>
-                            <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
-                        </section>
-                        <section className='flex-1 min-h-0 flex flex-col' aria-label='Chat'>
-                            <Chat playerName={playerName} />
-                        </section>
+            <main id='main-content' className='flex-1 min-h-0 flex flex-col' aria-label='Game room'>
+                {/* LOBBY: centered single column, all breakpoints */}
+                {!isInGame && (
+                    <div className='flex-1 overflow-y-auto flex flex-col items-center px-4 py-6'>
+                        <div className='w-full max-w-sm flex flex-col gap-4'>
+                            <section aria-label='Lobby'>
+                                <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
+                            </section>
+                            <section className='flex flex-col h-64 min-h-0' aria-label='Chat'>
+                                <Chat playerName={playerName} />
+                            </section>
+                        </div>
                     </div>
-                    )}
-                    <section className={`min-h-0 ${isInGame ? 'flex-1 min-w-0 w-full lg:flex lg:items-stretch lg:justify-center' : 'hidden sm:block sm:flex-initial sm:w-auto'}`} aria-label='Game'>
-                        <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} /> : undefined} />
-                    </section>
-                </div>
+                )}
+                {/* GAME: always mounted, shown only while playing */}
+                <section
+                    className={`${isInGame ? 'flex-1 min-h-0' : 'hidden'} p-2 sm:p-4 lg:p-6`}
+                    aria-label='Game'
+                >
+                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} /> : undefined} />
+                </section>
             </main>
 
             <Footer />

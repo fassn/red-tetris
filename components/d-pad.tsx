@@ -27,10 +27,10 @@ const DPad = ({ disabled }: DPadProps) => {
         }, REPEAT_DELAY)
     }, [stopRepeat])
 
-    const btn = 'flex items-center justify-center w-16 h-12 rounded-lg bg-surface-card border border-edge text-xl font-bold active:bg-brand active:text-content-inverse select-none transition-colors touch-manipulation'
+    const btn = 'flex items-center justify-center w-12 h-10 sm:w-16 sm:h-12 rounded-lg bg-surface-card border border-edge text-xl font-bold active:bg-brand active:text-content-inverse select-none transition-colors touch-manipulation'
 
     return (
-        <div className='flex lg:hidden items-center justify-center gap-6 py-2' role='group' aria-label='Game controls'>
+        <div className='flex lg:hidden items-center justify-center gap-2 sm:gap-6 py-2' role='group' aria-label='Game controls'>
             <button
                 className={btn}
                 aria-label='Move left'
