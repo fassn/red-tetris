@@ -9,11 +9,12 @@ type LobbyProps = {
     otherPlayers: RoomPlayer[],
     gameMode: GameMode,
     onToggleMode: (next: GameMode) => void,
+    roomName: string,
 }
 
-const Logo = () => (
+const Room = ({ roomName }: { roomName: string }) => (
     <div className='flex h-24 justify-center items-center bg-brand'>
-        <h1 className='text-4xl font-bold uppercase tracking-wider'>Red Tetris</h1>
+        <h2 className='text-4xl font-bold uppercase tracking-wider'>#{roomName}</h2>
     </div>
 )
 
@@ -41,12 +42,12 @@ const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
     </div>
 )
 
-const HostMenu = ({ otherPlayers, gameMode, onStartGame, onToggleMode }: { otherPlayers: RoomPlayer[], gameMode: GameMode, onStartGame: () => void, onToggleMode: () => void }) => {
+const HostMenu = ({ otherPlayers, gameMode, onStartGame, onToggleMode, roomName }: { otherPlayers: RoomPlayer[], gameMode: GameMode, onStartGame: () => void, onToggleMode: () => void, roomName: string }) => {
     const readyCount = otherPlayers.filter((p) => p.state.playState === PlayState.READY).length
 
     return (
         <>
-            <Logo />
+            <Room roomName={roomName} />
             <PlayerList otherPlayers={otherPlayers} />
             <div className='flex flex-col justify-center px-4 pb-6'>
                 <div className='text-center text-lg mb-4'>
@@ -77,9 +78,9 @@ const HostMenu = ({ otherPlayers, gameMode, onStartGame, onToggleMode }: { other
     )
 }
 
-const GuestMenu = ({ playerState, otherPlayers, gameMode, onSetReady }: { playerState: PlayerState, otherPlayers: RoomPlayer[], gameMode: GameMode, onSetReady: (e: ChangeEvent<HTMLInputElement>) => void }) => (
+const GuestMenu = ({ playerState, otherPlayers, gameMode, onSetReady, roomName }: { playerState: PlayerState, otherPlayers: RoomPlayer[], gameMode: GameMode, onSetReady: (e: ChangeEvent<HTMLInputElement>) => void, roomName: string }) => (
     <>
-        <Logo />
+        <Room roomName={roomName} />
         <PlayerList otherPlayers={otherPlayers} />
         <div className='flex flex-col text-lg justify-center px-4 pb-6'>
             <div className='text-center mb-2'>Wait for the game leader to start the game!</div>
@@ -95,7 +96,7 @@ const GuestMenu = ({ playerState, otherPlayers, gameMode, onSetReady }: { player
     </>
 )
 
-const Lobby = ({ playerName, playerState, otherPlayers, gameMode, onToggleMode }: LobbyProps) => {
+const Lobby = ({ playerName, playerState, otherPlayers, gameMode, onToggleMode, roomName }: LobbyProps) => {
     const socket = useContext(SocketContext)
 
     const selfPlayer: RoomPlayer = {
@@ -123,17 +124,17 @@ const Lobby = ({ playerName, playerState, otherPlayers, gameMode, onToggleMode }
     const card = 'bg-surface-card rounded-lg shadow-xs shadow-brand overflow-hidden'
 
     if (playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME) {
-        return <div className={card}><Logo /></div>
+        return <div className={card}><Room roomName={roomName} /></div>
     }
     if (playerState.host) {
-        return <div className={card}><HostMenu otherPlayers={allPlayers} gameMode={gameMode} onStartGame={startGame} onToggleMode={toggleMode} /></div>
+        return <div className={card}><HostMenu otherPlayers={allPlayers} gameMode={gameMode} onStartGame={startGame} onToggleMode={toggleMode} roomName={roomName} /></div>
     }
     if (!anyPlaying) {
-        return <div className={card}><GuestMenu playerState={playerState} otherPlayers={allPlayers} gameMode={gameMode} onSetReady={setReady} /></div>
+        return <div className={card}><GuestMenu playerState={playerState} otherPlayers={allPlayers} gameMode={gameMode} onSetReady={setReady} roomName={roomName} /></div>
     }
     return (
         <div className={card}>
-            <Logo />
+            <Room roomName={roomName} />
             <PlayerList otherPlayers={allPlayers} />
             <div className='px-4 py-6 text-center text-lg'>A game is on-going. Please wait for it to finish!</div>
         </div>

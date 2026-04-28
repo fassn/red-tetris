@@ -156,9 +156,9 @@ function RoomView({ roomName }: { roomName: string }) {
                     <div className='flex-1 overflow-y-auto flex flex-col items-center justify-center px-4 py-6'>
                         <div className='w-full max-w-xl flex flex-col gap-4'>
                             <section aria-label='Lobby'>
-                                <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
+                                <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} roomName={roomName} />
                             </section>
-                            <section className='flex flex-col h-40 lg:h-64 min-h-0' aria-label='Chat'>
+                            <section className='flex flex-col h-40 md:h-64 min-h-0' aria-label='Chat'>
                                 <Chat playerName={playerName} />
                             </section>
                         </div>
