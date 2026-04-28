@@ -10,6 +10,9 @@ const tabs = [
     { mode: GameMode.TIME_ATTACK, label: '⏱ Time Attack' },
 ] as const
 
+const playerCounts = [1, 2, 3, 4] as const
+type PlayerCount = typeof playerCounts[number]
+
 function formatDate(iso: string): string {
     return new Date(iso + 'Z').toLocaleDateString(undefined, {
         month: 'short', day: 'numeric', year: 'numeric',
@@ -18,7 +21,8 @@ function formatDate(iso: string): string {
 
 const Leaderboard = () => {
     const [activeMode, setActiveMode] = useState<GameMode>(GameMode.CLASSIC)
-    const [result, setResult] = useState<{ mode: GameMode; scores: HighscoreEntry[] } | null>(null)
+    const [activeCount, setActiveCount] = useState<PlayerCount>(1)
+    const [result, setResult] = useState<{ mode: GameMode; playerCount: PlayerCount; scores: HighscoreEntry[] } | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
 
     const switchMode = (mode: GameMode) => {
@@ -26,23 +30,28 @@ const Leaderboard = () => {
         setActiveMode(mode)
     }
 
+    const switchCount = (count: PlayerCount) => {
+        setFetchError(null)
+        setActiveCount(count)
+    }
+
     useEffect(() => {
         let cancelled = false
-        fetch(`/api/highscores?mode=${activeMode}`)
+        fetch(`/api/highscores?mode=${activeMode}&playerCount=${activeCount}`)
             .then((res) => res.json())
             .then((data) => {
-                if (!cancelled) setResult({ mode: activeMode, scores: data.scores ?? [] })
+                if (!cancelled) setResult({ mode: activeMode, playerCount: activeCount, scores: data.scores ?? [] })
             })
             .catch(() => {
                 if (!cancelled) {
                     setFetchError('Failed to load leaderboard. Please try again later.')
-                    setResult({ mode: activeMode, scores: [] })
+                    setResult({ mode: activeMode, playerCount: activeCount, scores: [] })
                 }
             })
         return () => { cancelled = true }
-    }, [activeMode])
+    }, [activeMode, activeCount])
 
-    const loading = !result || result.mode !== activeMode
+    const loading = !result || result.mode !== activeMode || result.playerCount !== activeCount
     const scores = result?.scores ?? []
 
     return (
@@ -61,8 +70,8 @@ const Leaderboard = () => {
             </header>
 
             <main className='flex-1 min-h-0 flex flex-col items-center px-4 py-8 overflow-y-auto'>
-                {/* Tabs */}
-                <div className='flex gap-1 bg-surface-card rounded-lg p-1 shadow-xs border border-edge mb-8' role='tablist' aria-label='Game mode'>
+                {/* Mode tabs */}
+                <div className='flex gap-1 bg-surface-card rounded-lg p-1 shadow-xs border border-edge mb-3' role='tablist' aria-label='Game mode'>
                     {tabs.map(({ mode, label }) => (
                         <button
                             key={mode}
@@ -80,11 +89,30 @@ const Leaderboard = () => {
                     ))}
                 </div>
 
+                {/* Player count sub-tabs */}
+                <div className='flex gap-1 bg-surface-card rounded-lg p-1 shadow-xs border border-edge mb-8' role='tablist' aria-label='Number of players'>
+                    {playerCounts.map(count => (
+                        <button
+                            key={count}
+                            role='tab'
+                            aria-selected={activeCount === count}
+                            onClick={() => switchCount(count)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand ${
+                                activeCount === count
+                                    ? 'bg-brand text-white shadow-xs'
+                                    : 'text-content-muted hover:text-content'
+                            }`}
+                        >
+                            {count}P
+                        </button>
+                    ))}
+                </div>
+
                 {/* Table */}
                 <div className='w-full max-w-lg bg-surface-card rounded-lg shadow-xs border border-edge overflow-hidden'>
                     <table className='w-full text-sm'>
                         <caption className='sr-only'>
-                            {activeMode === GameMode.CLASSIC ? 'Classic' : 'Time Attack'} mode high scores
+                            {activeMode === GameMode.CLASSIC ? 'Classic' : 'Time Attack'} mode {activeCount}-player high scores
                         </caption>
                         <thead>
                             <tr className='border-b border-edge bg-surface-input'>

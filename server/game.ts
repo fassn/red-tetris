@@ -31,6 +31,8 @@ class Game {
     isStarted: boolean
     isCountingDown: boolean
     private _countdownToken: number
+    /** Number of players when the game was started. Set at game start, not save time. */
+    startedPlayerCount: number
     tickCount: number
     dropInterval: number
     level: number
@@ -49,6 +51,7 @@ class Game {
         this.isStarted = false
         this.isCountingDown = false
         this._countdownToken = 0
+        this.startedPlayerCount = 0
         this.tickCount = 0
         this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
@@ -63,6 +66,7 @@ class Game {
         this.isStarted = false
         this.isCountingDown = false
         this._countdownToken++
+        this.startedPlayerCount = 0
         this.tickCount = 0
         this.dropInterval = dropIntervalForLevel(0)
         this.level = 0

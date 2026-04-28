@@ -138,6 +138,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
             }
 
             sd.game.isStarted = true
+            sd.game.startedPlayerCount = sd.game.players.length
             sd.game.startTimer()
             addPlayer()
 

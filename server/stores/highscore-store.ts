@@ -12,6 +12,7 @@ export interface HighscoreEntry {
     score: number
     gameMode: GameMode
     roomName: string
+    playerCount: number | null
     createdAt: string
 }
 
@@ -36,12 +37,20 @@ function createDb(): Database.Database {
                 score INTEGER NOT NULL,
                 game_mode TEXT NOT NULL,
                 room_name TEXT NOT NULL,
+                player_count INTEGER,
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
         `)
+
+        // Migrate: add player_count column if missing (for DBs created before this feature)
+        const cols = db.pragma('table_info(highscores)') as { name: string }[]
+        if (!cols.some(c => c.name === 'player_count')) {
+            db.exec('ALTER TABLE highscores ADD COLUMN player_count INTEGER')
+        }
+
         db.exec(`
-            CREATE INDEX IF NOT EXISTS idx_highscores_mode_score
-            ON highscores (game_mode, score DESC)
+            CREATE INDEX IF NOT EXISTS idx_highscores_mode_count_score
+            ON highscores (game_mode, player_count, score DESC)
         `)
 
         return db
@@ -69,28 +78,28 @@ export function closeDb(): void {
     }
 }
 
-export function saveScore(playerName: string, score: number, gameMode: GameMode, roomName: string): void {
+export function saveScore(playerName: string, score: number, gameMode: GameMode, roomName: string, playerCount: number): void {
     try {
         const stmt = getDb().prepare(
-            'INSERT INTO highscores (player_name, score, game_mode, room_name) VALUES (?, ?, ?, ?)'
+            'INSERT INTO highscores (player_name, score, game_mode, room_name, player_count) VALUES (?, ?, ?, ?, ?)'
         )
-        stmt.run(playerName, score, gameMode, roomName)
+        stmt.run(playerName, score, gameMode, roomName, playerCount)
     } catch (err) {
         storeLog.error('Failed to save highscore:', err)
     }
 }
 
-export function getTopScores(gameMode: GameMode, limit = 10): HighscoreEntry[] {
+export function getTopScores(gameMode: GameMode, playerCount: number, limit = 10): HighscoreEntry[] {
     try {
         const stmt = getDb().prepare(`
             SELECT id, player_name as playerName, score, game_mode as gameMode,
-                   room_name as roomName, created_at as createdAt
+                   room_name as roomName, player_count as playerCount, created_at as createdAt
             FROM highscores
-            WHERE game_mode = ?
+            WHERE game_mode = ? AND player_count = ?
             ORDER BY score DESC
             LIMIT ?
         `)
-        return stmt.all(gameMode, limit) as HighscoreEntry[]
+        return stmt.all(gameMode, playerCount, limit) as HighscoreEntry[]
     } catch (err) {
         storeLog.error('Failed to fetch highscores:', err)
         return []

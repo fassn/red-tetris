@@ -45,6 +45,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<Respon
         return res.status(400).json({ error: 'Invalid mode. Use CLASSIC or TIME_ATTACK.' })
     }
 
-    const scores = getTopScores(mode)
+    const rawCount = req.query.playerCount as string | undefined
+    const playerCount = rawCount ? parseInt(rawCount, 10) : 1
+    if (!Number.isInteger(playerCount) || playerCount < 1 || playerCount > 4) {
+        return res.status(400).json({ error: 'Invalid playerCount. Use 1–4.' })
+    }
+
+    const scores = getTopScores(mode, playerCount)
     return res.status(200).json({ scores })
 }

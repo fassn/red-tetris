@@ -106,7 +106,7 @@ export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game)
         const roomName = loser.socket.data.roomName ?? ''
         for (const player of game.players) {
             if (player.score > 0 && !player.forfeited) {
-                saveScore(player.name, player.score, game.gameMode, roomName)
+                saveScore(player.name, player.score, game.gameMode, roomName, game.startedPlayerCount)
             }
         }
         game.reset()
@@ -138,7 +138,7 @@ export function emitTimeAttackEnd(io: TypedServer, game: Game) {
     const roomName = activePlayers[0].socket.data.roomName ?? ''
     for (const player of game.players) {
         if (player.score > 0 && !player.forfeited) {
-            saveScore(player.name, player.score, game.gameMode, roomName)
+            saveScore(player.name, player.score, game.gameMode, roomName, game.startedPlayerCount)
         }
     }
 
