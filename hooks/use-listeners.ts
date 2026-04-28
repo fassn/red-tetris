@@ -15,15 +15,21 @@ type useListenersProps = {
     cascadeTiles: MutableRefObject<TileProps[]>,
     getCascadeTilesCalled: MutableRefObject<boolean>,
     playSound: (name: SoundName) => void,
+    setCountdown: React.Dispatch<React.SetStateAction<number | null>>,
+    goTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
 }
 
-const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound }: useListenersProps) => {
+const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound, setCountdown, goTimerRef }: useListenersProps) => {
     const socket = useContext(SocketContext)
     useEffect(() => {
         const handleNewGame = ({ newStack, firstPiece, secondPiece }: { newStack: Stack[], firstPiece: PieceProps, secondPiece: PieceProps}) => {
             stack.current = newStack
             currentPiece.current = firstPiece
             setNextPiece(secondPiece)
+            // Show "GO!" overlay for 200ms
+            setCountdown(0)
+            if (goTimerRef.current) clearTimeout(goTimerRef.current)
+            goTimerRef.current = setTimeout(() => setCountdown(null), 200)
         }
 
         const handleNewStack = ({ newStack, newScore, linesCleared }: { newStack: Stack[], newScore: number, linesCleared: number }) => {
@@ -82,6 +88,8 @@ const useListeners = ({ stack, currentPiece, setNextPiece, setScore, setLevel, s
             setLevel(0)
             setTotalLines(0)
             gameWon.current = false
+            setCountdown(null)
+            if (goTimerRef.current) clearTimeout(goTimerRef.current)
         }
 
         socket.on('newGame', handleNewGame)

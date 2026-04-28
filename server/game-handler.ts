@@ -21,6 +21,8 @@ import { isValidGameMode, isValidMessage } from "./validation"
 import { isRateLimited } from "./rate-limiter"
 import { createLogger } from "./logger"
 
+const COUNTDOWN_DELAY = Number(process.env.COUNTDOWN_DELAY_MS ?? 333)
+
 export type GameDeps = {
     sessionStore: InMemorySessionStore
     messageStore: InMemoryMessageStore
@@ -122,30 +124,47 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const startGame = async () => {
         if (!sd.playerState.host) return
-        if (sd.game.isStarted) return
-        sd.game.isStarted = true
-        sd.game.startTimer()
-        addPlayer()
+        if (sd.game.isStarted || sd.game.isCountingDown) return
 
-        // Transition all eligible players to PLAYING
-        for (const player of sd.game.players) {
-            if (!player.pieces[0] || !player.pieces[1]) continue
-            const ps = player.socket.data.playerState
-            if (ps.host || ps.playState === PlayState.READY) {
-                ps.playState = PlayState.PLAYING
+        const token = sd.game.startCountdown()
+        try {
+            for (const count of [3, 2, 1]) {
+                io.to(sd.roomName).emit('gameCountdown', { count })
+                await new Promise<void>(r => setTimeout(r, COUNTDOWN_DELAY))
+                if (!sd.game.isCountdownValid(token)) {
+                    io.to(sd.roomName).emit('gameCountdown', { count: -1 })
+                    return
+                }
             }
-            io.to(player.socket.id).emit('newGame', {
-                newStack: player.stack,
-                firstPiece: sd.game.getPieceProps(player.pieces[0]),
-                secondPiece: sd.game.getPieceProps(player.pieces[1])
-            })
-        }
 
-        await broadcastRoomState()
+            sd.game.isStarted = true
+            sd.game.startTimer()
+            addPlayer()
+
+            // Transition all eligible players to PLAYING
+            for (const player of sd.game.players) {
+                if (!player.pieces[0] || !player.pieces[1]) continue
+                const ps = player.socket.data.playerState
+                if (ps.host || ps.playState === PlayState.READY) {
+                    ps.playState = PlayState.PLAYING
+                }
+                io.to(player.socket.id).emit('newGame', {
+                    newStack: player.stack,
+                    firstPiece: sd.game.getPieceProps(player.pieces[0]),
+                    secondPiece: sd.game.getPieceProps(player.pieces[1])
+                })
+            }
+
+            // count=0 tells non-playing observers to clear their countdown overlay
+            io.to(sd.roomName).emit('gameCountdown', { count: 0 })
+            await broadcastRoomState()
+        } finally {
+            sd.game.isCountingDown = false
+        }
     }
 
     const setReady = async (isReady: boolean) => {
-        if (sd.game.isStarted) return
+        if (sd.game.isStarted || sd.game.isCountingDown) return
         if (isReady) {
             addPlayer()
             sd.playerState.playState = PlayState.READY
@@ -230,7 +249,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const setGameMode = async (mode: GameMode) => {
         if (!sd.playerState.host) return
-        if (sd.game.isStarted) return
+        if (sd.game.isStarted || sd.game.isCountingDown) return
         if (!isValidGameMode(mode)) return
         if (isRateLimited(sd.playerId, 'mode')) return
         sd.game.gameMode = mode
@@ -241,6 +260,11 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     }
 
     const onDisconnect = async () => {
+        // Cancel any active countdown so the async startGame loop aborts cleanly
+        if (sd.game.isCountingDown) {
+            sd.game.cancelCountdown()
+        }
+
         // If the player was actively playing, treat disconnect as forfeit
         if (isPlayerActive()) {
             const player = sd.game.players.find((p: Player) => p.id === sd.playerId)

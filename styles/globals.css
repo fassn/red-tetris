@@ -4,6 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes countdown-pop {
+  from { transform: scale(1.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@utility animate-countdown-pop {
+  animation: countdown-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @theme {
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);

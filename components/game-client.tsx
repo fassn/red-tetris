@@ -25,9 +25,11 @@ type GameClientProps = {
     gameMode: GameMode
     timeRemaining: number
     bottomSlot?: React.ReactNode
+    setCountdown: React.Dispatch<React.SetStateAction<number | null>>
+    goTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
 }
 
-const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining, bottomSlot }: GameClientProps) => {
+const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining, bottomSlot, setCountdown, goTimerRef }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const { theme } = useTheme()
     const { play: playSound, musicEnabled, startMusic, stopMusic } = useSound()
@@ -100,7 +102,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
 
     useEffect(() => { syncCanvasTheme() }, [theme])
 
-    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound })
+    useListeners({ stack, currentPiece, setNextPiece, setScore, setLevel, setTotalLines, gameWon, cascadeTiles, getCascadeTilesCalled, playSound, setCountdown, goTimerRef })
 
     useEffect(() => {
         if (playerState.playState === PlayState.PLAYING && musicEnabled) {
@@ -320,6 +322,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                     <div className='hidden sm:flex lg:hidden flex-row items-stretch justify-center gap-2 shrink-0 h-64 py-1'>
                         {activeOpponents.map(p => (
                                 <MiniBoard
+                                    key={p.playerId}
                                     playerName={p.playerName}
                                     playState={p.state.playState}
                                     stack={opponentBoards[p.playerId]?.stack ?? createEmptyStack()}

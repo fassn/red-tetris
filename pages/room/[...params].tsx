@@ -6,6 +6,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import Chat, { type Message, nextMsgId } from '../../components/chat'
 import ConnectionOverlay from '../../components/connection-overlay'
+import GameCountdown from '../../components/game-countdown'
 import NamePrompt from '../../components/name-prompt'
 import Lobby from '../../components/lobby'
 import Footer from '../../components/footer'
@@ -46,6 +47,9 @@ function RoomView({ roomName }: { roomName: string }) {
         gameMode,
         setGameMode,
         timeRemaining,
+        countdown,
+        setCountdown,
+        goTimerRef,
         connectionStatus,
         connectionError,
         navigateHome,
@@ -194,12 +198,14 @@ function RoomView({ roomName }: { roomName: string }) {
                     className={`${isInGame ? 'flex-1 min-h-0' : 'hidden'} p-2 sm:p-4 lg:p-6`}
                     aria-label='Game'
                 >
-                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} /> : undefined} />
+                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} /> : undefined} setCountdown={setCountdown} goTimerRef={goTimerRef} />
                 </section>
             </main>
 
             <Footer />
         </div>
+
+        <GameCountdown count={countdown} />
 
         {forfeitDialogVisible && (
             <div

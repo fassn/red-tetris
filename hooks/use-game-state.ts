@@ -32,6 +32,8 @@ export function useGameState(roomName: string) {
     const [opponentBoards, setOpponentBoards] = useState<OpponentBoards>({})
     const [gameMode, setGameMode] = useState<GameMode>(GameMode.CLASSIC)
     const [timeRemaining, setTimeRemaining] = useState(-1)
+    const [countdown, setCountdown] = useState<number | null>(null)
+    const goTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
     const [backNavigationPending, setBackNavigationPending] = useState(false)
@@ -144,23 +146,39 @@ export function useGameState(roomName: string) {
             setGameMode(gameMode)
         }
 
+        const handleGameCountdown = ({ count }: { count: number }) => {
+            if (count > 0) {
+                setCountdown(count)
+            } else if (count === 0) {
+                // Spectators/WAITING: clear overlay. Don't clobber "GO!" (countdown===0 set by newGame)
+                setCountdown(prev => (prev !== null && prev > 0) ? null : prev)
+            } else {
+                // count === -1: cancelled
+                setCountdown(null)
+            }
+        }
+
         socket.on('roomIsFull', handleRoomFull)
         socket.on('session', handleSession)
         socket.on('newState', handleNewState)
         socket.on('opponentStack', handleOpponentStack)
         socket.on('timeUpdate', handleTimeUpdate)
         socket.on('gameModeChanged', handleGameModeChanged)
+        socket.on('gameCountdown', handleGameCountdown)
 
         return () => {
             socket.disconnect()
             localStorage.removeItem('sessionId')
             router.beforePopState(() => true)
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            if (goTimerRef.current) clearTimeout(goTimerRef.current)
             socket.off('roomIsFull', handleRoomFull)
             socket.off('session', handleSession)
             socket.off('newState', handleNewState)
             socket.off('opponentStack', handleOpponentStack)
             socket.off('timeUpdate', handleTimeUpdate)
             socket.off('gameModeChanged', handleGameModeChanged)
+            socket.off('gameCountdown', handleGameCountdown)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -188,6 +206,9 @@ export function useGameState(roomName: string) {
         gameMode,
         setGameMode,
         timeRemaining,
+        countdown,
+        setCountdown,
+        goTimerRef,
         connectionStatus,
         connectionError,
         navigateHome,

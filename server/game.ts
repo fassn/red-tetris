@@ -29,6 +29,8 @@ class Game {
     players: Player[]
     firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
+    isCountingDown: boolean
+    private _countdownToken: number
     tickCount: number
     dropInterval: number
     level: number
@@ -45,6 +47,8 @@ class Game {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
 
         this.isStarted = false
+        this.isCountingDown = false
+        this._countdownToken = 0
         this.tickCount = 0
         this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
@@ -57,6 +61,8 @@ class Game {
     reset() {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.isStarted = false
+        this.isCountingDown = false
+        this._countdownToken++
         this.tickCount = 0
         this.dropInterval = dropIntervalForLevel(0)
         this.level = 0
@@ -64,6 +70,23 @@ class Game {
         this.timeRemainingTicks = -1
         this._lastEmittedSecond = -1
         this.players = []
+    }
+
+    /** Start a new countdown. Returns a token that must be passed to isCountdownValid(). */
+    startCountdown(): number {
+        this.isCountingDown = true
+        return ++this._countdownToken
+    }
+
+    /** Returns true if the countdown token is still valid (not cancelled/reset). */
+    isCountdownValid(token: number): boolean {
+        return this.isCountingDown && this._countdownToken === token
+    }
+
+    /** Cancel the current countdown (e.g. on host disconnect). */
+    cancelCountdown(): void {
+        this._countdownToken++
+        this.isCountingDown = false
     }
 
     /** Start the timer for TIME_ATTACK mode */

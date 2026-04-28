@@ -13,6 +13,7 @@ export interface ServerToClientEvents {
     newMoveLeft: (newX: number) => void
     newMoveRight: (newX: number) => void
     newPoints: (points: [Point, Point, Point, Point]) => void
+    gameCountdown: (data: { count: number }) => void
     gameOver: (data: { won: boolean }) => void
     resetGame: () => void
     newIncomingMsg: (msg: Message) => void
