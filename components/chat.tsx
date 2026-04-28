@@ -1,7 +1,7 @@
 import { KeyboardEvent, useContext, useEffect, useRef, useState } from "react";
 import { SocketContext } from "../context/socket";
 
-type Message = {
+export type Message = {
     id: string,
     author: string,
     message: string
@@ -9,15 +9,18 @@ type Message = {
 
 type ChatProps = {
     playerName: string
+    messages: Message[]
+    onSend: (msg: Message) => void
 }
 
-let msgCounter = 0
-const nextMsgId = () => `msg-${Date.now()}-${++msgCounter}`
+export const nextMsgId = (() => {
+    let counter = 0
+    return () => `msg-${Date.now()}-${++counter}`
+})()
 
-const Chat = ({ playerName }: ChatProps) => {
+const Chat = ({ playerName, messages, onSend }: ChatProps) => {
     const socket = useContext(SocketContext)
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState<Array<Message>>([])
     const bottomRef = useRef<HTMLDivElement>(null)
 
     // Auto-scroll to bottom when new messages arrive
@@ -26,36 +29,12 @@ const Chat = ({ playerName }: ChatProps) => {
         bottomRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' })
     }, [messages])
 
-    useEffect(() => {
-        const handleMessages = (msgs: { author: string; message: string }[]) => {
-            setMessages(msgs.map(m => ({ ...m, id: nextMsgId() })))
-        }
-
-        const handleNewMsg = (msg: { author: string; message: string }) => {
-            setMessages((prev) => [
-                ...prev,
-                { id: nextMsgId(), author: msg.author, message: msg.message }
-            ])
-        }
-
-        socket.on('messages', handleMessages)
-        socket.on('newIncomingMsg', handleNewMsg)
-
-        return () => {
-            socket.off('messages', handleMessages)
-            socket.off('newIncomingMsg', handleNewMsg)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
     const sendMessage = () => {
         const trimmed = message.trim()
         if (!trimmed) return
+        const msg: Message = { id: nextMsgId(), author: playerName, message: trimmed }
         socket.emit('createdMessage', { author: playerName, message: trimmed })
-        setMessages((prev) => [
-            ...prev,
-            { id: nextMsgId(), author: playerName, message: trimmed }
-        ])
+        onSend(msg)
         setMessage('')
     }
 

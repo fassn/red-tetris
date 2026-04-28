@@ -2,15 +2,16 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
-import Chat from '../../components/chat'
+import Chat, { type Message, nextMsgId } from '../../components/chat'
 import ConnectionOverlay from '../../components/connection-overlay'
 import NamePrompt from '../../components/name-prompt'
 import Lobby from '../../components/lobby'
 import Footer from '../../components/footer'
 import { useGameState } from '../../hooks/use-game-state'
 import { isValidName } from '../../shared/validation'
+import { SocketContext } from '../../context/socket'
 
 const GameClient = dynamic(() => import('../../components/game-client'), { ssr: false })
 
@@ -35,6 +36,7 @@ const RoomPage: NextPage = () => {
 }
 
 function RoomView({ roomName }: { roomName: string }) {
+    const socket = useContext(SocketContext)
     const {
         playerName,
         isInGame,
@@ -54,6 +56,29 @@ function RoomView({ roomName }: { roomName: string }) {
         submitPlayerName,
         cancelNamePrompt,
     } = useGameState(roomName)
+
+    // Chat messages lifted here so they persist across game↔lobby transitions
+    const [chatMessages, setChatMessages] = useState<Message[]>([])
+
+    useEffect(() => {
+        const handleMessages = (msgs: { author: string; message: string }[]) => {
+            setChatMessages(msgs.map(m => ({ ...m, id: nextMsgId() })))
+        }
+        const handleNewMsg = (msg: { author: string; message: string }) => {
+            setChatMessages(prev => [...prev, { ...msg, id: nextMsgId() }])
+        }
+        socket.on('messages', handleMessages)
+        socket.on('newIncomingMsg', handleNewMsg)
+        return () => {
+            socket.off('messages', handleMessages)
+            socket.off('newIncomingMsg', handleNewMsg)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const handleChatSend = useCallback((msg: Message) => {
+        setChatMessages(prev => [...prev, msg])
+    }, [])
 
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
     const forfeitDialogVisible = showForfeitDialog || backNavigationPending
@@ -159,7 +184,7 @@ function RoomView({ roomName }: { roomName: string }) {
                                 <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} roomName={roomName} />
                             </section>
                             <section className='flex flex-col h-40 md:h-64 min-h-0' aria-label='Chat'>
-                                <Chat playerName={playerName} />
+                                <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} />
                             </section>
                         </div>
                     </div>
@@ -169,7 +194,7 @@ function RoomView({ roomName }: { roomName: string }) {
                     className={`${isInGame ? 'flex-1 min-h-0' : 'hidden'} p-2 sm:p-4 lg:p-6`}
                     aria-label='Game'
                 >
-                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} /> : undefined} />
+                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} /> : undefined} />
                 </section>
             </main>
 
