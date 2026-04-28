@@ -153,12 +153,12 @@ function RoomView({ roomName }: { roomName: string }) {
             <main id='main-content' className='flex-1 min-h-0 flex flex-col' aria-label='Game room'>
                 {/* LOBBY: centered single column, all breakpoints */}
                 {!isInGame && (
-                    <div className='flex-1 overflow-y-auto flex flex-col items-center px-4 py-6'>
-                        <div className='w-full max-w-sm flex flex-col gap-4'>
+                    <div className='flex-1 overflow-y-auto flex flex-col items-center justify-center px-4 py-6'>
+                        <div className='w-full max-w-xl flex flex-col gap-4'>
                             <section aria-label='Lobby'>
                                 <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} />
                             </section>
-                            <section className='flex flex-col h-64 min-h-0' aria-label='Chat'>
+                            <section className='flex flex-col h-40 lg:h-64 min-h-0' aria-label='Chat'>
                                 <Chat playerName={playerName} />
                             </section>
                         </div>

@@ -99,14 +99,14 @@ const MiniBoard = ({ playerName, playState, stack, tileSize, onContainerResize, 
     return (
         <div className='h-full flex flex-col gap-0.5'>
             {!hideLabel && (
-                <div className='flex items-center gap-1 shrink-0 overflow-hidden px-0.5'>
-                    <span className='text-xs font-semibold truncate flex-1 min-w-0'>{playerName}</span>
+                <div className='flex justify-center items-center gap-3 shrink-0 overflow-hidden px-0.5'>
+                    <span className='text-xs font-semibold truncate min-w-0'>{playerName}</span>
                     <span className='text-xs shrink-0'>{stateEmoji}</span>
                 </div>
             )}
             <div
                 ref={canvasAreaRef}
-                className='flex-1 min-h-0 flex items-center justify-center min-w-0'
+                className='flex-1 min-h-0 flex items-start justify-center min-w-0'
             >
                 <canvas
                     ref={canvasRef}
