@@ -5,7 +5,7 @@ import { syncCanvasTheme, getTileBg, setupHiDPI, resolveColor } from '../utils/d
 import { PlayState, RGBA, Stack } from '../shared/types'
 
 export const MINI_TILE = 12
-const MINI_SPACING = 1
+export const MINI_SPACING = 1
 const MINI_RADIUS = 2
 const MINI_WIDTH = COLS * MINI_TILE + (COLS - 1) * MINI_SPACING
 const MINI_HEIGHT = ROWS * MINI_TILE + (ROWS - 1) * MINI_SPACING

@@ -122,6 +122,19 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     await assignHost()
 
+    // Push current board states so spectators joining mid-game see boards immediately
+    if (sd.game.isStarted) {
+        for (const player of sd.game.players) {
+            if (player.id !== sd.playerId && player.socket.data.playerState.playState === PlayState.PLAYING) {
+                socket.emit('opponentStack', {
+                    playerId: player.id,
+                    playerName: player.name,
+                    stack: player.stack,
+                })
+            }
+        }
+    }
+
     const startGame = async () => {
         if (!sd.playerState.host) return
         if (sd.game.isStarted || sd.game.isCountingDown) return

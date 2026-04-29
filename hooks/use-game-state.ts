@@ -34,6 +34,7 @@ export function useGameState(roomName: string) {
     const [timeRemaining, setTimeRemaining] = useState(-1)
     const [countdown, setCountdown] = useState<number | null>(null)
     const goTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const prevPlayStateRef = useRef<PlayState | null>(null)
 
     const isInGame = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
     const [backNavigationPending, setBackNavigationPending] = useState(false)
@@ -117,8 +118,14 @@ export function useGameState(roomName: string) {
 
         const handleNewState = ({ playerState, otherPlayers, gameMode: mode }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[], gameMode?: GameMode }) => {
             if (playerState) {
+                const prev = prevPlayStateRef.current
+                prevPlayStateRef.current = playerState.playState
                 setPlayerState(playerState)
-                if (playerState.playState === PlayState.WAITING) {
+                if (
+                    playerState.playState === PlayState.WAITING &&
+                    prev !== null &&
+                    prev !== PlayState.WAITING
+                ) {
                     setOpponentBoards({})
                     setTimeRemaining(-1)
                 }

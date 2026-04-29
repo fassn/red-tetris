@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import Chat, { type Message, nextMsgId } from '../../components/chat'
 import ConnectionOverlay from '../../components/connection-overlay'
@@ -10,8 +10,11 @@ import GameCountdown from '../../components/game-countdown'
 import NamePrompt from '../../components/name-prompt'
 import Lobby from '../../components/lobby'
 import Footer from '../../components/footer'
+import SpectatorPanel, { type SpectatorBoard } from '../../components/spectator-panel'
 import { useGameState } from '../../hooks/use-game-state'
 import { isValidName } from '../../shared/validation'
+import { PlayState } from '../../shared/types'
+import { createEmptyStack } from '../../shared/stack'
 import { SocketContext } from '../../context/socket'
 
 const GameClient = dynamic(() => import('../../components/game-client'), { ssr: false })
@@ -84,6 +87,18 @@ function RoomView({ roomName }: { roomName: string }) {
         setChatMessages(prev => [...prev, msg])
     }, [])
 
+    const spectatorBoards = useMemo<SpectatorBoard[]>(
+        () =>
+            otherPlayers
+                .filter((p) => p.state.playState === PlayState.PLAYING)
+                .map((p) => ({
+                    playerId: p.playerId,
+                    playerName: p.playerName,
+                    playState: p.state.playState,
+                    stack: opponentBoards[p.playerId]?.stack ?? createEmptyStack(),
+                })),
+        [otherPlayers, opponentBoards]
+    )
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
     const forfeitDialogVisible = showForfeitDialog || backNavigationPending
     const mainContentRef = useRef<HTMLDivElement>(null)
@@ -180,18 +195,43 @@ function RoomView({ roomName }: { roomName: string }) {
                 <div className='w-16' />
             </header>
             <main id='main-content' className='flex-1 min-h-0 flex flex-col' aria-label='Game room'>
-                {/* LOBBY: centered single column, all breakpoints */}
+                {/* LOBBY */}
                 {!isInGame && (
-                    <div className='flex-1 overflow-y-auto flex flex-col items-center justify-center px-4 py-6'>
-                        <div className='w-full max-w-xl flex flex-col gap-4'>
-                            <section aria-label='Lobby'>
-                                <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} roomName={roomName} />
-                            </section>
-                            <section className='flex flex-col h-40 md:h-64 min-h-0' aria-label='Chat'>
-                                <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} />
-                            </section>
+                    spectatorBoards.length > 0 ? (
+                        /* Desktop spectating layout: left=lobby+chat, right=live boards */
+                        <div className='flex-1 min-h-0 flex flex-col lg:flex-row'>
+                            <div className='lg:w-96 lg:shrink-0 overflow-y-auto flex flex-col items-center px-4 py-6'>
+                                <div className='w-full max-w-xl lg:max-w-none flex flex-col gap-4'>
+                                    <section aria-label='Lobby'>
+                                        <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} roomName={roomName} />
+                                    </section>
+                                    <section className='flex flex-col h-40 md:h-64 min-h-0' aria-label='Chat'>
+                                        <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} />
+                                    </section>
+                                </div>
+                            </div>
+                            <div className='hidden lg:flex flex-1 min-w-0 min-h-0 flex-col p-4 border-l border-edge'>
+                                <p className='text-xs font-semibold uppercase tracking-widest text-content-secondary mb-3 shrink-0'>
+                                    Live
+                                </p>
+                                <div className='flex-1 min-h-0'>
+                                    <SpectatorPanel boards={spectatorBoards} />
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* No ongoing game: centered single column */
+                        <div className='flex-1 overflow-y-auto flex flex-col items-center justify-center px-4 py-6'>
+                            <div className='w-full max-w-xl flex flex-col gap-4'>
+                                <section aria-label='Lobby'>
+                                    <Lobby playerName={playerName} playerState={playerState} otherPlayers={otherPlayers} gameMode={gameMode} onToggleMode={setGameMode} roomName={roomName} />
+                                </section>
+                                <section className='flex flex-col h-40 md:h-64 min-h-0' aria-label='Chat'>
+                                    <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} />
+                                </section>
+                            </div>
+                        </div>
+                    )
                 )}
                 {/* GAME: always mounted, shown only while playing */}
                 <section

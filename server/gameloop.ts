@@ -21,6 +21,14 @@ function broadcastPlayerStates(io: TypedServer, game: Game) {
             otherPlayers,
         })
     }
+    // Notify spectators (sockets in the room that are not game players)
+    if (game.players.length > 0) {
+        const roomName = game.players[0].socket.data.roomName ?? ''
+        const gameSocketIds = game.players.map((p) => p.socket.id)
+        io.to(roomName).except(gameSocketIds).emit('newState', {
+            otherPlayers: allPlayers,
+        })
+    }
 }
 
 export function emitNextPiece(io: TypedServer, game: Game, player: Player, playerPieces: Piece[]) {
@@ -55,14 +63,12 @@ export function emitStackAndScore(io: TypedServer, game: Game, player: Player, p
 }
 
 export function broadcastOpponentStack(io: TypedServer, game: Game, player: Player) {
-    for (const other of game.players) {
-        if (other.id === player.id) continue
-        io.to(other.socket.id).emit('opponentStack', {
-            playerId: player.id,
-            playerName: player.name,
-            stack: player.stack,
-        })
-    }
+    const roomName = player.socket.data.roomName ?? ''
+    io.to(roomName).except(player.socket.id).emit('opponentStack', {
+        playerId: player.id,
+        playerName: player.name,
+        stack: player.stack,
+    })
 }
 
 export function checkIfPieceHasHit(currentPiece: Piece) {
