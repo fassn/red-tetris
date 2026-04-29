@@ -1,17 +1,7 @@
-import ThemeToggle from './theme-toggle'
-import SoundToggle from './sound-toggle'
-import MusicToggle from './music-toggle'
-
 const Footer = () => {
     return (
-        <footer className='flex w-full h-10 shrink-0 bg-brand px-4 justify-between items-center z-10'>
-            <div className='w-8' />
+        <footer className='flex w-full h-10 shrink-0 bg-brand px-4 justify-center items-center z-10'>
             <div className='text-center uppercase text-sm'>© 2026 fassn</div>
-            <div className='flex items-center gap-1'>
-                <MusicToggle />
-                <SoundToggle />
-                <ThemeToggle />
-            </div>
         </footer>
     )
 }

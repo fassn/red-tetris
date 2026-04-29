@@ -101,6 +101,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
                 playerState: sock.data.playerState,
                 otherPlayers,
                 gameMode: sd.game.gameMode,
+                isPaused: sd.game.isPaused,
             })
         }
     }
@@ -174,7 +175,8 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
                 io.to(player.socket.id).emit('newGame', {
                     newStack: player.stack,
                     firstPiece: sd.game.getPieceProps(player.pieces[0]),
-                    secondPiece: sd.game.getPieceProps(player.pieces[1])
+                    secondPiece: sd.game.getPieceProps(player.pieces[1]),
+                    startedPlayerCount: sd.game.startedPlayerCount,
                 })
             }
 
@@ -216,6 +218,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveDown = () => {
         if (!isPlayerActive()) return
+        if (sd.game.isPaused) return
         if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
@@ -227,6 +230,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveLeft = () => {
         if (!isPlayerActive()) return
+        if (sd.game.isPaused) return
         if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
@@ -238,6 +242,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const moveRight = () => {
         if (!isPlayerActive()) return
+        if (sd.game.isPaused) return
         if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
@@ -249,6 +254,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
 
     const rotate = () => {
         if (!isPlayerActive()) return
+        if (sd.game.isPaused) return
         if (isRateLimited(sd.playerId, 'move')) return
         const playerStack = sd.game.getPlayerStack(sd.playerId)
         const playerPieces = sd.game.getPlayerPieces(sd.playerId)
@@ -268,6 +274,19 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
         }
         socket.to(sd.roomName).emit('newIncomingMsg', sanitized)
         deps.messageStore.saveMessage(sd.roomName, sanitized)
+    }
+
+    const pauseGame = async () => {
+        if (!isPlayerActive()) return
+        if (sd.game.startedPlayerCount > 1) return
+        if (isRateLimited(sd.playerId, 'move')) return
+        sd.game.isPaused = !sd.game.isPaused
+        if (sd.game.isPaused) {
+            io.to(sd.roomName).emit('gamePaused')
+        } else {
+            io.to(sd.roomName).emit('gameResumed')
+        }
+        await broadcastRoomState()
     }
 
     const setGameMode = async (mode: GameMode) => {
@@ -346,6 +365,7 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
     socket.on('setReady', safe('setReady', setReady))
     socket.on('startGame', safe('startGame', startGame))
     socket.on('setGameMode', safe('setGameMode', setGameMode))
+    socket.on('pauseGame', safe('pauseGame', pauseGame))
 
     socket.on('moveDown', safe('moveDown', moveDown))
     socket.on('moveLeft', safe('moveLeft', moveLeft))

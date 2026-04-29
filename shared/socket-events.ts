@@ -4,8 +4,8 @@ export interface ServerToClientEvents {
     session: (data: { sessionId: string; playerId: string }) => void
     messages: (messages: Message[]) => void
     roomIsFull: () => void
-    newState: (data: { playerState?: PlayerState; otherPlayers?: RoomPlayer[]; gameMode?: GameMode }) => void
-    newGame: (data: { newStack: Stack[]; firstPiece: PieceProps; secondPiece: PieceProps }) => void
+    newState: (data: { playerState?: PlayerState; otherPlayers?: RoomPlayer[]; gameMode?: GameMode; isPaused?: boolean }) => void
+    newGame: (data: { newStack: Stack[]; firstPiece: PieceProps; secondPiece: PieceProps; startedPlayerCount: number }) => void
     newStack: (data: { newStack: Stack[]; newScore: number; linesCleared: number }) => void
     newPosition: (newY: number) => void
     newPiece: (data: { newCurrentPiece: PieceProps; newNextPiece: PieceProps }) => void
@@ -21,6 +21,8 @@ export interface ServerToClientEvents {
     levelUp: (data: { level: number; dropInterval: number }) => void
     timeUpdate: (data: { remaining: number }) => void
     gameModeChanged: (data: { gameMode: GameMode }) => void
+    gamePaused: () => void
+    gameResumed: () => void
 }
 
 export interface ClientToServerEvents {
@@ -32,5 +34,6 @@ export interface ClientToServerEvents {
     rotate: () => void
     quitGame: () => void
     createdMessage: (msg: Message) => void
+    pauseGame: () => void
     setGameMode: (mode: GameMode) => void
 }

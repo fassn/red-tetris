@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import Footer from '../components/footer'
+import Navbar from '../components/navbar'
 import { GameMode } from '../shared/types'
 import type { HighscoreEntry } from '../server/stores/highscore-store'
 
@@ -61,13 +62,10 @@ const Leaderboard = () => {
                 <meta name='description' content='Red Tetris high scores' />
             </Head>
 
-            <header className='flex items-center justify-between bg-brand px-4 h-10 shrink-0'>
-                <Link href='/' className='text-sm font-medium hover:underline'>
-                    ← Back to game
-                </Link>
-                <h1 className='text-lg font-bold uppercase tracking-wider'>Leaderboard</h1>
-                <div className='w-20' />
-            </header>
+            <Navbar
+                title='Leaderboard'
+                left={<Link href='/' className='text-sm font-medium hover:underline'>← Back to game</Link>}
+            />
 
             <main className='flex-1 min-h-0 flex flex-col items-center px-4 py-8 overflow-y-auto'>
                 {/* Mode tabs */}

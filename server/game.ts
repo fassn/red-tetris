@@ -30,6 +30,7 @@ class Game {
     firstPiecesRandomProps: { type: PieceType, color: RGBA }[] = Array<{ type: PieceType, color: RGBA }>(2)
     isStarted: boolean
     isCountingDown: boolean
+    isPaused: boolean
     private _countdownToken: number
     /** Number of players when the game was started. Set at game start, not save time. */
     startedPlayerCount: number
@@ -50,6 +51,7 @@ class Game {
 
         this.isStarted = false
         this.isCountingDown = false
+        this.isPaused = false
         this._countdownToken = 0
         this.startedPlayerCount = 0
         this.tickCount = 0
@@ -65,6 +67,7 @@ class Game {
         this.firstPiecesRandomProps = [this.getRandomPieceProps(), this.getRandomPieceProps()]
         this.isStarted = false
         this.isCountingDown = false
+        this.isPaused = false
         this._countdownToken++
         this.startedPlayerCount = 0
         this.tickCount = 0

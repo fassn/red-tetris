@@ -27,9 +27,12 @@ type GameClientProps = {
     bottomSlot?: React.ReactNode
     setCountdown: React.Dispatch<React.SetStateAction<number | null>>
     goTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+    isPaused: boolean
+    canPause: boolean
+    togglePause: () => void
 }
 
-const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining, bottomSlot, setCountdown, goTimerRef }: GameClientProps) => {
+const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeRemaining, bottomSlot, setCountdown, goTimerRef, isPaused, canPause, togglePause }: GameClientProps) => {
     const socket = useContext(SocketContext)
     const { theme } = useTheme()
     const { play: playSound, musicEnabled, startMusic, stopMusic } = useSound()
@@ -152,7 +155,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
             drawStack(ctx, stack.current)
 
             if (playerState.playState === PlayState.PLAYING) {
-                if (keysDown.current.has('ArrowDown') && ts - lastSoftDrop >= SOFT_DROP_MS) {
+                if (!isPaused && keysDown.current.has('ArrowDown') && ts - lastSoftDrop >= SOFT_DROP_MS) {
                     socket.emit('moveDown')
                     lastSoftDrop = ts
                 }
@@ -180,6 +183,11 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
         const onKeyDown = (e: KeyboardEvent) => {
             if ((e.target as HTMLElement)?.tagName === 'INPUT') return
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault()
+            if (e.key === 'p' && !e.repeat && canPause && playerState.playState === PlayState.PLAYING) {
+                togglePause()
+                return
+            }
+            if (isPaused) return
             if (e.key === 'ArrowUp' && !keysDown.current.has('ArrowUp')) socket.emit('rotate')
             keysDown.current.add(e.key)
             if (e.key === 'ArrowLeft')  socket.emit('moveLeft')
@@ -192,7 +200,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
             window.removeEventListener('keydown', onKeyDown)
             window.removeEventListener('keyup', onKeyUp)
         }
-    }, [socket])
+    }, [socket, canPause, isPaused, togglePause, playerState.playState])
 
     const isPlaying   = playerState.playState === PlayState.PLAYING || playerState.playState === PlayState.ENDGAME
     const isEndgame   = playerState.playState === PlayState.ENDGAME
@@ -315,6 +323,17 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                     {isEndgame && (
                         <EndgameOverlay won={gameWon.current} score={score} level={level} totalLines={totalLines} />
                     )}
+                    {isPaused && !isEndgame && (
+                        <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/60 gap-4'>
+                            <p className='text-3xl font-bold uppercase tracking-widest text-white'>Paused</p>
+                            <button
+                                onClick={togglePause}
+                                className='px-6 py-2 text-sm font-semibold uppercase tracking-wide bg-brand rounded-sm hover:bg-brand-hover transition-colors focus:outline-hidden focus:ring-2 focus:ring-brand focus:ring-offset-2'
+                            >
+                                Resume
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* TABLET: mini-boards row [hidden sm:flex lg:hidden] */}
@@ -334,7 +353,7 @@ const GameClient = ({ playerState, opponentBoards, otherPlayers, gameMode, timeR
                 {/* D-PAD [lg:hidden, playing only] */}
                 {isPlaying && playerState.playState === PlayState.PLAYING && (
                     <div className='lg:hidden shrink-0'>
-                        <DPad />
+                        <DPad disabled={isPaused} />
                     </div>
                 )}
 

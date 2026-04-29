@@ -10,6 +10,8 @@ import GameCountdown from '../../components/game-countdown'
 import NamePrompt from '../../components/name-prompt'
 import Lobby from '../../components/lobby'
 import Footer from '../../components/footer'
+import Navbar from '../../components/navbar'
+import PauseButton from '../../components/pause-button'
 import SpectatorPanel, { type SpectatorBoard } from '../../components/spectator-panel'
 import { useGameState } from '../../hooks/use-game-state'
 import { isValidName } from '../../shared/validation'
@@ -53,6 +55,9 @@ function RoomView({ roomName }: { roomName: string }) {
         countdown,
         setCountdown,
         goTimerRef,
+        isPaused,
+        startedPlayerCount,
+        togglePause,
         connectionStatus,
         connectionError,
         navigateHome,
@@ -99,6 +104,8 @@ function RoomView({ roomName }: { roomName: string }) {
                 })),
         [otherPlayers, opponentBoards]
     )
+
+    const canPause = startedPlayerCount === 1
     const [showForfeitDialog, setShowForfeitDialog] = useState(false)
     const forfeitDialogVisible = showForfeitDialog || backNavigationPending
     const mainContentRef = useRef<HTMLDivElement>(null)
@@ -184,16 +191,16 @@ function RoomView({ roomName }: { roomName: string }) {
                 Skip to content
             </a>
             <ConnectionOverlay status={connectionStatus} error={connectionError} />
-            <header className='flex items-center justify-between bg-brand px-4 h-10 shrink-0'>
-                <button
-                    onClick={handleHeaderAction}
-                    className='text-sm font-medium hover:underline'
-                >
-                    {isInGame ? '← Lobby' : '← Home'}
-                </button>
-                <h1 className='text-lg font-bold uppercase tracking-wider'>Red Tetris</h1>
-                <div className='w-16' />
-            </header>
+            <Navbar
+                left={
+                    <button onClick={handleHeaderAction} className='text-sm font-medium hover:underline'>
+                        {isInGame ? '← Lobby' : '← Home'}
+                    </button>
+                }
+                actions={canPause && isInGame && playerState.playState === PlayState.PLAYING ? (
+                    <PauseButton isPaused={isPaused} onToggle={togglePause} />
+                ) : undefined}
+            />
             <main id='main-content' className='flex-1 min-h-0 flex flex-col' aria-label='Game room'>
                 {/* LOBBY */}
                 {!isInGame && (
@@ -238,7 +245,7 @@ function RoomView({ roomName }: { roomName: string }) {
                     className={`${isInGame ? 'flex-1 min-h-0' : 'hidden'} p-2 sm:p-4 lg:p-6`}
                     aria-label='Game'
                 >
-                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} /> : undefined} setCountdown={setCountdown} goTimerRef={goTimerRef} />
+                    <GameClient playerState={playerState} opponentBoards={opponentBoards} otherPlayers={otherPlayers} gameMode={gameMode} timeRemaining={timeRemaining} bottomSlot={isInGame ? <Chat playerName={playerName} messages={chatMessages} onSend={handleChatSend} /> : undefined} setCountdown={setCountdown} goTimerRef={goTimerRef} isPaused={isPaused} canPause={startedPlayerCount === 1} togglePause={togglePause} />
                 </section>
             </main>
 

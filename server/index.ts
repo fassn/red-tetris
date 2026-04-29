@@ -47,6 +47,7 @@ app.prepare().then(() => {
             for (const [roomName, game] of gameStore.games) {
                 try {
                     if (!game.isStarted) continue
+                    if (game.isPaused) continue
                     const shouldDrop = game.tick()
 
                     // Time-attack: emit countdown and check expiry

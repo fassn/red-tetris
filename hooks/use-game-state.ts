@@ -33,6 +33,8 @@ export function useGameState(roomName: string) {
     const [gameMode, setGameMode] = useState<GameMode>(GameMode.CLASSIC)
     const [timeRemaining, setTimeRemaining] = useState(-1)
     const [countdown, setCountdown] = useState<number | null>(null)
+    const [isPaused, setIsPaused] = useState(false)
+    const [startedPlayerCount, setStartedPlayerCount] = useState(0)
     const goTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const prevPlayStateRef = useRef<PlayState | null>(null)
 
@@ -116,7 +118,7 @@ export function useGameState(roomName: string) {
             socket.playerId = playerId
         }
 
-        const handleNewState = ({ playerState, otherPlayers, gameMode: mode }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[], gameMode?: GameMode }) => {
+        const handleNewState = ({ playerState, otherPlayers, gameMode: mode, isPaused: paused }: { playerState?: PlayerState, otherPlayers?: RoomPlayer[], gameMode?: GameMode, isPaused?: boolean }) => {
             if (playerState) {
                 const prev = prevPlayStateRef.current
                 prevPlayStateRef.current = playerState.playState
@@ -128,6 +130,7 @@ export function useGameState(roomName: string) {
                 ) {
                     setOpponentBoards({})
                     setTimeRemaining(-1)
+                    setIsPaused(false)
                 }
             }
             if (otherPlayers) {
@@ -135,6 +138,9 @@ export function useGameState(roomName: string) {
             }
             if (mode) {
                 setGameMode(mode)
+            }
+            if (paused !== undefined) {
+                setIsPaused(paused)
             }
         }
 
@@ -165,6 +171,13 @@ export function useGameState(roomName: string) {
             }
         }
 
+        const handleGamePaused = () => { setIsPaused(true) }
+        const handleGameResumed = () => { setIsPaused(false) }
+        const handleNewGame = ({ startedPlayerCount: count }: { startedPlayerCount: number }) => {
+            setStartedPlayerCount(count)
+            setIsPaused(false)
+        }
+
         socket.on('roomIsFull', handleRoomFull)
         socket.on('session', handleSession)
         socket.on('newState', handleNewState)
@@ -172,6 +185,9 @@ export function useGameState(roomName: string) {
         socket.on('timeUpdate', handleTimeUpdate)
         socket.on('gameModeChanged', handleGameModeChanged)
         socket.on('gameCountdown', handleGameCountdown)
+        socket.on('gamePaused', handleGamePaused)
+        socket.on('gameResumed', handleGameResumed)
+        socket.on('newGame', handleNewGame)
 
         return () => {
             socket.disconnect()
@@ -186,6 +202,9 @@ export function useGameState(roomName: string) {
             socket.off('timeUpdate', handleTimeUpdate)
             socket.off('gameModeChanged', handleGameModeChanged)
             socket.off('gameCountdown', handleGameCountdown)
+            socket.off('gamePaused', handleGamePaused)
+            socket.off('gameResumed', handleGameResumed)
+            socket.off('newGame', handleNewGame)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -203,6 +222,10 @@ export function useGameState(roomName: string) {
         setBackNavigationPending(false)
     }
 
+    const togglePause = () => {
+        socket.emit('pauseGame')
+    }
+
     return {
         playerName,
         isInGame,
@@ -216,6 +239,9 @@ export function useGameState(roomName: string) {
         countdown,
         setCountdown,
         goTimerRef,
+        isPaused,
+        startedPlayerCount,
+        togglePause,
         connectionStatus,
         connectionError,
         navigateHome,
