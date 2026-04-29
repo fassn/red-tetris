@@ -148,6 +148,8 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
                 const ps = player.socket.data.playerState
                 if (ps.host || ps.playState === PlayState.READY) {
                     ps.playState = PlayState.PLAYING
+                    ps.lastScore = null
+                    ps.lastLines = null
                 }
                 io.to(player.socket.id).emit('newGame', {
                     newStack: player.stack,

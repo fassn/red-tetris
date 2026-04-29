@@ -8,6 +8,7 @@ class Player {
     socket: TypedSocket
     name: string
     score: number
+    linesCleared: number
     stack: Stack[]
     pieces: Piece[]
     forfeited: boolean
@@ -17,6 +18,7 @@ class Player {
         this.socket = socket
         this.name = name
         this.score = 0
+        this.linesCleared = 0
         this.stack = createEmptyStack()
         this.pieces = []
         this.forfeited = false

@@ -48,6 +48,8 @@ export enum GameMode {
 export type PlayerState = {
     host: boolean
     playState: PlayState
+    lastScore?: number | null
+    lastLines?: number | null
 }
 
 export type RoomPlayer = {

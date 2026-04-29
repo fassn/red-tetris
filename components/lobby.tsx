@@ -20,21 +20,46 @@ const Room = ({ roomName }: { roomName: string }) => (
 
 const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
     <div className='px-4 py-4'>
-        <h2 className='text-lg font-semibold mb-2'>Players</h2>
+        <div className='flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-content-muted mb-1 px-0'>
+            <span className='flex-1 min-w-0'>Players</span>
+            <span className='flex items-center gap-6 shrink-0'>
+                <span className='w-16 text-right'>Points</span>
+                <span className='w-10 text-right'>Lines</span>
+                <span className='w-16 text-right'>Status</span>
+            </span>
+        </div>
         <ul className='space-y-1' aria-label='Player list'>
             {otherPlayers.map((p) => (
-                    <li key={p.playerId} className='flex items-center justify-between text-sm'>
-                        <span>
+                    <li key={p.playerId} className='flex items-center justify-between text-sm gap-2'>
+                        <span className='flex-1 truncate min-w-0'>
                             {p.playerName}
                             {p.state.host && <span className='ml-1 text-brand' aria-label='Host'>★</span>}
                         </span>
-                        <span className={
-                            p.state.playState === PlayState.READY ? 'text-status-ready' :
-                            p.state.playState === PlayState.PLAYING ? 'text-status-playing' :
-                            p.state.playState === PlayState.ENDGAME ? 'text-status-inactive' :
-                            'text-status-muted'
-                        } aria-label={`Status: ${PlayState[p.state.playState]}`}>
-                            {PlayState[p.state.playState]}
+                        <span className='flex items-center gap-6 shrink-0'>
+                            {p.state.playState === PlayState.PLAYING ? (
+                                <>
+                                    <span className='w-16 text-right tabular-nums text-content-muted'>—</span>
+                                    <span className='w-10 text-right tabular-nums text-content-muted'>—</span>
+                                </>
+                            ) : p.state.lastScore != null ? (
+                                <>
+                                    <span className='w-16 text-right tabular-nums text-content-secondary'>{p.state.lastScore.toLocaleString()}</span>
+                                    <span className='w-10 text-right tabular-nums text-content-secondary'>{p.state.lastLines ?? 0}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className='w-16' />
+                                    <span className='w-10' />
+                                </>
+                            )}
+                            <span className={`w-16 text-right ${
+                                p.state.playState === PlayState.READY ? 'text-status-ready' :
+                                p.state.playState === PlayState.PLAYING ? 'text-status-playing' :
+                                p.state.playState === PlayState.ENDGAME ? 'text-status-inactive' :
+                                'text-status-muted'
+                            }`} aria-label={`Status: ${PlayState[p.state.playState]}`}>
+                                {PlayState[p.state.playState]}
+                            </span>
                         </span>
                     </li>
                 ))}
@@ -104,7 +129,10 @@ const Lobby = ({ playerName, playerState, otherPlayers, gameMode, onToggleMode, 
         playerName: playerName || 'You',
         state: playerState,
     }
-    const allPlayers = [selfPlayer, ...otherPlayers]
+    const allPlayers = [selfPlayer, ...otherPlayers].sort((a, b) => {
+        if (a.state.host !== b.state.host) return a.state.host ? -1 : 1
+        return a.playerName.localeCompare(b.playerName)
+    })
 
     const setReady = (event: ChangeEvent<HTMLInputElement>) => {
         socket.emit('setReady', event.target.checked)

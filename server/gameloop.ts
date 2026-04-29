@@ -42,6 +42,7 @@ export function updatePiecesStack(playerPieces: Piece[], game: Game) {
 export function emitStackAndScore(io: TypedServer, game: Game, player: Player, playerStack: Stack[]) {
     const lineCount = game.countFilledLines(playerStack)
     const score = game.addToScore(lineCount, player.id)
+    player.linesCleared += lineCount
     io.to(player.socket.id).emit('newStack', { newStack: playerStack, newScore: score, linesCleared: lineCount })
 
     // Check for level-up after scoring
@@ -82,8 +83,10 @@ export function movePieceDown(io: TypedServer, currentPiece: Piece, player: Play
  * declares a winner if only one is left standing.
  */
 export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game) {
-    // Mark loser
+    // Mark loser and store final stats for lobby display
     loser.socket.data.playerState.playState = PlayState.ENDGAME
+    loser.socket.data.playerState.lastScore = loser.score
+    loser.socket.data.playerState.lastLines = loser.linesCleared
     io.to(loser.socket.id).emit('gameOver', { won: false })
 
     // Count remaining active players
@@ -95,6 +98,8 @@ export function emitEndGameToPlayers(io: TypedServer, loser: Player, game: Game)
         // Last player standing wins
         const winner = activePlayers[0]
         winner.socket.data.playerState.playState = PlayState.ENDGAME
+        winner.socket.data.playerState.lastScore = winner.score
+        winner.socket.data.playerState.lastLines = winner.linesCleared
         io.to(winner.socket.id).emit('gameOver', { won: true })
     }
 
@@ -127,6 +132,8 @@ export function emitTimeAttackEnd(io: TypedServer, game: Game) {
 
     for (const player of activePlayers) {
         player.socket.data.playerState.playState = PlayState.ENDGAME
+        player.socket.data.playerState.lastScore = player.score
+        player.socket.data.playerState.lastLines = player.linesCleared
         const won = player.score === maxScore
         io.to(player.socket.id).emit('gameOver', { won })
     }
