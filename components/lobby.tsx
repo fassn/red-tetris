@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ChangeEvent, useContext } from "react"
+import { ChangeEvent, useContext, useState } from "react"
 import { SocketContext } from "../context/socket"
 import { GameMode, PlayerState, PlayState, RoomPlayer } from "../shared/types"
 
@@ -12,11 +12,33 @@ type LobbyProps = {
     roomName: string,
 }
 
-const Room = ({ roomName }: { roomName: string }) => (
-    <div className='flex h-24 justify-center items-center bg-brand'>
-        <h2 className='text-4xl font-bold uppercase tracking-wider'>#{roomName}</h2>
-    </div>
-)
+const Room = ({ roomName }: { roomName: string }) => {
+    const [copied, setCopied] = useState(false)
+
+    const handleCopy = () => {
+        const url = `${window.location.origin}/room/${encodeURIComponent(roomName)}`
+        navigator.clipboard.writeText(url).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        })
+    }
+
+    return (
+        <div className='flex flex-col h-24 justify-center items-center bg-brand gap-1'>
+            <button
+                onClick={handleCopy}
+                className='text-4xl font-bold uppercase tracking-wider hover:opacity-80 transition-opacity focus:outline-hidden focus:ring-2 focus:ring-white/50 rounded-sm px-1'
+                title='Click to copy room link'
+                aria-label={`Room ${roomName} — click to copy link`}
+            >
+                #{roomName}
+            </button>
+            <span className='text-xs text-content/60 h-4'>
+                {copied ? '✓ Link copied!' : ''}
+            </span>
+        </div>
+    )
+}
 
 const PlayerList = ({ otherPlayers }: { otherPlayers: RoomPlayer[] }) => (
     <div className='px-4 py-4'>

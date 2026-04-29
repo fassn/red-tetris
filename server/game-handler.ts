@@ -155,14 +155,21 @@ const GameHandler = async (io: TypedServer, socket: TypedSocket, deps: GameDeps)
             sd.game.startTimer()
             addPlayer()
 
+            // Clear last scores for all sockets in the room (including spectators)
+            const allRoomSockets = await io.in(sd.roomName).fetchSockets()
+            for (const sock of allRoomSockets) {
+                if (sock.data.playerState) {
+                    sock.data.playerState.lastScore = null
+                    sock.data.playerState.lastLines = null
+                }
+            }
+
             // Transition all eligible players to PLAYING
             for (const player of sd.game.players) {
                 if (!player.pieces[0] || !player.pieces[1]) continue
                 const ps = player.socket.data.playerState
                 if (ps.host || ps.playState === PlayState.READY) {
                     ps.playState = PlayState.PLAYING
-                    ps.lastScore = null
-                    ps.lastLines = null
                 }
                 io.to(player.socket.id).emit('newGame', {
                     newStack: player.stack,
